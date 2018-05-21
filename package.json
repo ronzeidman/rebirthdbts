@@ -1,0 +1,26 @@
+{
+  "name": "rebirthdbts",
+  "version": "0.0.1",
+  "description": "Experimental RebirthDB TypeScript driver",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ronzeidman/rebirthdbts.git"
+  },
+  "author": "Ron Zeidman",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ronzeidman/rebirthdbts/issues"
+  },
+  "homepage": "https://github.com/ronzeidman/rebirthdbts#readme",
+  "devDependencies": {
+    "@types/node": "^8.10.17",
+    "protobufjs": "^6.8.6",
+    "ts-node": "^6.0.3",
+    "tslint": "^5.10.0",
+    "typescript": "^2.8.3"
+  }
+}
