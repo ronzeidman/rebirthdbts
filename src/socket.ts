@@ -7,8 +7,8 @@ import {
   computeSaltedPassword,
   validateVersion
 } from './handshake';
+import { QueryJson, TermJson } from './internal-types';
 import { Query } from './proto/ql2';
-import { QueryJson, TermJson } from './types';
 
 export class RebirthDBSocket {
   public readonly port: number;
