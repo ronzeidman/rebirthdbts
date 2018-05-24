@@ -13,12 +13,17 @@ export interface ServerInfo {
   proxy: boolean;
 }
 export interface ConnectionOptions {
-  host?: string; // default 'localhost'
-  port?: number; // default 28015
+  servers?: Array<{
+    host: string;
+    port?: number; // default 28015
+  }>; // default [{host: 'localhost', port: 28015}]
   db?: string; // default 'test'
   user?: string; // default 'admin'
   password?: string; // default ''
-  timeout?: number; // in seconds, default 20
+  connectTimeout?: number; // in seconds, default 20
+  idleTimeout?: number; // default
+  minConnections?: number; // default = number of servers
+  maxConnections?: number; // default = number of servers
 }
 
 export interface TableCreateOptions {
@@ -866,28 +871,28 @@ export interface RDatabase {
 }
 
 export interface R {
-  minval: RDatum;
-  maxval: RDatum;
-  row: RDatum;
-  monday: RDatum;
-  tuesday: RDatum;
-  wednesday: RDatum;
-  thursday: RDatum;
-  friday: RDatum;
-  saturday: RDatum;
-  sunday: RDatum;
-  january: RDatum;
-  february: RDatum;
-  march: RDatum;
-  april: RDatum;
-  may: RDatum;
-  june: RDatum;
-  july: RDatum;
-  august: RDatum;
-  september: RDatum;
-  october: RDatum;
-  november: RDatum;
-  december: RDatum;
+  minval: RValue;
+  maxval: RValue;
+  // row: RDatum;
+  monday: RValue;
+  tuesday: RValue;
+  wednesday: RValue;
+  thursday: RValue;
+  friday: RValue;
+  saturday: RValue;
+  sunday: RValue;
+  january: RValue;
+  february: RValue;
+  march: RValue;
+  april: RValue;
+  may: RValue;
+  june: RValue;
+  july: RValue;
+  august: RValue;
+  september: RValue;
+  october: RValue;
+  november: RValue;
+  december: RValue;
   desc(indexName: string): any;
   asc(indexName: string): any;
   grant(

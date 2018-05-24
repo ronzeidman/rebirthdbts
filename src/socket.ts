@@ -7,9 +7,9 @@ import {
   computeSaltedPassword,
   validateVersion
 } from './handshake';
-import { QueryJson, TermJson } from './internal-types';
+import { QueryJson } from './internal-types';
 import { Query } from './proto/ql2';
-import { RunOptions } from './types';
+import { RQuery, RunOptions } from './types';
 
 export class RebirthDBSocket {
   public readonly port: number;
@@ -65,7 +65,8 @@ export class RebirthDBSocket {
     await this.performHandshake();
   }
 
-  public async query(term: TermJson, optargs?: RunOptions) {
+  public async query(rq: RQuery, optargs?: RunOptions) {
+    const { term } = rq as any;
     const query: QueryJson = [Query.QueryType.START, term];
     if (optargs) {
       query[2] = optargs;
