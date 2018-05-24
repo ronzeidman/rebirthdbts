@@ -271,7 +271,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
     ...args: Array<RDatum | Array<(arg: RDatum<T>, ...args: RStream[]) => U>>
   ): U extends RStream ? RStream : RDatum;
-  <U extends (T extends Array<infer T1> ? keyof T1 : keyof T)>(
+  <U extends T extends Array<infer T1> ? keyof T1 : keyof T>(
     attribute: RValue<U>
   ): T extends Array<infer T1> ? RDatum<Array<T[U]>> : RDatum<T[U]>;
   (attribute: RValue<number>): T extends Array<infer T1> ? RDatum<T1> : never;
@@ -377,11 +377,11 @@ export interface RDatum<T = any> extends RQuery<T> {
   distinct(): RDatum<T>;
 
   pluck(
-    ...fields: Array<RValue<string>>
+    ...fields: any[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
 
   without(
-    ...fields: Array<RValue<string>>
+    ...fields: any[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
 
   merge<U = any>(
@@ -509,7 +509,7 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
     other: RStream<U>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>;
-  innerJoin<U>(
+  outerJoin<U>(
     other: RStream<U>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>; // actually left join
@@ -729,10 +729,10 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
 export interface RSingleSelection<T = any> extends RDatum<T> {
   update(
     obj: RValue<Partial<T>>,
-    options: UpdateOptions
+    options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
-  replace(obj: RValue<T>, options: UpdateOptions): RDatum<WriteResult<T>>;
-  delete(options: DeleteOptions): RDatum<WriteResult<T>>;
+  replace(obj: RValue<T>, options?: UpdateOptions): RDatum<WriteResult<T>>;
+  delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
   changes(options?: ChangesOptions): RStream<Changes<T>>;
 }
 
@@ -784,9 +784,7 @@ export interface RTable<T = any> extends RSelection<T> {
   indexStatus(...indexName: string[]): RDatum<IndexStatus>;
   indexWait(...indexName: string[]): RDatum<IndexStatus>;
 
-  insert(
-    ...objOrOptions: Array<RValue<T> | InsertOptions>
-  ): RDatum<WriteResult<T>>;
+  insert(obj: any, options?: InsertOptions): RDatum<WriteResult<T>>;
   sync(): RDatum<{ synced: number }>;
 
   get(key: any): RSingleSelection<T>;
@@ -831,7 +829,7 @@ export interface RTable<T = any> extends RSelection<T> {
   status(): RDatum<TableStatus>;
   rebalance(): RDatum<RebalanceResult>;
   reconfigure(options: TableReconfigureOptions): RDatum<ReconfigureResult>;
-  wait(options: WaitOptions): RDatum<{ ready: 1 }>;
+  wait(options?: WaitOptions): RDatum<{ ready: 1 }>;
 }
 export interface RDatabase {
   grant(
@@ -871,7 +869,27 @@ export interface R {
   minval: RDatum;
   maxval: RDatum;
   row: RDatum;
+  monday: RDatum;
+  tuesday: RDatum;
+  wednesday: RDatum;
+  thursday: RDatum;
+  friday: RDatum;
+  saturday: RDatum;
+  sunday: RDatum;
+  january: RDatum;
+  february: RDatum;
+  march: RDatum;
+  april: RDatum;
+  may: RDatum;
+  june: RDatum;
+  july: RDatum;
+  august: RDatum;
+  september: RDatum;
+  october: RDatum;
+  november: RDatum;
+  december: RDatum;
   desc(indexName: string): any;
+  asc(indexName: string): any;
   grant(
     userName: string,
     options: {
@@ -902,7 +920,7 @@ export interface R {
   // For default database
   tableCreate(
     tableName: RValue<string>,
-    options: TableCreateOptions
+    options?: TableCreateOptions
   ): RDatum<TableChangeResult>;
   tableDrop(tableName: RValue<string>): RDatum<TableChangeResult>;
   tableList(): RDatum<string>;
@@ -958,7 +976,7 @@ export interface R {
     time: RValue<string>,
     options?: { defaultTimezone: string }
   ): RDatum<Date>;
-  args(arg: RStream | any[]): any;
+  args(arg: any): any;
   binary(data: any): RDatum<Buffer>;
   branch<T>(
     test: RValue<boolean>,
@@ -977,15 +995,15 @@ export interface R {
   json(json: RValue<string>): RDatum;
   http(url: RValue<string>, options: HttpRequestOptions): RDatum;
   http(url: RValue<string>, options: HTTPStreamRequestOptions): RStream;
-  uuid(val?: string): RDatum<string>;
+  uuid(val?: RValue<string>): RDatum<string>;
   circle(
     longitudeLatitude: [string, string] | RDatum,
     radius: RValue<number>,
-    options: {
-      numVertices: number;
-      geoSystem: 'WGS84' | 'unit_sphere';
-      unit: 'm' | 'km' | 'mi' | 'nm' | 'ft';
-      fill: boolean;
+    options?: {
+      numVertices?: number;
+      geoSystem?: 'WGS84' | 'unit_sphere';
+      unit?: 'm' | 'km' | 'mi' | 'nm' | 'ft';
+      fill?: boolean;
     }
   ): RDatum;
   line(...points: Array<[string, string]>): RDatum;
@@ -1003,9 +1021,9 @@ export interface R {
   distance(
     geo1: RDatum,
     geo2: RDatum,
-    options: {
-      geoSystem: 'WGS84' | 'unit_sphere';
-      unit: 'm' | 'km' | 'mi' | 'nm' | 'ft';
+    options?: {
+      geoSystem?: 'WGS84' | 'unit_sphere';
+      unit?: 'm' | 'km' | 'mi' | 'nm' | 'ft';
     }
   ): RStream;
   intersects<T>(stream: RStream<T>, geometry: RDatum): RStream<T>;

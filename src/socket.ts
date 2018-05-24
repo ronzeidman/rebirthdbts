@@ -9,6 +9,7 @@ import {
 } from './handshake';
 import { QueryJson, TermJson } from './internal-types';
 import { Query } from './proto/ql2';
+import { RunOptions } from './types';
 
 export class RebirthDBSocket {
   public readonly port: number;
@@ -64,8 +65,11 @@ export class RebirthDBSocket {
     await this.performHandshake();
   }
 
-  public async query(term: TermJson) {
+  public async query(term: TermJson, optargs?: RunOptions) {
     const query: QueryJson = [Query.QueryType.START, term];
+    if (optargs) {
+      query[2] = optargs;
+    }
     const encoded = JSON.stringify(query);
     const querySize = Buffer.byteLength(encoded);
     const buffer = new Buffer(8 + 4 + querySize);

@@ -7,7 +7,7 @@ export type TermJson =
   | boolean
   | object
   | null;
-export type OptargsJson = { [key: string]: string } | undefined;
+export type OptargsJson = { [key: string]: any } | undefined;
 export interface ComplexTermJson
   extends Array<Term.TermType | TermJson[] | OptargsJson> {
   0: Term.TermType;
