@@ -1,9 +1,10 @@
 import { isBuffer, isDate, isFunction } from 'util';
 import { funcConfig } from './config';
+import { RebirthDBConnection } from './connection-pool';
 import { RebirthdbError } from './error';
 import { ComplexTermJson, TermJson } from './internal-types';
 import { Term } from './proto/ql2';
-import { R } from './types';
+import { ConnectionOptions, R, RunOptions } from './types';
 
 const reversedDo = queryTermBuilder(Term.TermType.FUNCALL, 1, -1, false);
 const rSymbol = Symbol('r');
@@ -22,6 +23,17 @@ const queryBuilderProto = Object.assign(
         args.unshift(this.term);
       }
       return reversedDo.call({}, last, ...args);
+    },
+    async run(
+      this: { term: TermJson },
+      conn?: RebirthDBConnection | RunOptions,
+      options?: RunOptions
+    ) {
+      const c = conn instanceof RebirthDBConnection ? conn : undefined;
+      if (!c) {
+        throw new RebirthdbError('No connection');
+      }
+      return c.query(this.term);
     }
   }
 );
@@ -143,5 +155,17 @@ export const r: R = Object.assign(getQueryBuilder() as any, {
       return getQueryBuilder(parseParam(arg));
     }
     return getQueryBuilder([Term.TermType.DATUM, [arg]]);
+  },
+  connect: async (options: ConnectionOptions) => {
+    if (!options.pool) {
+      const c = new RebirthDBConnection(
+        options.servers && options.servers.length
+          ? options.servers[0]
+          : ({} as any),
+        options as any
+      );
+      await c.reconnect();
+      return c;
+    }
   }
 });

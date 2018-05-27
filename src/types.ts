@@ -13,17 +13,24 @@ export interface ServerInfo {
   proxy: boolean;
 }
 export interface ConnectionOptions {
+  db?: string; // default 'test'
+  user?: string; // default 'admin'
+  password?: string; // default ''
+  discovary?: boolean; // default false
+  pool?: boolean; // default true
+  buffer?: number; // default = number of servers
+  max?: number; // default = number of servers
+  timeout?: number; // default = 20
+  pingInterval?: number; // default -1
+  timeoutError?: number; // default = 1000
+  timeoutGb?: number; // default = 60*60*1000
+  maxExponent?: number; // default 6
+  silent?: boolean; // default = false
   servers?: Array<{
     host: string;
     port?: number; // default 28015
   }>; // default [{host: 'localhost', port: 28015}]
-  db?: string; // default 'test'
-  user?: string; // default 'admin'
-  password?: string; // default ''
-  connectTimeout?: number; // in seconds, default 20
-  idleTimeout?: number; // default
-  minConnections?: number; // default = number of servers
-  maxConnections?: number; // default = number of servers
+  log?: (message: string) => void; // default undefined;
 }
 
 export interface TableCreateOptions {
@@ -242,7 +249,7 @@ export interface MatchResults {
 
 //#region operations
 export interface Connection extends EventEmitter {
-  clientPort: string;
+  clientPort: number;
   clientAddress: string;
   close(options?: { noreplyWait: true }): Promise<void>;
   reconnect(options?: { noreplyWait: true }): Promise<void>;
@@ -270,6 +277,7 @@ export interface RQuery<T = any> {
     type: string;
   }>;
 
+  run(connection: Connection, noptions?: RunOptions): Promise<T>;
   run(options?: RunOptions): Promise<T>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
@@ -915,8 +923,6 @@ export interface R {
     >;
   }>;
 
-  connect(optionsOrHost: ConnectionOptions | string): Promise<Connection>;
-
   dbCreate(dbName: string): RDatum<DBConfig>;
   dbDrop(dbName: string): RDatum<DBChangeResult>;
   dbList(): RDatum<string[]>;
@@ -1054,6 +1060,11 @@ export interface R {
     arg4: RDatum,
     func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T
   ): T extends RStream ? T : RDatum;
+
+  connect(
+    optionsOrHost: (ConnectionOptions & { pool: false }) | string
+  ): Promise<Connection>;
+  connect(optionsOrHost: ConnectionOptions | string): Promise<ConnectionPool>;
 }
 
 //#endregion operations

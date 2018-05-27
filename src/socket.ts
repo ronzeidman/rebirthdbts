@@ -7,22 +7,30 @@ import {
   computeSaltedPassword,
   validateVersion
 } from './handshake';
-import { QueryJson } from './internal-types';
-import { Query } from './proto/ql2';
-import { RQuery, RunOptions } from './types';
+import { QueryJson, ResponseJson } from './internal-types';
 
 export class RebirthDBSocket {
   public readonly port: number;
   public readonly host: string;
   public readonly user: string;
   public readonly password: Buffer;
+  public lastError?: Error;
+  public get status() {
+    if (!!this.lastError) {
+      return 'errored';
+    } else if (!this.isOpen) {
+      return 'closed';
+    } else if (this.mode === 'handshake') {
+      return 'handshake';
+    }
+    return 'open';
+  }
+  private isOpen = false;
   private socket: Socket;
   private nextToken = 0;
   private buffer = new Buffer(0);
-  private isOpen = false;
   private mode: 'handshake' | 'response' = 'handshake';
-  private data: any[] = [];
-  private lastError?: Error;
+  private data: Array<ResponseJson | ((arg: ResponseJson) => void)> = [];
 
   constructor({
     port = 28015,
@@ -65,12 +73,17 @@ export class RebirthDBSocket {
     await this.performHandshake();
   }
 
-  public async query(rq: RQuery, optargs?: RunOptions) {
-    const { term } = rq as any;
-    const query: QueryJson = [Query.QueryType.START, term];
-    if (optargs) {
-      query[2] = optargs;
-    }
+  // public async query(rq: RQuery, optargs?: RunOptions) {
+  //   const { term } = rq as any;
+  //   const query: QueryJson = [Query.QueryType.START, term];
+  //   if (optargs) {
+  //     query[2] = optargs;
+  //   }
+
+  //   return this.readNext(token);
+  // }
+
+  public sendQuery(query: QueryJson) {
     const encoded = JSON.stringify(query);
     const querySize = Buffer.byteLength(encoded);
     const buffer = new Buffer(8 + 4 + querySize);
@@ -81,7 +94,31 @@ export class RebirthDBSocket {
     buffer.writeUInt32LE(querySize, 8);
     buffer.write(encoded, 12);
     this.socket.write(buffer);
-    return this.readNext(token);
+    return token;
+  }
+
+  public readNext<T = ResponseJson>(token: number, timeout = 5000): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      if (typeof this.data[token] !== 'undefined') {
+        const data = this.data[token];
+        if (typeof data !== 'function') {
+          delete this.data[token];
+          resolve(data as any);
+        }
+      } else if (this.isOpen) {
+        const t = setTimeout(
+          () => reject(new RebirthdbError('Response timed out')),
+          timeout
+        );
+        this.data[token] = (data: ResponseJson) => {
+          delete this.data[token];
+          clearTimeout(t);
+          resolve(data as any);
+        };
+      } else {
+        reject(this.lastError || new RebirthdbError('Connection is closed'));
+      }
+    });
   }
 
   public close() {
@@ -91,8 +128,8 @@ export class RebirthDBSocket {
   private async performHandshake() {
     const { randomString, authBuffer } = buildAuthBuffer(this.user);
     this.socket.write(authBuffer);
-    validateVersion(await this.readNext(0));
-    const { authentication } = await this.readNext(1);
+    validateVersion(await this.readNext<any>(0));
+    const { authentication } = await this.readNext<any>(1);
     const { serverSignature, proof } = await computeSaltedPassword(
       authentication,
       randomString,
@@ -100,30 +137,9 @@ export class RebirthDBSocket {
       this.password
     );
     this.socket.write(proof);
-    const { authentication: returnedSignature } = await this.readNext(2);
+    const { authentication: returnedSignature } = await this.readNext<any>(2);
     compareDigest(returnedSignature, serverSignature);
     this.mode = 'response';
-  }
-
-  private readNext(token: number, timeout = 5000): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (typeof this.data[token] !== 'undefined') {
-        const data = this.data[token];
-        delete this.data[token];
-        resolve(data);
-      } else if (this.isOpen) {
-        const t = setTimeout(
-          () => reject(new RebirthdbError('Response timed out')),
-          timeout
-        );
-        this.data[token] = (data: any) => {
-          clearTimeout(t);
-          resolve(data);
-        };
-      } else {
-        reject(this.lastError || new RebirthdbError('Connection is closed'));
-      }
-    });
   }
 
   private handleHandshakeData() {
@@ -135,7 +151,7 @@ export class RebirthDBSocket {
         if (jsonMsg.success) {
           const token = this.nextToken++;
           if (typeof this.data[token] === 'function') {
-            this.data[token](jsonMsg);
+            (this.data[token] as any)(jsonMsg as any);
             delete this.data[token];
           } else {
             this.data[token] = jsonMsg;
@@ -164,10 +180,12 @@ export class RebirthDBSocket {
       }
 
       const responseBuffer = this.buffer.slice(12, 12 + responseLength);
-      const response = JSON.parse(responseBuffer.toString('utf8'));
+      const response: ResponseJson = JSON.parse(
+        responseBuffer.toString('utf8')
+      );
 
       if (typeof this.data[token] === 'function') {
-        this.data[token](response);
+        (this.data[token] as any)(response);
         delete this.data[token];
       } else {
         this.data[token] = response;

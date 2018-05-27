@@ -1,15 +1,17 @@
+import { inspect } from 'util';
 import { NULL_BUFFER } from './handshake';
 import { r } from './query-builder';
-import { RebirthDBSocket } from './socket';
 
 // Term.TermType.DB;
 
 (async ({ user = 'admin', password = NULL_BUFFER } = {}) => {
   try {
-    const rsocket = new RebirthDBSocket();
-    await rsocket.connect();
-    console.log('Connected!');
-    console.log(await rsocket.query(r.db('test').table('test')));
+    const conn = await r.connect({ pool: false });
+    const result = await r
+      .db('test_db')
+      .table('test_table')
+      .run(conn);
+    console.log(inspect(result));
   } catch (error) {
     console.log(error);
   }
