@@ -10,6 +10,7 @@ import { r } from './query-builder';
     const result = await r
       .db('test_db')
       .table('test_table')
+      .insert({ test_key: 'new_value' }, { returnChanges: true })
       .run(conn);
     console.log(inspect(result));
   } catch (error) {

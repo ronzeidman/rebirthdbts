@@ -1,7 +1,8 @@
-import { isBuffer, isDate, isFunction } from 'util';
+import { inspect, isBuffer, isDate, isFunction } from 'util';
 import { funcConfig } from './config';
 import { RebirthDBConnection } from './connection-pool';
 import { RebirthdbError } from './error';
+import { camelToSnake } from './helper';
 import { ComplexTermJson, TermJson } from './internal-types';
 import { Term } from './proto/ql2';
 import { ConnectionOptions, R, RunOptions } from './types';
@@ -96,7 +97,14 @@ function queryTermBuilder(
   hasOptarg: boolean
 ) {
   return function(this: { term?: TermJson }, ...args: any[]) {
-    const argsLength = this.term ? args.length : Math.max(args.length - 1, 0);
+    let argsLength = args.length;
+    if (!this.term) {
+      argsLength--;
+    }
+    if (hasOptarg) {
+      argsLength--;
+    }
+    argsLength = Math.max(argsLength, 0);
     if (argsLength < minArgs) {
       throw new RebirthdbError(`Expecting at least ${minArgs} arguments`);
     }
@@ -118,7 +126,14 @@ function queryTermBuilder(
       term[1] = params;
     }
     if (optarg) {
-      term[2] = optarg;
+      term[2] = Object.entries(maybeOptarg).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [camelToSnake(key)]: parseParam(value)
+        }),
+        {}
+      );
+      console.log(inspect(term[2]));
     }
     return getQueryBuilder(term);
   };
