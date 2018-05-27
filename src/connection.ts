@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
 import { inspect, promisify } from 'util';
+import { Cursor } from './cursor';
 import { RebirthdbError } from './error';
 import { NULL_BUFFER } from './handshake';
 import { TermJson } from './internal-types';
 import { Query, Response, Term } from './proto/ql2';
 import { RebirthDBSocket } from './socket';
-import { Connection, ServerInfo } from './types';
+import { Connection, RunOptions, ServerInfo } from './types';
 
 export class RebirthDBConnection extends EventEmitter implements Connection {
   public readonly clientPort: number;
@@ -101,27 +102,21 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
     return result.r[0];
   }
-  public async query(term: TermJson, globalArgs: any = {}) {
+  public async query(term: TermJson, globalArgs: RunOptions = {}) {
     const token = this.socket.sendQuery([
       Query.QueryType.START,
       term,
       { db: this.db, ...globalArgs }
     ]);
-    const result = await this.socket.readNext(token);
-    console.log(inspect(result));
-    switch (result.t) {
-      case Response.ResponseType.CLIENT_ERROR:
-      case Response.ResponseType.COMPILE_ERROR:
-      case Response.ResponseType.RUNTIME_ERROR:
-        throw new RebirthdbError('Query error');
-      case Response.ResponseType.SUCCESS_ATOM:
-        return result.r[0];
-      case Response.ResponseType.SUCCESS_PARTIAL:
-      case Response.ResponseType.SUCCESS_SEQUENCE:
-        return result.r;
-      default:
-        throw new RebirthdbError('Unexpected return value');
+    const cursor = new Cursor(this.socket, token, globalArgs);
+    if (globalArgs.immidiateReturn) {
+      return cursor;
     }
+    const type = await cursor.resolve();
+    if (type === Response.ResponseType.SUCCESS_ATOM) {
+      return await cursor.next();
+    }
+    return cursor;
   }
 
   private startPinging() {

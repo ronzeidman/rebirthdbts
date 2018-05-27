@@ -93,6 +93,7 @@ export interface RunOptions {
   maxBatchBytes?: number; // default 1MB
   maxBatchSeconds?: number; // default 0.5
   firstBatchScaledownFactor?: number; // default 4
+  immidiateReturn?: boolean;
 }
 
 export interface HttpRequestOptions {
@@ -261,7 +262,10 @@ export interface Connection extends EventEmitter {
 export type RValue<T = any> = RDatum<T> | T;
 
 export interface RCursor<T = any> {
-  d: string;
+  next(): Promise<T>;
+  toArray(): Promise<T[]>;
+  close(): Promise<void>;
+  eachAsync(rowHandler: (row: T) => Promise<void>): Promise<void>;
 }
 
 export interface RQuery<T = any> {
@@ -277,8 +281,18 @@ export interface RQuery<T = any> {
     type: string;
   }>;
 
-  run(connection: Connection, noptions?: RunOptions): Promise<T>;
-  run(options?: RunOptions): Promise<T>;
+  run(
+    connection: Connection,
+    noptions: RunOptions & { immidiateReturn: true }
+  ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
+  run(
+    options: RunOptions & { immidiateReturn: true }
+  ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
+  run(
+    connection: Connection,
+    noptions?: RunOptions & { immidiateReturn?: false }
+  ): Promise<T>;
+  run(options?: RunOptions & { immidiateReturn?: false }): Promise<T>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(

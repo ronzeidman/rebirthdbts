@@ -83,16 +83,16 @@ export class RebirthDBSocket {
   //   return this.readNext(token);
   // }
 
-  public sendQuery(query: QueryJson) {
+  public sendQuery(query: QueryJson, token = this.nextToken++) {
     const encoded = JSON.stringify(query);
     const querySize = Buffer.byteLength(encoded);
     const buffer = new Buffer(8 + 4 + querySize);
-    const token = this.nextToken++;
     // tslint:disable-next-line:no-bitwise
     buffer.writeUInt32LE(token & 0xffffffff, 0);
     buffer.writeUInt32LE(Math.floor(token / 0xffffffff), 4);
     buffer.writeUInt32LE(querySize, 8);
     buffer.write(encoded, 12);
+    delete this.data[token];
     this.socket.write(buffer);
     return token;
   }

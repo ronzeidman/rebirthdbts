@@ -1,6 +1,6 @@
 import { inspect, isBuffer, isDate, isFunction } from 'util';
 import { funcConfig } from './config';
-import { RebirthDBConnection } from './connection-pool';
+import { RebirthDBConnection } from './connection';
 import { RebirthdbError } from './error';
 import { camelToSnake } from './helper';
 import { ComplexTermJson, TermJson } from './internal-types';
@@ -34,13 +34,13 @@ const queryBuilderProto = Object.assign(
       if (!c) {
         throw new RebirthdbError('No connection');
       }
-      return c.query(this.term);
+      return c.query(this.term, options);
     }
   }
 );
 // this may cause a performance issue, but this is how it's done in rethinkdbdash to support bracket operation
 function getQueryBuilder(term?: TermJson) {
-  const qb: any = queryTermBuilder(Term.TermType.BRACKET, 1, 1, false);
+  const qb: any = queryTermBuilder(Term.TermType.BRACKET, 1, 1, false, term);
   qb.__proto__ = queryBuilderProto;
   qb.term = term;
   return qb;
@@ -94,27 +94,34 @@ function queryTermBuilder(
   termType: Term.TermType,
   minArgs: number,
   maxArgs: number,
-  hasOptarg: boolean
+  hasOptarg: boolean,
+  t?: TermJson
 ) {
   return function(this: { term?: TermJson }, ...args: any[]) {
-    let argsLength = args.length;
-    if (!this.term) {
-      argsLength--;
+    const currentTerm: TermJson | undefined = (t || (this && this.term)) as any;
+    const argsLength = args.length;
+    let localMaxArgs = maxArgs;
+    if (!currentTerm) {
+      localMaxArgs++;
     }
-    if (hasOptarg) {
-      argsLength--;
-    }
-    argsLength = Math.max(argsLength, 0);
     if (argsLength < minArgs) {
       throw new RebirthdbError(`Expecting at least ${minArgs} arguments`);
     }
-    if (maxArgs !== -1 && argsLength > maxArgs) {
-      throw new RebirthdbError(`Expecting at most ${maxArgs} arguments`);
+    const maxArgsPlusOptarg =
+      hasOptarg && localMaxArgs >= 0 ? localMaxArgs + 1 : localMaxArgs;
+    if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
+      throw new RebirthdbError(
+        `Expecting at most ${maxArgsPlusOptarg} arguments`
+      );
     }
-    const params: TermJson[] = this.term ? [this.term] : [];
+    const params: TermJson[] = currentTerm ? [currentTerm] : [];
     const maybeOptarg = args.length ? args.pop() : undefined;
     const optarg =
-      hasOptarg && typeof maybeOptarg === 'object' && !(rSymbol in maybeOptarg)
+      hasOptarg &&
+      (argsLength >= maxArgsPlusOptarg ||
+        (!Array.isArray(maybeOptarg) &&
+          typeof maybeOptarg === 'object' &&
+          !(rSymbol in maybeOptarg)))
         ? maybeOptarg
         : undefined;
     if (maybeOptarg && !optarg) {
