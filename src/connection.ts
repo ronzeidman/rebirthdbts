@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { inspect, promisify } from 'util';
+import { promisify } from 'util';
 import { Cursor } from './cursor';
 import { RebirthdbError } from './error';
 import { NULL_BUFFER } from './handshake';
@@ -9,13 +9,13 @@ import { RebirthDBSocket } from './socket';
 import { Connection, RunOptions, ServerInfo } from './types';
 
 export class RebirthDBConnection extends EventEmitter implements Connection {
-  public readonly clientPort: number;
-  public readonly clientAddress: string;
+  public clientPort: number;
+  public clientAddress: string;
   private socket: RebirthDBSocket;
   private timeout: number;
   private pingInterval: number;
   private silent: boolean;
-  private log: () => void;
+  private log: (message: string) => any;
   private pingTimer?: NodeJS.Timer;
   private db = 'test';
 
@@ -28,12 +28,18 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       timeout = 20,
       pingInterval = -1,
       silent = false,
-      log = () => undefined
+      log = (message: string) => undefined
     } = {}
   ) {
     super();
     this.clientPort = port;
     this.clientAddress = host;
+    this.timeout = timeout;
+    this.pingInterval = pingInterval;
+    this.silent = silent;
+    this.log = log;
+    this.use(db);
+
     this.socket = new RebirthDBSocket({
       port,
       host,
@@ -42,10 +48,10 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
         ? Buffer.concat([new Buffer(password), NULL_BUFFER])
         : NULL_BUFFER
     });
-    this.timeout = timeout;
-    this.pingInterval = pingInterval;
-    this.silent = silent;
-    this.log = log;
+  }
+
+  public getSocket() {
+    return this.socket;
   }
 
   public async close({ noreplyWait = false } = {}): Promise<void> {
@@ -61,19 +67,38 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
   }
   public async reconnect(
-    options?: { noreplyWait: true } | undefined
+    options?: { noreplyWait: boolean },
+    { host = this.clientAddress, port = this.clientPort } = {}
   ): Promise<void> {
+    this.clientPort = port;
+    this.clientAddress = host;
     if (this.socket.status === 'open' || this.socket.status === 'handshake') {
       await this.close(options);
     }
+    this.socket
+      .on('connect', () => this.emit('connect'))
+      .on('close', () => this.emit('close'))
+      .on('error', err => this.reportError(err))
+      .on('data', (data, token) => this.emit(data, token))
+      .on('release', count => {
+        if (count === 0) {
+          this.emit('release');
+        }
+      });
     await Promise.race([
       promisify(setTimeout)(this.timeout * 1000),
-      this.socket.connect()
+      this.socket.connect({}, { host, port })
     ]);
     if (this.socket.status === 'errored') {
+      this.reportError(this.socket.lastError as any);
+      this.emit('close');
+      this.close();
       throw this.socket.lastError;
     }
     if (this.socket.status !== 'open') {
+      this.emit('timeout');
+      this.emit('close');
+      this.close();
       throw new RebirthdbError('Connection timed out');
     }
     this.startPinging();
@@ -88,7 +113,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      throw new RebirthdbError('Unexpected return value');
+      const err = new RebirthdbError('Unexpected return value');
+      this.reportError(err);
+      throw err;
     }
   }
   public async server(): Promise<ServerInfo> {
@@ -98,7 +125,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      throw new RebirthdbError('Unexpected return value');
+      const err = new RebirthdbError('Unexpected return value');
+      this.reportError(err);
+      throw err;
     }
     return result.r[0];
   }
@@ -126,14 +155,13 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           Query.QueryType.START,
           [Term.TermType.ERROR, ['ping']]
         ]);
-        const result = await this.socket.readNext(token);
+        const result = await this.socket.readNext(token, 5000);
         if (
           result.t !== Response.ResponseType.RUNTIME_ERROR ||
           result.e !== Response.ErrorType.USER ||
           result.r[0] !== 'ping'
         ) {
-          console.error('Ping error!');
-          console.error(inspect(result));
+          this.reportError(new RebirthdbError('Ping error'));
         }
         if (this.pingTimer) {
           this.startPinging();
@@ -147,5 +175,13 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       clearTimeout(this.pingTimer);
     }
     this.pingTimer = undefined;
+  }
+
+  private reportError(err: Error) {
+    this.emit('error', err);
+    this.log(err.toString());
+    if (!this.silent) {
+      console.error(err.toString());
+    }
   }
 }

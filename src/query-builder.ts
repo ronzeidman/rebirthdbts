@@ -1,6 +1,7 @@
 import { inspect, isBuffer, isDate, isFunction } from 'util';
 import { funcConfig } from './config';
 import { RebirthDBConnection } from './connection';
+import { RebirthDBConnectionPool } from './connection-pool';
 import { RebirthdbError } from './error';
 import { camelToSnake } from './helper';
 import { ComplexTermJson, TermJson } from './internal-types';
@@ -31,10 +32,15 @@ const queryBuilderProto = Object.assign(
       options?: RunOptions
     ) {
       const c = conn instanceof RebirthDBConnection ? conn : undefined;
-      if (!c) {
+      const cpool = r.getPoolMaster() as RebirthDBConnectionPool;
+      const opt = conn instanceof RebirthDBConnection ? options : conn;
+      if (!c && !cpool) {
         throw new RebirthdbError('No connection');
       }
-      return c.query(this.term, options);
+      if (c) {
+        return c.query(this.term, opt);
+      }
+      return cpool.queue(this.term, opt);
     }
   }
 );
@@ -189,5 +195,10 @@ export const r: R = Object.assign(getQueryBuilder() as any, {
       await c.reconnect();
       return c;
     }
+    const pool = new RebirthDBConnectionPool(options);
+    (r as any).pool = pool;
+  },
+  getPoolMaster: () => {
+    return (r as any).pool;
   }
 });

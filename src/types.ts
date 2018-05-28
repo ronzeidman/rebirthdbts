@@ -16,7 +16,7 @@ export interface ConnectionOptions {
   db?: string; // default 'test'
   user?: string; // default 'admin'
   password?: string; // default ''
-  discovary?: boolean; // default false
+  discovery?: boolean; // default false
   pool?: boolean; // default true
   buffer?: number; // default = number of servers
   max?: number; // default = number of servers
@@ -30,7 +30,7 @@ export interface ConnectionOptions {
     host: string;
     port?: number; // default 28015
   }>; // default [{host: 'localhost', port: 28015}]
-  log?: (message: string) => void; // default undefined;
+  log?: (message: string) => any; // default undefined;
 }
 
 export interface TableCreateOptions {
@@ -252,11 +252,18 @@ export interface MatchResults {
 export interface Connection extends EventEmitter {
   clientPort: number;
   clientAddress: string;
-  close(options?: { noreplyWait: true }): Promise<void>;
-  reconnect(options?: { noreplyWait: true }): Promise<void>;
+  close(options?: { noreplyWait: boolean }): Promise<void>;
+  reconnect(options?: { noreplyWait: boolean }): Promise<void>;
   use(db: string): void;
   noreplyWait(): Promise<void>;
   server(): Promise<ServerInfo>;
+}
+
+export interface ConnectionPool extends EventEmitter {
+  drain(options?: { noreplyWait: boolean }): Promise<void>;
+  getLength(): number;
+  getAvailableLength(): number;
+  getPools(): Connection[];
 }
 
 export type RValue<T = any> = RDatum<T> | T;
@@ -1079,6 +1086,7 @@ export interface R {
     optionsOrHost: (ConnectionOptions & { pool: false }) | string
   ): Promise<Connection>;
   connect(optionsOrHost: ConnectionOptions | string): Promise<ConnectionPool>;
+  getPoolMaster(): ConnectionPool | undefined;
 }
 
 //#endregion operations

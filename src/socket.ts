@@ -1,19 +1,16 @@
+import { EventEmitter } from 'events';
 import { Socket, SocketConnectOpts } from 'net';
 import { RebirthdbError } from './error';
-import {
-  NULL_BUFFER,
-  buildAuthBuffer,
-  compareDigest,
-  computeSaltedPassword,
-  validateVersion
-} from './handshake';
+import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake';
 import { QueryJson, ResponseJson } from './internal-types';
+import { Response } from './proto/ql2';
 
-export class RebirthDBSocket {
-  public readonly port: number;
-  public readonly host: string;
+export class RebirthDBSocket extends EventEmitter {
+  public port: number;
+  public host: string;
   public readonly user: string;
   public readonly password: Buffer;
+  public runningQueries: number[] = [];
   public lastError?: Error;
   public get status() {
     if (!!this.lastError) {
@@ -26,7 +23,7 @@ export class RebirthDBSocket {
     return 'open';
   }
   private isOpen = false;
-  private socket: Socket;
+  private socket?: Socket;
   private nextToken = 0;
   private buffer = new Buffer(0);
   private mode: 'handshake' | 'response' = 'handshake';
@@ -38,12 +35,24 @@ export class RebirthDBSocket {
     user = 'admin',
     password = NULL_BUFFER
   } = {}) {
+    super();
     this.port = port;
     this.host = host;
     this.user = user;
     this.password = password;
-    this.socket = new Socket()
-      .on('close', () => (this.isOpen = false))
+  }
+
+  public async connect(
+    options: Partial<SocketConnectOpts> = {},
+    { host = this.host, port = this.port } = {}
+  ) {
+    this.host = host;
+    this.port = port;
+    if (this.socket) {
+      throw new RebirthdbError('Socket already connected');
+    }
+    const socket = new Socket()
+      .on('close', () => this.close())
       .on('error', error => this.handleError(error))
       .on('data', data => {
         try {
@@ -60,30 +69,20 @@ export class RebirthDBSocket {
           this.handleError(error);
         }
       });
-  }
-
-  public async connect(options: Partial<SocketConnectOpts> = {}) {
+    this.socket = socket;
     await new Promise(resolve =>
-      this.socket.connect(
-        { port: this.port, host: this.host, ...options },
-        resolve
-      )
+      socket.connect({ port, host, ...options }, resolve)
     );
+    socket.setKeepAlive(true);
     this.isOpen = true;
     await this.performHandshake();
+    this.emit('connect');
   }
 
-  // public async query(rq: RQuery, optargs?: RunOptions) {
-  //   const { term } = rq as any;
-  //   const query: QueryJson = [Query.QueryType.START, term];
-  //   if (optargs) {
-  //     query[2] = optargs;
-  //   }
-
-  //   return this.readNext(token);
-  // }
-
   public sendQuery(query: QueryJson, token = this.nextToken++) {
+    if (!this.socket || this.status !== 'open') {
+      throw new RebirthdbError('Connection is not open');
+    }
     const encoded = JSON.stringify(query);
     const querySize = Buffer.byteLength(encoded);
     const buffer = new Buffer(8 + 4 + querySize);
@@ -94,10 +93,12 @@ export class RebirthDBSocket {
     buffer.write(encoded, 12);
     delete this.data[token];
     this.socket.write(buffer);
+    this.runningQueries.push(token);
+    this.emit('query', token);
     return token;
   }
 
-  public readNext<T = ResponseJson>(token: number, timeout = 5000): Promise<T> {
+  public readNext<T = ResponseJson>(token: number, timeout = -1): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       if (typeof this.data[token] !== 'undefined') {
         const data = this.data[token];
@@ -106,13 +107,18 @@ export class RebirthDBSocket {
           resolve(data as any);
         }
       } else if (this.isOpen) {
-        const t = setTimeout(
-          () => reject(new RebirthdbError('Response timed out')),
-          timeout
-        );
+        let t: NodeJS.Timer | undefined;
+        if (timeout > 0) {
+          t = setTimeout(
+            () => reject(new RebirthdbError('Response timed out')),
+            timeout
+          );
+        }
         this.data[token] = (data: ResponseJson) => {
           delete this.data[token];
-          clearTimeout(t);
+          if (t) {
+            clearTimeout(t);
+          }
           resolve(data as any);
         };
       } else {
@@ -122,10 +128,21 @@ export class RebirthDBSocket {
   }
 
   public close() {
+    if (!this.socket) {
+      return;
+    }
+    this.socket.removeAllListeners();
     this.socket.destroy();
+    this.socket = undefined;
+    this.isOpen = false;
+    this.mode = 'handshake';
+    this.removeAllListeners();
   }
 
   private async performHandshake() {
+    if (!this.socket || this.status !== 'handshake') {
+      throw new RebirthdbError('Connection is not open');
+    }
     const { randomString, authBuffer } = buildAuthBuffer(this.user);
     this.socket.write(authBuffer);
     validateVersion(await this.readNext<any>(0));
@@ -190,14 +207,21 @@ export class RebirthDBSocket {
       } else {
         this.data[token] = response;
       }
-
       this.buffer = this.buffer.slice(12 + responseLength);
+      if (response.t !== Response.ResponseType.SUCCESS_PARTIAL) {
+        const tokenIndex = this.runningQueries.indexOf(token);
+        if (tokenIndex >= 0) {
+          this.runningQueries.splice(tokenIndex, 1);
+          this.emit('release', this.runningQueries.length);
+        }
+      }
+      this.emit('data', response, token);
     }
   }
 
   private handleError(err: Error) {
-    this.socket.destroy();
-    this.isOpen = false;
+    this.close();
     this.lastError = err;
+    this.emit('error', err);
   }
 }
