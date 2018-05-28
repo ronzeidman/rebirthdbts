@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Socket, SocketConnectOpts } from 'net';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
 import {
   NULL_BUFFER,
   buildAuthBuffer,
@@ -55,7 +55,7 @@ export class RebirthDBSocket extends EventEmitter {
     this.host = host;
     this.port = port;
     if (this.socket) {
-      throw new RebirthdbError('Socket already connected');
+      throw new RebirthDBError('Socket already connected');
     }
     const socket = new Socket()
       .on('close', () => this.close())
@@ -87,7 +87,7 @@ export class RebirthDBSocket extends EventEmitter {
 
   public sendQuery(query: QueryJson, token = this.nextToken++) {
     if (!this.socket || this.status !== 'open') {
-      throw new RebirthdbError(
+      throw new RebirthDBError(
         '`run` was called with a closed connection after:',
         { query }
       );
@@ -119,7 +119,7 @@ export class RebirthDBSocket extends EventEmitter {
         let t: NodeJS.Timer | undefined;
         if (timeout > 0) {
           t = setTimeout(
-            () => reject(new RebirthdbError('Response timed out')),
+            () => reject(new RebirthDBError('Response timed out')),
             timeout
           );
         }
@@ -131,7 +131,7 @@ export class RebirthDBSocket extends EventEmitter {
           resolve(data as any);
         };
       } else {
-        reject(this.lastError || new RebirthdbError('Connection is closed'));
+        reject(this.lastError || new RebirthDBError('Connection is closed'));
       }
     });
   }
@@ -151,7 +151,7 @@ export class RebirthDBSocket extends EventEmitter {
 
   private async performHandshake() {
     if (!this.socket || this.status !== 'handshake') {
-      throw new RebirthdbError('Connection is not open');
+      throw new RebirthDBError('Connection is not open');
     }
     const { randomString, authBuffer } = buildAuthBuffer(this.user);
     this.socket.write(authBuffer);
@@ -185,11 +185,11 @@ export class RebirthDBSocket extends EventEmitter {
           }
         } else {
           this.handleError(
-            new RebirthdbError(jsonMsg.error, jsonMsg.error_code)
+            new RebirthDBError(jsonMsg.error, jsonMsg.error_code)
           );
         }
       } catch {
-        this.handleError(new RebirthdbError(strMsg));
+        this.handleError(new RebirthDBError(strMsg));
       }
       this.buffer = this.buffer.slice(index + 1);
       index = this.buffer.indexOf(0);

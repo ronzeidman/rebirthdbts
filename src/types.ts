@@ -303,7 +303,7 @@ export interface RQuery<T = any> {
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
-    ...args: Array<RDatum | Array<(arg: RDatum<T>, ...args: RStream[]) => U>>
+    ...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>
   ): U extends RStream ? RStream : RDatum;
   <U extends T extends Array<infer T1> ? keyof T1 : keyof T>(
     attribute: RValue<U>

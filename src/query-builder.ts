@@ -2,7 +2,7 @@ import { isBuffer, isDate, isFunction } from 'util';
 import { funcConfig, rConsts } from './config';
 import { RebirthDBConnection } from './connection';
 import { RebirthDBConnectionPool } from './connection-pool';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
 import { parseOptarg } from './helper';
 import { ComplexTermJson, TermJson } from './internal-types';
 import { Term } from './proto/ql2';
@@ -23,7 +23,7 @@ const queryBuilderProto = Object.assign(
     do(this: { term?: TermJson }, ...args: any[]) {
       const last = args.pop();
       if (this.term) {
-        args.unshift(this.term);
+        args.unshift(this);
       }
       return reversedDo.call({}, last, ...args);
     },
@@ -36,7 +36,7 @@ const queryBuilderProto = Object.assign(
       const cpool = r.getPoolMaster() as RebirthDBConnectionPool;
       const opt = conn instanceof RebirthDBConnection ? options : conn;
       if (!c && !cpool) {
-        throw new RebirthdbError(
+        throw new RebirthDBError(
           '`run` was called without a connection and no pool has been created after:',
           { term: this.term }
         );
@@ -71,7 +71,7 @@ function expr(arg: any) {
 export function parseParam(param: any): TermJson {
   if (isQueryBuilder(param)) {
     if (!param.term) {
-      throw new RebirthdbError("'r' cannot be an argument");
+      throw new RebirthDBError("'r' cannot be an argument");
     }
     return param.term;
   }
@@ -101,11 +101,13 @@ export function parseParam(param: any): TermJson {
             .fill(0)
             .map((_, i) => i + 1)
         ],
-        param(
-          ...Array(param.length)
-            .fill(0)
-            .map((_, i) => getQueryBuilder([Term.TermType.VAR, [i + 1]]))
-        ).term as ComplexTermJson
+        parseParam(
+          param(
+            ...Array(param.length)
+              .fill(0)
+              .map((_, i) => getQueryBuilder([Term.TermType.VAR, [i + 1]]))
+          )
+        )
       ]
     ];
   }
@@ -136,7 +138,7 @@ export function queryTermBuilder(
       hasOptarg && localMaxArgs >= 0 ? localMaxArgs + 1 : localMaxArgs;
     if (minArgs === maxArgsPlusOptarg && argsLength !== minArgs) {
       const termConf = funcConfig.find(c => c[0] === termType);
-      throw new RebirthdbError(
+      throw new RebirthDBError(
         `\`${termConf ? termConf[1] : termType}\` takes ${minArgs} argument${
           minArgs === 1 ? '' : 's'
         }, ${argsLength} provided after:`,
@@ -145,7 +147,7 @@ export function queryTermBuilder(
     }
     if (argsLength < minArgs) {
       const termConf = funcConfig.find(c => c[0] === termType);
-      throw new RebirthdbError(
+      throw new RebirthDBError(
         `\`${
           termConf ? termConf[1] : termType
         }\` takes at least ${minArgs} argument${
@@ -156,7 +158,7 @@ export function queryTermBuilder(
     }
     if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
       const termConf = funcConfig.find(c => c[0] === termType);
-      throw new RebirthdbError(
+      throw new RebirthDBError(
         `\`${
           termConf ? termConf[1] : termType
         }\` takes at most ${maxArgsPlusOptarg} argument${
@@ -201,7 +203,7 @@ export const r: R = Object.assign(
     expr,
     connect: async ({ pool = true, ...options }: ConnectionOptions = {}) => {
       if (options.servers && !options.servers.length) {
-        throw new RebirthdbError(
+        throw new RebirthDBError(
           'If `servers` is an array, it must contain at least one server.'
         );
       }

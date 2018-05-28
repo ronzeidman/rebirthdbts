@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
 import { Cursor } from './cursor';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
 import { NULL_BUFFER } from './handshake';
 import { parseOptarg } from './helper';
-import { TermJson } from './internal-types';
+import { QueryJson, TermJson } from './internal-types';
 import { Query, Response, Term } from './proto/ql2';
 import { RebirthDBSocket } from './socket';
 import { Connection, RunOptions, ServerInfo } from './types';
@@ -107,7 +107,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.emit('timeout');
       this.emit('close');
       this.close();
-      throw new RebirthdbError(
+      throw new RebirthDBError(
         `Failed to connect to ${host}:${port} in less than ${this.timeout}s.`
       );
     }
@@ -124,7 +124,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      const err = new RebirthdbError('Unexpected return value');
+      const err = new RebirthDBError('Unexpected return value');
       this.reportError(err);
       throw err;
     }
@@ -136,7 +136,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      const err = new RebirthdbError('Unexpected return value');
+      const err = new RebirthDBError('Unexpected return value');
       this.reportError(err);
       throw err;
     }
@@ -152,12 +152,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     } = globalArgs;
     gargs.db = gargs.db || this.db;
     this.findTableTermAndAddDb(term, gargs.db);
-    const token = this.socket.sendQuery([
-      Query.QueryType.START,
-      term,
-      parseOptarg(gargs)
-    ]);
-    const cursor = new Cursor(this.socket, token, globalArgs);
+    const query: QueryJson = [Query.QueryType.START, term, parseOptarg(gargs)];
+    const token = this.socket.sendQuery(query);
+    const cursor = new Cursor(this.socket, token, globalArgs, query);
     if (globalArgs.immidiateReturn) {
       return cursor;
     }
@@ -203,7 +200,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           result.e !== Response.ErrorType.USER ||
           result.r[0] !== 'ping'
         ) {
-          this.reportError(new RebirthdbError('Ping error'));
+          this.reportError(new RebirthDBError('Ping error'));
         }
         if (this.pingTimer) {
           this.startPinging();

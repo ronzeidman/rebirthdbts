@@ -1,5 +1,6 @@
 import { inspect } from 'util';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
+import { QueryJson } from './internal-types';
 import { Query, Response } from './proto/ql2';
 import { getNativeTypes } from './response-parser';
 import { RebirthDBSocket } from './socket';
@@ -16,6 +17,7 @@ export class Cursor {
       RunOptions,
       'binaryFormat' | 'groupFormat' | 'timeFormat'
     >,
+    private query: QueryJson,
     private results?: any[],
     private hasNext?: boolean
   ) {}
@@ -68,13 +70,25 @@ export class Cursor {
 
   public async resolve() {
     const response = await this.conn.readNext(this.token);
-    const { t: type, r: results, p: profile } = response;
+    const {
+      t: type,
+      r: results,
+      p: profile,
+      b: backtrace,
+      e: error
+    } = response;
     switch (type) {
       case Response.ResponseType.CLIENT_ERROR:
       case Response.ResponseType.COMPILE_ERROR:
       case Response.ResponseType.RUNTIME_ERROR:
         console.error(inspect(response));
-        throw new RebirthdbError('Query error');
+        console.error(inspect(this.query[1], { depth: null }));
+        throw new RebirthDBError(response.r[0], {
+          responseErrorType: error,
+          responseType: type,
+          query: this.query,
+          backtrace
+        });
       case Response.ResponseType.SUCCESS_ATOM:
       case Response.ResponseType.SUCCESS_PARTIAL:
       case Response.ResponseType.SUCCESS_SEQUENCE:
@@ -84,7 +98,7 @@ export class Cursor {
         this.position = 0;
         break;
       default:
-        throw new RebirthdbError('Unexpected return value');
+        throw new RebirthDBError('Unexpected return value');
     }
     this.responseType = type;
     return type;

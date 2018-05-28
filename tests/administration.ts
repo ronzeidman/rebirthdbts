@@ -61,7 +61,7 @@ it('`config` should throw if called with an argument', async () => {
       .config('hello')
       .run();
   } catch (e) {
-    if (e.message.match(/^`config` takes 0 argument, 1 provided after:/)) {
+    if (e.message.match(/^`config` takes 0 arguments, 1 provided after:/)) {
       return;
     } else {
       throw e;
@@ -91,7 +91,7 @@ it('`status` should throw if called with an argument', async () => {
       .status('hello')
       .run();
   } catch (e) {
-    if (e.message.match(/^`status` takes 0 argument, 1 provided after:/)) {
+    if (e.message.match(/^`status` takes 0 arguments, 1 provided after:/)) {
       return;
     } else {
       throw e;
@@ -279,7 +279,7 @@ it('`rebalance` should throw if an argument is provided', async () => {
       .rebalance(1)
       .run();
   } catch (e) {
-    if (e.message.match(/^`rebalance` takes 0 argument, 1 provided after:/)) {
+    if (e.message.match(/^`rebalance` takes 0 arguments, 1 provided after:/)) {
     } else {
       throw e;
     }

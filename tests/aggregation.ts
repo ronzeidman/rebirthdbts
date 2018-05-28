@@ -92,7 +92,7 @@ it('`fold` should work -- with emit', async () => {
         }
       )
       .run();
-    assert.deepEqual(await result.toArray(), [
+    assert.deepEqual(result, [
       0,
       'foo',
       1,
@@ -132,7 +132,7 @@ it('`fold` should work -- with emit and finalEmit', async () => {
         }
       )
       .run();
-    assert.deepEqual(await result.toArray(), [
+    assert.deepEqual(result, [
       0,
       'foo',
       1,

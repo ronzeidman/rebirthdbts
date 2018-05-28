@@ -1,34 +1,39 @@
-import * as config from './config';
-import { r } from '../src'; r.connect(config);
-import { uuid } from './util/common';
 import assert from 'assert';
+import { r } from '../src';
+import * as config from './config';
+import { uuid } from './util/common';
 
-
-
-
-
-let dbName, tableName, pks, result;
+let dbName: string;
+let tableName: string;
+let pks: string[];
+let result: any;
 
 it('Init for backtraces', async () => {
   try {
+    await r.connect(config);
     dbName = uuid();
     tableName = uuid();
 
     result = await r.dbCreate(dbName).run();
     assert.equal(result.dbs_created, 1);
 
-    result = await r.db(dbName).tableCreate(tableName).run();
+    result = await r
+      .db(dbName)
+      .tableCreate(tableName)
+      .run();
     assert.equal(result.tables_created, 1);
 
-    result = await r.db(dbName).table(tableName).insert(eval('['+new Array(100).join('{}, ')+'{}]')).run();
+    result = await r
+      .db(dbName)
+      .table(tableName)
+      .insert(eval('[' + new Array(100).join('{}, ') + '{}]'))
+      .run();
     assert.equal(result.inserted, 100);
-
-
+  } catch (e) {
+    console.log(e.message);
+    throw e;
   }
-  catch(e) {
-    console.log(e.message); throw e;
-  }
-})
+});
 /*
  *** NOTE ***
  *
@@ -53,20 +58,21 @@ r.dbDrop(1)
 */
 it('Test backtrace for r.dbDrop(1)', async () => {
   try {
-    r.nextVarId=1;
-    await r.dbDrop(1).run()
-    throw new Error("Should have thrown an error");
-  }
-  catch(e) {
-    if (e.message === "Expected type STRING but found NUMBER in:\nr.dbDrop(1)\n         ^ \n") {
+    r.nextVarId = 1;
+    await r.dbDrop(1).run();
+    throw new Error('Should have thrown an error');
+  } catch (e) {
+    if (
+      e.message ===
+      'Expected type STRING but found NUMBER in:\nr.dbDrop(1)\n         ^ \n'
+    ) {
       return;
-    }
-    else {
-      console.log(e.message); throw e;
+    } else {
+      console.log(e.message);
+      throw e;
     }
   }
-})
-
+});
 
 /*
 Frames:
@@ -79,20 +85,21 @@ r.dbCreate(1)
 */
 it('Test backtrace for r.dbCreate(1)', async () => {
   try {
-    r.nextVarId=1;
-    await r.dbCreate(1).run()
-    throw new Error("Should have thrown an error");
-  }
-  catch(e) {
-    if (e.message === "Expected type STRING but found NUMBER in:\nr.dbCreate(1)\n           ^ \n") {
+    r.nextVarId = 1;
+    await r.dbCreate(1).run();
+    throw new Error('Should have thrown an error');
+  } catch (e) {
+    if (
+      e.message ===
+      'Expected type STRING but found NUMBER in:\nr.dbCreate(1)\n           ^ \n'
+    ) {
       return;
-    }
-    else {
-      console.log(e.message); throw e;
+    } else {
+      console.log(e.message);
+      throw e;
     }
   }
-})
-
+});
 
 /*
 //TODO Broken on the server
@@ -108,21 +115,26 @@ r.dbList().do(function(var_1) {
 */
 it('Test backtrace for r.dbList().do(function(x) { return x.add("a") })', async () => {
   try {
-    r.nextVarId=1;
-    await r.dbList().do(function(x) { return x.add("a") }).run()
-    throw new Error("Should have thrown an error");
-  }
-  catch(e) {
-    if (e.message === "Expected type ARRAY but found STRING in:\nr.dbList().do(function(var_1) {\n    return var_1.add(\"a\")\n           ^^^^^^^^^^^^^^\n})\n") {
+    r.nextVarId = 1;
+    await r
+      .dbList()
+      .do(function(x) {
+        return x.add('a');
+      })
+      .run();
+    throw new Error('Should have thrown an error');
+  } catch (e) {
+    if (
+      e.message ===
+      'Expected type ARRAY but found STRING in:\nr.dbList().do(function(var_1) {\n    return var_1.add("a")\n           ^^^^^^^^^^^^^^\n})\n'
+    ) {
       return;
-    }
-    else {
-      console.log(e.message); throw e;
+    } else {
+      console.log(e.message);
+      throw e;
     }
   }
-})
-
-
+});
 
 /*
 //TODO Broken on the server
@@ -138,20 +150,26 @@ r.expr(2).do(function(var_1) {
 */
 it('Test backtrace for r.expr(2).do(function(x) { return x.add("a") })', async () => {
   try {
-    r.nextVarId=1;
-    await r.expr(2).do(function(x) { return x.add("a") }).run()
-    throw new Error("Should have thrown an error");
-  }
-  catch(e) {
-    if (e.message === "Expected type NUMBER but found STRING in:\nr.expr(2).do(function(var_1) {\n    return var_1.add(\"a\")\n           ^^^^^^^^^^^^^^\n})\n") {
+    r.nextVarId = 1;
+    await r
+      .expr(2)
+      .do(function(x) {
+        return x.add('a');
+      })
+      .run();
+    throw new Error('Should have thrown an error');
+  } catch (e) {
+    if (
+      e.message ===
+      'Expected type NUMBER but found STRING in:\nr.expr(2).do(function(var_1) {\n    return var_1.add("a")\n           ^^^^^^^^^^^^^^\n})\n'
+    ) {
       return;
-    }
-    else {
-      console.log(e.message); throw e;
+    } else {
+      console.log(e.message);
+      throw e;
     }
   }
-})
-
+});
 
 /*
 //TODO Broken on the server
@@ -165,20 +183,32 @@ r.db("7debc6e4a249569a1a6280fd6e871270").tableCreate("551f695a834f94e0fe215e1944
 */
 it('Test backtrace for r.db(dbName).tableCreate(tableName)', async () => {
   try {
-    r.nextVarId=1;
-    await r.db(dbName).tableCreate(tableName).run()
-    throw new Error("Should have thrown an error");
-  }
-  catch(e) {
-    if (e.message === "Table `"+dbName+"."+tableName+"` already exists in:\nr.db(\""+dbName+"\").tableCreate(\""+tableName+"\")\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") {
+    r.nextVarId = 1;
+    await r
+      .db(dbName)
+      .tableCreate(tableName)
+      .run();
+    throw new Error('Should have thrown an error');
+  } catch (e) {
+    if (
+      e.message ===
+      'Table `' +
+        dbName +
+        '.' +
+        tableName +
+        '` already exists in:\nr.db("' +
+        dbName +
+        '").tableCreate("' +
+        tableName +
+        '")\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+    ) {
       return;
-    }
-    else {
-      console.log(e.message); throw e;
+    } else {
+      console.log(e.message);
+      throw e;
     }
   }
-})
-
+});
 
 /*
 //TODO Broken on the server
@@ -205,8 +235,6 @@ it('Test backtrace for r.db(dbName).tableDrop("nonExistingTable")', async () => 
     }
   }
 })
-
-
 
 /*
 //TODO Broken on the server
@@ -235,7 +263,6 @@ it('Test backtrace for r.db(dbName).tableList().do(function(x) { return x.add("a
     }
   }
 })
-
 
 /*
 Frames:
@@ -266,7 +293,6 @@ it('Test backtrace for r.expr(["zoo", "zoo"]).forEach(function(index) { return r
   }
 })
 
-
 /*
 //TODO Broken on the server
 Frames:
@@ -294,7 +320,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexDrop("nonExistingIndex
     }
   }
 })
-
 
 /*
 //TODO Broken on the server
@@ -325,7 +350,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexList().do(function(x) 
   }
 })
 
-
 /*
 Frames:
 //TODO Broken on the server
@@ -354,8 +378,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexWait().do(function(x) 
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -386,7 +408,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexWait("foo", "bar")', a
 })
 */
 
-
 /*
 //TODO Broken on the server
 Frames:
@@ -413,7 +434,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexStatus().and( r.expr(1
     }
   }
 })
-
 
 /*
 Frames:
@@ -444,7 +464,6 @@ it('Test backtrace for r.db(dbName).table(tableName).indexStatus("foo", "bar").d
     }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -472,7 +491,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").update({foo: "bar"
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -499,8 +517,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").update(function(do
     }
   }
 })
-
-
 
 /*
 //TODO Broken on the server
@@ -530,7 +546,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").replace({foo: "bar
   }
 })
 
-
 /*
 //TODO Broken on the server
 Frames:
@@ -559,7 +574,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").replace(function(d
   }
 })
 
-
 /*
 //TODO Broken on the server
 Frames:
@@ -585,8 +599,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").delete()', async (
     }
   }
 })
-
-
 
 /*
 //TODO Broken on the server
@@ -614,7 +626,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable").sync()', async () 
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -640,7 +651,6 @@ it('Test backtrace for r.db("nonExistingDb").table("nonExistingTable")', async (
   }
 })
 
-
 /*
 //TODO Broken on the server
 Frames:
@@ -665,8 +675,6 @@ it('Test backtrace for r.db(dbName).table("nonExistingTable")', async () => {
       }
   }
 })
-
-
 
 /*
 Frames:
@@ -726,9 +734,6 @@ it('Test backtrace for r.db(dbName).table(tableName).getAll(1, 2, 3).do(function
   }
 })
 
-
-
-
 /*
 Frames:
 [ 1 ]
@@ -762,7 +767,6 @@ it('Test backtrace for r.db(dbName).table(tableName).getAll(1, 2, 3, { index: "f
     }
   }
 })
-
 
 /*
 Frames:
@@ -798,9 +802,6 @@ it('Test backtrace for r.db(dbName).table(tableName).between(2, 3, { index: "foo
   }
 })
 
-
-
-
 /*
 Frames:
 [ 1 ]
@@ -835,8 +836,6 @@ it('Test backtrace for r.db(dbName).table(tableName).filter({foo: "bar"}).do(fun
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -867,7 +866,6 @@ it('Test backtrace for r.expr([1,2,3]).innerJoin( function(left, right) { return
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 2 },
@@ -896,8 +894,6 @@ it('Test backtrace for r.expr([1,2,3]).innerJoin(r.expr([1,2,3]), function(left,
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -929,8 +925,6 @@ it('Test backtrace for r.expr([1,2,3]).outerJoin( function(left, right) { return
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 1 } ]
@@ -956,8 +950,6 @@ it('Test backtrace for r.expr([1,2,3]).eqJoin("id", r.db(dbName).table(tableName
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -986,7 +978,6 @@ it('Test backtrace for r.expr([1,2,3]).eqJoin("id", r.db(dbName).table(tableName
     }
   }
 })
-
 
 /*
 Frames:
@@ -1017,7 +1008,6 @@ it('Test backtrace for r.expr([1,2,3]).map(function(v) { return v}).add(1)', asy
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1042,7 +1032,6 @@ it('Test backtrace for r.expr([1,2,3]).withFields("foo", "bar").add(1)', async (
     }
   }
 })
-
 
 /*
 Frames:
@@ -1073,7 +1062,6 @@ it('Test backtrace for r.expr([1,2,3]).concatMap(function(v) { return v}).add(1)
     }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 1 } ]
@@ -1098,8 +1086,6 @@ it('Test backtrace for r.expr([1,2,3]).orderBy("foo").add(1)', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1126,8 +1112,6 @@ it('Test backtrace for r.expr([1,2,3]).skip("foo").add(1)', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 1 } ]
@@ -1152,7 +1136,6 @@ it('Test backtrace for r.expr([1,2,3]).limit("foo").add(1)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -1179,8 +1162,6 @@ it('Test backtrace for r.expr([1,2,3]).slice("foo", "bar").add(1)', async () => 
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 1 } ]
@@ -1205,7 +1186,6 @@ it('Test backtrace for r.expr([1,2,3]).nth("bar").add(1)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -1232,8 +1212,6 @@ it('Test backtrace for r.expr([1, 2, 3]).offsetsOf("bar").add("Hello")', async (
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -1258,7 +1236,6 @@ it('Test backtrace for r.expr([1,2,3]).isEmpty().add("Hello")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -1285,8 +1262,6 @@ it('Test backtrace for r.expr([1,2,3]).union([5,6]).add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -1311,8 +1286,6 @@ it('Test backtrace for r.expr([1,2,3]).sample("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1343,8 +1316,6 @@ it('Test backtrace for r.expr([1,2,3]).count(function() { return true}).add("Hel
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -1370,8 +1341,6 @@ it('Test backtrace for r.expr([1,2,3]).distinct().add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -1396,7 +1365,6 @@ it('Test backtrace for r.expr([1,2,3]).contains("foo", "bar").add("Hello")', asy
     }
   }
 })
-
 
 /*
 Frames:
@@ -1428,7 +1396,6 @@ it('Test backtrace for r.expr([1,2,3]).update(row => row("foo")).add("Hello")', 
     }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1453,8 +1420,6 @@ it('Test backtrace for r.expr([1,2,3]).pluck("foo").add("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1481,8 +1446,6 @@ it('Test backtrace for r.expr([1,2,3]).without("foo").add("Hello")', async () =>
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1507,8 +1470,6 @@ it('Test backtrace for r.expr([1,2,3]).merge("foo").add("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1535,8 +1496,6 @@ it('Test backtrace for r.expr([1,2,3]).append("foo").add("Hello")', async () => 
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -1561,8 +1520,6 @@ it('Test backtrace for r.expr([1,2,3]).prepend("foo").add("Hello")', async () =>
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1589,7 +1546,6 @@ it('Test backtrace for r.expr([1,2,3]).difference("foo").add("Hello")', async ()
   }
 })
 
-
 /*
 Frames:
 []
@@ -1614,7 +1570,6 @@ it('Test backtrace for r.expr([1,2,3]).setInsert("foo").add("Hello")', async () 
     }
   }
 })
-
 
 /*
 Frames:
@@ -1641,7 +1596,6 @@ it('Test backtrace for r.expr([1,2,3]).setUnion("foo").add("Hello")', async () =
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1666,7 +1620,6 @@ it('Test backtrace for r.expr([1,2,3]).setIntersection("foo").add("Hello")', asy
     }
   }
 })
-
 
 /*
 Frames:
@@ -1693,8 +1646,6 @@ it('Test backtrace for r.expr([1, 2, 3])("foo").add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1719,7 +1670,6 @@ it('Test backtrace for r.expr([1,2,3]).hasFields("foo").add("Hello")', async () 
     }
   }
 })
-
 
 /*
 Frames:
@@ -1746,7 +1696,6 @@ it('Test backtrace for r.expr([1,2,3]).insertAt("foo", 2).add("Hello")', async (
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1771,8 +1720,6 @@ it('Test backtrace for r.expr([1,2,3]).spliceAt("foo", 2).add("Hello")', async (
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1799,8 +1746,6 @@ it('Test backtrace for r.expr([1,2,3]).deleteAt("foo", 2).add("Hello")', async (
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -1825,7 +1770,6 @@ it('Test backtrace for r.expr([1,2,3]).changeAt("foo", 2).add("Hello")', async (
     }
   }
 })
-
 
 /*
 Frames:
@@ -1852,8 +1796,6 @@ it('Test backtrace for  r.expr([1,2,3]).keys().add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 0 } ]
@@ -1878,8 +1820,6 @@ it('Test backtrace for r.expr([1,2,3]).match("foo").add("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -1906,8 +1846,6 @@ it('Test backtrace for r.expr([1,2,3]).add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -1932,7 +1870,6 @@ it('Test backtrace for r.expr([1,2,3]).sub("Hello")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -1959,7 +1896,6 @@ it('Test backtrace for r.expr([1,2,3]).mul("Hello")', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -1984,8 +1920,6 @@ it('Test backtrace for r.expr([1,2,3]).div("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2012,7 +1946,6 @@ it('Test backtrace for r.expr([1,2,3]).mod("Hello")', async () => {
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -2037,8 +1970,6 @@ it('Test backtrace for r.expr([1,2,3]).and(r.expr("Hello").add(2))', async () =>
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2065,8 +1996,6 @@ it('Test backtrace for r.expr(false).or(r.expr("Hello").add(2))', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -2091,7 +2020,6 @@ it('Test backtrace for r.expr([1,2,3]).eq(r.expr("Hello").add(2))', async () => 
     }
   }
 })
-
 
 /*
 Frames:
@@ -2118,7 +2046,6 @@ it('Test backtrace for r.expr([1,2,3]).ne(r.expr("Hello").add(2))', async () => 
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -2143,7 +2070,6 @@ it('Test backtrace for r.expr([1,2,3]).gt(r.expr("Hello").add(2))', async () => 
     }
   }
 })
-
 
 /*
 Frames:
@@ -2170,8 +2096,6 @@ it('Test backtrace for r.expr([1,2,3]).lt(r.expr("Hello").add(2))', async () => 
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -2196,7 +2120,6 @@ it('Test backtrace for r.expr([1,2,3]).le(r.expr("Hello").add(2))', async () => 
     }
   }
 })
-
 
 /*
 Frames:
@@ -2223,7 +2146,6 @@ it('Test backtrace for r.expr([1,2,3]).ge(r.expr("Hello").add(2))', async () => 
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -2248,7 +2170,6 @@ it('Test backtrace for r.expr([1,2,3]).not().add(r.expr("Hello").add(2))', async
     }
   }
 })
-
 
 /*
 Frames:
@@ -2275,8 +2196,6 @@ it('Test backtrace for r.now().add("Hello")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -2301,8 +2220,6 @@ it('Test backtrace for r.time(1023, 11, 3, "Z").add("Hello")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2329,7 +2246,6 @@ it('Test backtrace for r.epochTime(12132131).add("Hello")', async () => {
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 }, { type: 'POS', pos: 0 } ]
@@ -2354,7 +2270,6 @@ it('Test backtrace for r.ISO8601("UnvalidISO961String").add("Hello")', async () 
     }
   }
 })
-
 
 /*
 Frames:
@@ -2381,7 +2296,6 @@ it('Test backtrace for r.now().inTimezone("noTimezone").add("Hello")', async () 
   }
 })
 
-
 /*
 Frames:
 []
@@ -2406,7 +2320,6 @@ it('Test backtrace for r.now().timezone().add(true)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2433,7 +2346,6 @@ it('Test backtrace for r.now().during(r.now(), r.now()).add(true)', async () => 
   }
 })
 
-
 /*
 Frames:
 []
@@ -2458,8 +2370,6 @@ it('Test backtrace for r.now().timeOfDay().add(true)', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2486,7 +2396,6 @@ it('Test backtrace for r.now().year().add(true)', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -2511,7 +2420,6 @@ it('Test backtrace for r.now().month().add(true)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2538,7 +2446,6 @@ it('Test backtrace for r.now().day().add(true)', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -2563,7 +2470,6 @@ it('Test backtrace for r.now().dayOfWeek().add(true)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2590,8 +2496,6 @@ it('Test backtrace for r.now().dayOfYear().add(true)', async () => {
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -2616,7 +2520,6 @@ it('Test backtrace for r.now().hours().add(true)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2643,7 +2546,6 @@ it('Test backtrace for r.now().minutes().add(true)', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -2668,7 +2570,6 @@ it('Test backtrace for r.now().seconds().add(true)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2695,7 +2596,6 @@ it('Test backtrace for r.now().toISO8601().add(true)', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -2720,8 +2620,6 @@ it('Test backtrace for r.now().toEpochTime().add(true)', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2750,8 +2648,6 @@ it('Test backtrace for r.expr(1).do(function(var_1) { return var_1("bah").add(3)
   }
 })
 
-
-
 /*
 Frames:
 [ 0 ]
@@ -2776,8 +2672,6 @@ it('Test backtrace for r.branch(r.expr(1).add("hello"), "Hello", "World")', asyn
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2808,8 +2702,6 @@ it('Test backtrace for r.expr(1).forEach(function(foo) { return foo("bar") })', 
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -2834,8 +2726,6 @@ it('Test backtrace for r.error("foo")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -2866,7 +2756,6 @@ it('Test backtrace for r.expr({a:1})("b").default("bar").add(2)', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -2895,7 +2784,6 @@ it('Test backtrace for r.expr({a:1}).add(2)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2926,7 +2814,6 @@ it('Test backtrace for r.expr({a:1}).add(r.js("2"))', async () => {
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -2951,7 +2838,6 @@ it('Test backtrace for r.expr(2).coerceTo("ARRAY")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -2978,7 +2864,6 @@ it('Test backtrace for r.expr(2).add("foo").typeOf()', async () => {
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -3003,7 +2888,6 @@ it('Test backtrace for r.expr(2).add("foo").info()', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -3030,7 +2914,6 @@ it('Test backtrace for r.expr(2).add(r.json("foo"))', async () => {
     }
 })
 
-
 /*
 Frames:
 undefined
@@ -3056,11 +2939,9 @@ it('Test backtrace for r.db(dbName).table(tableName).replace({a:1}, {nonValid:tr
   }
 })
 
-
 /*
 Frames:
 []
-
 
 /*
 Frames:
@@ -3094,8 +2975,6 @@ it('Test backtrace for r.db(dbName).table(tableName).replace({a:1}, {durability:
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 }, { type: 'POS', pos: 1 } ]
@@ -3120,7 +2999,6 @@ it('Test backtrace for r.expr([1,2]).map(row => row.add("eh"))', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -3173,7 +3051,6 @@ it('Test backtrace for r.table("foo").add(1).add(1).add("hello-super-long-string
   }
 })
 
-
 /*
 Frames:
 [ 'b' ]
@@ -3201,9 +3078,6 @@ it('Test backtrace for r.expr({a:1, b:r.expr(1).add("eh")})', async () => {
     }
   }
 })
-
-
-
 
 /*
 Frames:
@@ -3240,7 +3114,6 @@ it('Test backtrace for r.db(dbName).table(tableName).replace({a:1}, {durability:
   }
 })
 
-
 /*
 Frames:
 [ { type: 'OPT', opt: 'durability' } ]
@@ -3272,7 +3145,6 @@ it('Test backtrace for r.db(dbName).table(tableName).replace({a:1}, {durability:
     }
   }
 })
-
 
 /*
 Frames:
@@ -3334,7 +3206,6 @@ it('Test backtrace for r.expr({a:r.expr(1).add("eh"), b: 2})', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -3359,8 +3230,6 @@ it('Test backtrace for r.expr([1,2,3]).add("eh")', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -3391,8 +3260,6 @@ it('Test backtrace for r.expr({a:1}).add("eh")', async () => {
   }
 })
 
-
-
 /*
 Frames:
 [ { type: 'POS', pos: 1 } ]
@@ -3417,7 +3284,6 @@ it('Test backtrace for r.expr([1,2,3]).group("foo")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -3449,7 +3315,6 @@ it('Test backtrace for r.expr([1,2,3]).ungroup()', async () => {
     }
 })
 
-
 /*
 Frames:
 []
@@ -3475,7 +3340,6 @@ it('Test backtrace for r.expr([1,2,3,"hello"]).sum()', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -3500,7 +3364,6 @@ it('Test backtrace for r.expr([1,2,3,"hello"]).avg()', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -3577,7 +3440,6 @@ it('Test backtrace for r.expr([]).avg()', async () => {
   }
 })
 
-
 /*
 Frames:
 [ { type: 'POS', pos: 0 } ]
@@ -3628,7 +3490,6 @@ it('Test backtrace for r.expr(1).downcase()', async () => {
   }
 })
 
-
 /*
 Frames:
 [ 0, 1, 0 ]
@@ -3656,7 +3517,6 @@ it('Test backtrace for r.expr(1).do(function(v) { return r.object(1, 2) })', asy
   }
 })
 
-
 /*
 Frames:
 [ 0, 1 ]
@@ -3683,7 +3543,6 @@ it('Test backtrace for r.expr(1).do(function(v) { return r.object("a") })', asyn
     }
   }
 })
-
 
 /*
 Frames:
@@ -3714,7 +3573,6 @@ it('Test backtrace for r.random(1,2,{float: true}).sub("foo")', async () => {
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -3740,7 +3598,6 @@ it('Test backtrace for r.random("foo", "bar")', async () => {
   }
 })
 
-
 /*
 Frames:
 undefined
@@ -3763,7 +3620,6 @@ it('Test backtrace for r.random("foo", "bar", "buzz", "lol")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -3793,7 +3649,6 @@ it('Test backtrace for r.db(dbName).table(tableName).changes().add(2)', async ()
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -3822,8 +3677,6 @@ it('Test backtrace for r.http("").add(2)', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -3877,7 +3730,6 @@ it('Test backtrace for r.do(1,function( b) { return b.add("foo") })', async () =
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -3909,7 +3761,6 @@ it('Test backtrace for r.db(dbName).table(tableName).between("foo", "bar", {inde
     }
   }
 })
-
 
 /*
 // Note: Buggy? it should be SELECTION, not TABLE_SLICE
@@ -3944,8 +3795,6 @@ it('Test backtrace for r.db(dbName).table(tableName).orderBy({index: "id"}).add(
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -3971,8 +3820,6 @@ it('Test backtrace for r.binary("foo").add(1)', async () => {
   }
 })
 
-
-
 /*
 Frames:
 []
@@ -3997,8 +3844,6 @@ it('Test backtrace for r.binary(new Buffer([0,1,2,3,4])).add(1)', async () => {
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -4027,8 +3872,6 @@ it('Test backtrace for r.do(1,function( b) { return r.point(1, 2).add("foo") })'
   }
 })
 
-
-
 /*
 Frames:
 [ 0, 1, 0 ]
@@ -4056,9 +3899,6 @@ it('Test backtrace for r.do(1,function( b) { return r.line(1, 2).add("foo") })',
   }
 })
 
-
-
-
 /*
 Frames:
 [ 0, 1, 0 ]
@@ -4085,8 +3925,6 @@ it('Test backtrace for r.do(1,function( b) { return r.circle(1, 2).add("foo") })
     }
   }
 })
-
-
 
 /*
 Frames:
@@ -4142,7 +3980,6 @@ it('Test backtrace for r.do(1,function( b) { return r.polygon([0,0], [1,1], [2,3
   }
 })
 
-
 /*
 Frames:
 [ 0, 1, 0, 0 ]
@@ -4169,7 +4006,6 @@ it('Test backtrace for r.do(1,function( b) { return r.polygon([0,0], [1,1], [2,3
     }
   }
 })
-
 
 /*
 Frames:
@@ -4224,7 +4060,6 @@ it('Test backtrace for r.db(dbName).table(tableName).getIntersecting(r.circle(0,
   }
 })
 
-
 /*
 Frames:
 [ 1 ]
@@ -4250,7 +4085,6 @@ it('Test backtrace for r.db(dbName).table(tableName).getNearest(r.circle(0, 1), 
     }
   }
 })
-
 
 /*
 Frames:
@@ -4280,9 +4114,6 @@ it('Test backtrace for r.polygon([0, 0], [0, 1], [1, 1]).includes(r.expr([0, 1, 
         }
     }
 })
-
-
-
 
 /*
 Frames:
@@ -4313,9 +4144,6 @@ it('Test backtrace for r.polygon([0, 0], [0, 1], [1, 1]).intersects(r.expr([0, 1
     }
 })
 
-
-
-
 /*
 Frames:
 [ 1 ]
@@ -4344,8 +4172,6 @@ it('Test backtrace for r.polygon([0, 0], [0, 1], [1, 1]).includes(r.expr([0, 1, 
         }
     }
 })
-
-
 
 /*
 Frames:
@@ -4403,7 +4229,6 @@ it('Test backtrace for r.db(dbName).table(tableName).orderBy(r.asc("foo")).add(1
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -4428,7 +4253,6 @@ it('Test backtrace for r.range("foo")', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -4458,8 +4282,6 @@ it('Test backtrace for r.range(1,10).do(function(x) { return x.add(4) })', async
   }
 })
 
-
-
 /*
 Frames:
 [ 1, 0 ]
@@ -4487,7 +4309,6 @@ it('Test backtrace for r.range(1,10).toJSON().do(function(x) { return x.add(4) }
     }
   }
 })
-
 
 /*
 Frames:
@@ -4517,8 +4338,6 @@ it('Test backtrace for r.db(dbName).table(tableName).config().do(function(x) { r
   }
 })
 
-
-
 /*
 Frames:
 [ 0, 1 ]
@@ -4547,8 +4366,6 @@ it('Test backtrace for r.db(dbName).table(tableName).status().do(function(x) { r
   }
 })
 
-
-
 /*
 Frames:
 [ 0, 1 ]
@@ -4576,7 +4393,6 @@ it('Test backtrace for r.db(dbName).table(tableName).wait().do(function(x) { ret
     }
   }
 })
-
 
 /*
 Frames:
@@ -4611,7 +4427,6 @@ it('Test backtrace for r.db(dbName).table(tableName).reconfigure({ shards: 1 }).
   }
 })
 
-
 /*
 Frames:
 [ 0 ]
@@ -4639,7 +4454,6 @@ it('Test backtrace for r.expr(1).add("foo").add(r.db(dbName).table(tableName).re
     }
   }
 })
-
 
 /*
 Frames:
@@ -4670,7 +4484,6 @@ it('Test backtrace for r.map([1,2,3], [1,2,3], function(var_1) { return var_1("b
   }
 })
 
-
 /*
 Frames:
 [ 2, 1, 0, 0 ]
@@ -4698,8 +4511,6 @@ it('Test backtrace for r.map([1,2,3], [1,2,3], function(var_1, var_2) { return v
   }
 })
 
-
-
 /*
 Frames:
 [ 0, 0 ]
@@ -4724,7 +4535,6 @@ it('Test backtrace for r.expr([1,2,3]).split(",", 3).add(3)', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -4784,7 +4594,6 @@ it('Test backtrace for r.monday.add([1])', async () => {
   }
 })
 
-
 /*
 Frames:
 []
@@ -4809,7 +4618,6 @@ it('Test backtrace for r.november.add([1])', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -4839,7 +4647,6 @@ it('Test backtrace for r.expr({a: r.wednesday}).add([1])', async () => {
     }
   }
 })
-
 
 /*
 Frames:
@@ -4872,7 +4679,6 @@ it('Test backtrace for r.db(dbName).table(tableName).between(r.minval, r.maxval,
     }
   }
 })
-
 
 /*
 Frames:
@@ -4931,9 +4737,6 @@ it('Test backtrace for r.expr({foo: "bar"}).merge({foo: r.literal(), bar: r.expr
     }
 })
 
-
-
-
 /*
 Frames:
 [ 0 ]
@@ -4959,8 +4762,6 @@ it('Test backtrace for r.floor("hello")', async () => {
     }
 })
 
-
-
 /*
 Frames:
 undefined
@@ -4983,8 +4784,6 @@ it('Test backtrace for r.floor()', async () => {
         }
     }
 })
-
-
 
 /*
 Frames:
@@ -5011,10 +4810,6 @@ it('Test backtrace for r.round("hello")', async () => {
     }
 })
 
-
-
-
-
 /*
 Frames:
 [ 0 ]
@@ -5039,7 +4834,6 @@ it('Test backtrace for r.ceil("hello")', async () => {
         }
     }
 })
-
 
 /*
 Frames:
@@ -5073,4 +4867,3 @@ it('Test backtrace for r.expr({a:1, b:2, c: 3}).values().add(2)', async () => {
         }
     }
 })
-

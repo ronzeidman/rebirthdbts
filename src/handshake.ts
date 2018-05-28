@@ -1,6 +1,6 @@
 import { createHash, createHmac, pbkdf2, randomBytes } from 'crypto';
 import { promisify } from 'util';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
 import { VersionDummy } from './proto/ql2';
 
 export const NULL_BUFFER = new Buffer('\0', 'binary');
@@ -48,10 +48,10 @@ function handleMessage(
         if (jsonMsg.success) {
           func(msg).catch(reject);
         } else {
-          reject(new RebirthdbError(jsonMsg.error, jsonMsg.error_code));
+          reject(new RebirthDBError(jsonMsg.error, jsonMsg.error_code));
         }
       } catch {
-        reject(new RebirthdbError(msg));
+        reject(new RebirthDBError(msg));
       }
     }
   };
@@ -66,7 +66,7 @@ export function validateVersion(msg: {
     msg.max_protocol_version < PROTOCOL_VERSION ||
     msg.min_protocol_version > PROTOCOL_VERSION
   ) {
-    throw new RebirthdbError('Unsupported protocol version');
+    throw new RebirthDBError('Unsupported protocol version');
   }
 }
 
@@ -82,7 +82,7 @@ export async function computeSaltedPassword(
   const salt = new Buffer(s, 'base64');
   const iterations = parseInt(i, 10);
   if (randomNonce.substring(0, randomString.length) !== randomString) {
-    throw new RebirthdbError('Invalid nonce from server');
+    throw new RebirthDBError('Invalid nonce from server');
   }
   const cacheKey = `${password.toString('base64')},${salt.toString(
     'base64'
@@ -136,7 +136,7 @@ export function compareDigest(authentication: string, serverSignature: string) {
     authentication.substring(authentication.indexOf('=') + 1) !==
     serverSignature
   ) {
-    throw new RebirthdbError('Invalid server signature');
+    throw new RebirthDBError('Invalid server signature');
   }
 }
 

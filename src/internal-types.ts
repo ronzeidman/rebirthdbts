@@ -26,5 +26,5 @@ export interface ResponseJson {
   n: Response.ResponseNote[];
   e?: Response.ErrorType;
   p?: any;
-  b?: any;
+  b?: number[];
 }

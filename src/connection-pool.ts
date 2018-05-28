@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
 import { RebirthDBConnection } from './connection';
-import { RebirthdbError } from './error';
+import { RebirthDBError } from './error';
 import { min } from './helper';
 import { TermJson } from './internal-types';
 import {
@@ -74,7 +74,7 @@ export class RebirthDBConnectionPool extends EventEmitter
           if (healthy) {
             resolve();
           } else {
-            reject(new RebirthdbError('Error initializing pool'));
+            reject(new RebirthDBError('Error initializing pool'));
           }
         });
       }
@@ -114,7 +114,7 @@ export class RebirthDBConnectionPool extends EventEmitter
       }
       const openConnections = this.getOpenConnections();
       if (!openConnections.length) {
-        throw this.reportError(new RebirthdbError('No connections available'));
+        throw this.reportError(new RebirthDBError('No connections available'));
       }
       return openConnections.reduce(min).query(term, globalArgs);
     }

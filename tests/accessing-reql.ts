@@ -221,8 +221,8 @@ it('`run` should throw on an unrecognized argument', async () => {
     result = await r.expr(1).run(connection, { foo: 'bar' });
   } catch (e) {
     if (
-      e.message ===
-      'Unrecognized option `foo` in `run`. Available options are readMode <string>, durability <string>, noreply <bool>, timeFormat <string>, groupFormat: <string>, profile <bool>, binaryFormat <bool>, cursor <bool>, stream <bool>.'
+      e.message === 'Unrecognized global optional argument `foo`.'
+      // 'Unrecognized option `foo` in `run`. Available options are readMode <string>, durability <string>, noreply <bool>, timeFormat <string>, groupFormat: <string>, profile <bool>, binaryFormat <bool>, cursor <bool>, stream <bool>.'
     ) {
       return;
     } else {
