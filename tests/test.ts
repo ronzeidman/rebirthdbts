@@ -7,8 +7,9 @@
 // let result: any;
 // (async () => {
 //   await r.connect(config);
+//   const c = r.wednesday;
 //   await r
-//     .polygon([0, 0] as any, [0, 1] as any, [1, 1] as any)
-//     .includes(r.expr([0, 1, 3]))
+//     .expr({ a: r.wednesday } as any)
+//     .add([1] as any)
 //     .run();
 // })();

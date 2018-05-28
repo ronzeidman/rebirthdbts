@@ -196,7 +196,10 @@ export function queryTermBuilder(
 export const r: R = Object.assign(
   getQueryBuilder() as any,
   rConsts.reduce(
-    (acc, [term, key]) => ({ [key]: { [rSymbol]: true, term: [term] } }),
+    (acc, [term, key]) => ({
+      ...acc,
+      [key]: { [rSymbol]: true, term: [term] }
+    }),
     {}
   ),
   {
