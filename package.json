@@ -2,10 +2,16 @@
   "name": "rebirthdbts",
   "version": "0.0.1",
   "description": "Experimental RebirthDB TypeScript driver",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "directories": {
+    "test": "test"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js"
+    "test":
+      "ts-mocha ts-mocha -p ./tsconfig.test.json  --check-leaks -t 20000 ./tests/*.ts",
+    "build": "tsc",
+    "proto":
+      "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js"
   },
   "repository": {
     "type": "git",
@@ -18,10 +24,19 @@
   },
   "homepage": "https://github.com/ronzeidman/rebirthdbts#readme",
   "devDependencies": {
+    "@types/expect": "^1.20.3",
+    "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.17",
+    "longjohn": "^0.2.12",
+    "mocha": "^5.2.0",
     "protobufjs": "^6.8.6",
+    "trace": "^3.1.0",
+    "ts-mocha": "^1.2.0",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",
     "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "rm": "^0.1.8"
   }
 }

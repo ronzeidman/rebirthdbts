@@ -2,6 +2,31 @@ import { Term } from './proto/ql2';
 
 // [TermType, funcName, min arg number, max arg number (-1 = infinite), can have optional args]
 // for operations directly under 'r' the max arg number can be increased by 1 since there is no `this`
+
+export const rConsts = [
+  [Term.TermType.MINVAL, 'minval'],
+  [Term.TermType.MAXVAL, 'maxval'],
+  [Term.TermType.MONDAY, 'monday'],
+  [Term.TermType.TUESDAY, 'tuesday'],
+  [Term.TermType.WEDNESDAY, 'wednesday'],
+  [Term.TermType.THURSDAY, 'thursday'],
+  [Term.TermType.FRIDAY, 'friday'],
+  [Term.TermType.SATURDAY, 'saturday'],
+  [Term.TermType.SUNDAY, 'sunday'],
+  [Term.TermType.JANUARY, 'january'],
+  [Term.TermType.FEBRUARY, 'february'],
+  [Term.TermType.MARCH, 'march'],
+  [Term.TermType.APRIL, 'april'],
+  [Term.TermType.MAY, 'may'],
+  [Term.TermType.JUNE, 'june'],
+  [Term.TermType.JULY, 'july'],
+  [Term.TermType.AUGUST, 'august'],
+  [Term.TermType.SEPTEMBER, 'september'],
+  [Term.TermType.OCTOBER, 'october'],
+  [Term.TermType.NOVEMBER, 'november'],
+  [Term.TermType.DECEMBER, 'december']
+];
+
 export const funcConfig: Array<
   [Term.TermType, string, number, number, boolean]
 > = [
@@ -37,8 +62,7 @@ export const funcConfig: Array<
   [Term.TermType.UUID, 'uuid', 1, 1, false],
   [Term.TermType.HTTP, 'http', 1, 1, true],
   [Term.TermType.ERROR, 'error', 1, 1, false],
-  [Term.TermType.DB, 'db', 0, 0, false], // only under 'r'
-  [Term.TermType.TABLE, 'table', 1, 1, false],
+  [Term.TermType.TABLE, 'table', 1, 1, true],
   [Term.TermType.GET, 'get', 1, 1, false],
   [Term.TermType.GET_ALL, 'getAll', 1, -1, true],
   [Term.TermType.EQ, 'eq', 1, -1, false],
@@ -67,7 +91,7 @@ export const funcConfig: Array<
   [Term.TermType.SKIP, 'skip', 1, 1, false],
   [Term.TermType.LIMIT, 'limit', 1, 1, false],
   [Term.TermType.OFFSETS_OF, 'offsetsOf', 1, 1, false],
-  [Term.TermType.CONTAINS, 'contains', 1, 1, false],
+  [Term.TermType.CONTAINS, 'contains', 1, -1, false],
   [Term.TermType.GET_FIELD, 'getField', 1, 1, false],
   [Term.TermType.KEYS, 'keys', 0, 0, false],
   [Term.TermType.VALUES, 'values', 0, 0, false],
@@ -106,8 +130,6 @@ export const funcConfig: Array<
   [Term.TermType.DELETE, 'delete', 0, 0, true],
   [Term.TermType.REPLACE, 'replace', 1, 1, true],
   [Term.TermType.INSERT, 'insert', 1, 1, true],
-  [Term.TermType.DB_CREATE, 'dbCreate', 0, 0, false], // only under 'r'
-  [Term.TermType.DB_DROP, 'dbDrop', 0, 0, false], // only under 'r'
   [Term.TermType.DB_LIST, 'dbList', 0, 0, false],
   [Term.TermType.TABLE_CREATE, 'tableCreate', 0, 1, true],
   [Term.TermType.TABLE_DROP, 'tableDrop', 0, 1, false],
@@ -118,22 +140,18 @@ export const funcConfig: Array<
   [Term.TermType.RECONFIGURE, 'reconfigure', 0, 0, true],
   [Term.TermType.REBALANCE, 'rebalance', 0, 0, false],
   [Term.TermType.SYNC, 'sync', 0, 0, false],
-  [Term.TermType.GRANT, 'grant', 1, 1, true],
+  [Term.TermType.GRANT, 'grant', 2, 2, false],
   [Term.TermType.INDEX_CREATE, 'indexCreate', 1, 2, true],
   [Term.TermType.INDEX_DROP, 'indexDrop', 1, 1, false],
   [Term.TermType.INDEX_LIST, 'indexList', 0, 0, false],
   [Term.TermType.INDEX_STATUS, 'indexStatus', 1, -1, false],
   [Term.TermType.INDEX_WAIT, 'indexWait', 1, -1, false],
   [Term.TermType.INDEX_RENAME, 'indexRename', 2, 2, true],
-  [Term.TermType.SET_WRITE_HOOK, 'setWriteHook', -1, -1, true], // not documented
-  [Term.TermType.GET_WRITE_HOOK, 'getWriteHoot', -1, -1, true], // not documented
   // [Term.TermType.FUNCALL, 'do', 1, -1, false], special implementation
   [Term.TermType.BRANCH, 'branch', 3, -1, false],
   [Term.TermType.OR, 'or', 1, -1, false],
   [Term.TermType.AND, 'and', 1, -1, false],
   [Term.TermType.FOR_EACH, 'forEach', 1, 1, false],
-  [Term.TermType.ASC, 'asc', 0, 0, false], // only under r
-  [Term.TermType.DESC, 'desc', 0, 0, false], // only under r
   [Term.TermType.INFO, 'info', 0, 0, false],
   [Term.TermType.MATCH, 'match', 0, 0, false],
   [Term.TermType.UPCASE, 'upcase', 0, 0, false],
@@ -143,7 +161,6 @@ export const funcConfig: Array<
   [Term.TermType.JSON, 'json', 1, 1, false],
   [Term.TermType.ISO8601, 'ISO8601', 1, 1, true],
   [Term.TermType.TO_ISO8601, 'toISO8601', 0, 0, false],
-  [Term.TermType.EPOCH_TIME, 'epochTime', 0, 0, false], // only under r
   [Term.TermType.TO_EPOCH_TIME, 'toEpochTime', 0, 0, false],
   [Term.TermType.NOW, 'now', 0, 0, false],
   [Term.TermType.IN_TIMEZONE, 'inTimezone', 1, 1, false],
@@ -162,8 +179,8 @@ export const funcConfig: Array<
   [Term.TermType.TIME, 'time', 4, 7, false],
   [Term.TermType.LITERAL, 'literal', 1, 1, false],
   [Term.TermType.GROUP, 'group', 1, -1, true],
-  [Term.TermType.SUM, 'sum', 1, 1, false],
-  [Term.TermType.AVG, 'avg', 1, 1, false],
+  [Term.TermType.SUM, 'sum', 0, 1, false],
+  [Term.TermType.AVG, 'avg', 0, 1, false],
   [Term.TermType.MIN, 'min', 0, 1, true],
   [Term.TermType.MAX, 'max', 0, 1, true],
   [Term.TermType.SPLIT, 'split', 1, 2, false],
@@ -185,12 +202,22 @@ export const funcConfig: Array<
   [Term.TermType.FILL, 'fill', 0, 0, false],
   [Term.TermType.GET_NEAREST, 'getNearest', 1, 1, true],
   [Term.TermType.POLYGON_SUB, 'polygonSub', 1, 1, false],
-  [Term.TermType.TO_JSON_STRING, 'toJsonString', 0, 0, false],
-  [Term.TermType.TO_JSON_STRING, 'toJSON', 0, 0, false],
-  [Term.TermType.BIT_AND, 'bitAnd', -1, -1, true], // not documented
-  [Term.TermType.BIT_OR, 'bitOr', -1, -1, true], // not documented
-  [Term.TermType.BIT_XOR, 'bitXor', -1, -1, true], // not documented
-  [Term.TermType.BIT_NOT, 'bitNot', -1, -1, true], // not documented
-  [Term.TermType.BIT_SAL, 'bitShiftLeft', -1, -1, true], // not documented
-  [Term.TermType.BIT_SAR, 'bitShiftRight', -1, -1, true] // not documented
+  [Term.TermType.TO_JSON_STRING, 'toJSON', 1, 1, false],
+  [Term.TermType.TO_JSON_STRING, 'toJsonString', 1, 1, false],
+  // only under 'r'
+  [Term.TermType.DB, 'db', 0, 0, false],
+  [Term.TermType.DB_CREATE, 'dbCreate', 0, 0, false],
+  [Term.TermType.DB_DROP, 'dbDrop', 0, 0, false],
+  [Term.TermType.ASC, 'asc', 0, 0, false],
+  [Term.TermType.DESC, 'desc', 0, 0, false],
+  [Term.TermType.EPOCH_TIME, 'epochTime', 0, 0, false]
+  // not documented
+  // [Term.TermType.SET_WRITE_HOOK, 'setWriteHook', -1, -1, true],
+  // [Term.TermType.GET_WRITE_HOOK, 'getWriteHoot', -1, -1, true],
+  // [Term.TermType.BIT_AND, 'bitAnd', -1, -1, true],
+  // [Term.TermType.BIT_OR, 'bitOr', -1, -1, true],
+  // [Term.TermType.BIT_XOR, 'bitXor', -1, -1, true],
+  // [Term.TermType.BIT_NOT, 'bitNot', -1, -1, true],
+  // [Term.TermType.BIT_SAL, 'bitShiftLeft', -1, -1, true],
+  // [Term.TermType.BIT_SAR, 'bitShiftRight', -1, -1, true]
 ];

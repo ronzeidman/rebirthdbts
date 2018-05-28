@@ -3,10 +3,18 @@ import { promisify } from 'util';
 import { Cursor } from './cursor';
 import { RebirthdbError } from './error';
 import { NULL_BUFFER } from './handshake';
+import { parseOptarg } from './helper';
 import { TermJson } from './internal-types';
 import { Query, Response, Term } from './proto/ql2';
 import { RebirthDBSocket } from './socket';
 import { Connection, RunOptions, ServerInfo } from './types';
+
+const tableQueries = [
+  Term.TermType.TABLE_CREATE,
+  Term.TermType.TABLE_DROP,
+  Term.TermType.TABLE_LIST,
+  Term.TermType.TABLE
+];
 
 export class RebirthDBConnection extends EventEmitter implements Connection {
   public clientPort: number;
@@ -69,7 +77,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
   public async reconnect(
     options?: { noreplyWait: boolean },
     { host = this.clientAddress, port = this.clientPort } = {}
-  ): Promise<void> {
+  ) {
     this.clientPort = port;
     this.clientAddress = host;
     if (this.socket.status === 'open' || this.socket.status === 'handshake') {
@@ -99,9 +107,12 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.emit('timeout');
       this.emit('close');
       this.close();
-      throw new RebirthdbError('Connection timed out');
+      throw new RebirthdbError(
+        `Failed to connect to ${host}:${port} in less than ${this.timeout}s.`
+      );
     }
     this.startPinging();
+    return this;
   }
   public use(db: string): void {
     this.db = db;
@@ -132,10 +143,19 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     return result.r[0];
   }
   public async query(term: TermJson, globalArgs: RunOptions = {}) {
+    const {
+      timeFormat,
+      groupFormat,
+      binaryFormat,
+      immidiateReturn,
+      ...gargs
+    } = globalArgs;
+    gargs.db = gargs.db || this.db;
+    this.findTableTermAndAddDb(term, gargs.db);
     const token = this.socket.sendQuery([
       Query.QueryType.START,
       term,
-      { db: this.db, ...globalArgs }
+      parseOptarg(gargs)
     ]);
     const cursor = new Cursor(this.socket, token, globalArgs);
     if (globalArgs.immidiateReturn) {
@@ -146,6 +166,28 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       return await cursor.next();
     }
     return cursor;
+  }
+
+  private findTableTermAndAddDb(term: TermJson | undefined, db: any) {
+    while (term) {
+      if (!Array.isArray(term)) {
+        return;
+      }
+      const termParam = term[1];
+      if (tableQueries.includes(term[0])) {
+        if (!termParam) {
+          term[1] = [[Term.TermType.DB, [db]]];
+          return;
+        }
+        const innerTerm = termParam[0];
+        if (Array.isArray(innerTerm) && innerTerm[0] === Term.TermType.DB) {
+          return;
+        }
+        termParam.unshift([Term.TermType.DB, [db]]);
+        return;
+      }
+      term = termParam && termParam[0];
+    }
   }
 
   private startPinging() {

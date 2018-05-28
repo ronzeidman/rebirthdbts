@@ -1,7 +1,13 @@
 import { EventEmitter } from 'events';
 import { Socket, SocketConnectOpts } from 'net';
 import { RebirthdbError } from './error';
-import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake';
+import {
+  NULL_BUFFER,
+  buildAuthBuffer,
+  compareDigest,
+  computeSaltedPassword,
+  validateVersion
+} from './handshake';
 import { QueryJson, ResponseJson } from './internal-types';
 import { Response } from './proto/ql2';
 
@@ -81,7 +87,10 @@ export class RebirthDBSocket extends EventEmitter {
 
   public sendQuery(query: QueryJson, token = this.nextToken++) {
     if (!this.socket || this.status !== 'open') {
-      throw new RebirthdbError('Connection is not open');
+      throw new RebirthdbError(
+        '`run` was called with a closed connection after:',
+        { query }
+      );
     }
     const encoded = JSON.stringify(query);
     const querySize = Buffer.byteLength(encoded);
@@ -137,6 +146,7 @@ export class RebirthDBSocket extends EventEmitter {
     this.isOpen = false;
     this.mode = 'handshake';
     this.removeAllListeners();
+    this.nextToken = 0;
   }
 
   private async performHandshake() {

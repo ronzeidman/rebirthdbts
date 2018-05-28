@@ -1,16 +1,17 @@
-import { inspect, isBuffer, isDate, isFunction } from 'util';
-import { funcConfig } from './config';
+import { isBuffer, isDate, isFunction } from 'util';
+import { funcConfig, rConsts } from './config';
 import { RebirthDBConnection } from './connection';
 import { RebirthDBConnectionPool } from './connection-pool';
 import { RebirthdbError } from './error';
-import { camelToSnake } from './helper';
+import { parseOptarg } from './helper';
 import { ComplexTermJson, TermJson } from './internal-types';
 import { Term } from './proto/ql2';
 import { ConnectionOptions, R, RunOptions } from './types';
 
 const reversedDo = queryTermBuilder(Term.TermType.FUNCALL, 1, -1, false);
 const rSymbol = Symbol('r');
-const isQueryBuilder = (arg: any) => typeof arg === 'object' && rSymbol in arg;
+const isQueryBuilder = (arg: any) =>
+  (typeof arg === 'object' || typeof arg === 'function') && rSymbol in arg;
 const queryBuilderProto = Object.assign(
   funcConfig
     .map(([termType, funcName, minArg, maxArg, hasOptarg]) => ({
@@ -35,21 +36,36 @@ const queryBuilderProto = Object.assign(
       const cpool = r.getPoolMaster() as RebirthDBConnectionPool;
       const opt = conn instanceof RebirthDBConnection ? options : conn;
       if (!c && !cpool) {
-        throw new RebirthdbError('No connection');
+        throw new RebirthdbError(
+          '`run` was called without a connection and no pool has been created after:',
+          { term: this.term }
+        );
       }
       if (c) {
-        return c.query(this.term, opt);
+        return await c.query(this.term, opt);
       }
-      return cpool.queue(this.term, opt);
+      return await cpool.queue(this.term, opt);
     }
   }
 );
 // this may cause a performance issue, but this is how it's done in rethinkdbdash to support bracket operation
 function getQueryBuilder(term?: TermJson) {
-  const qb: any = queryTermBuilder(Term.TermType.BRACKET, 1, 1, false, term);
+  const qb: any = term
+    ? queryTermBuilder(Term.TermType.BRACKET, 1, 1, false, term)
+    : expr;
   qb.__proto__ = queryBuilderProto;
   qb.term = term;
   return qb;
+}
+
+function expr(arg: any) {
+  if (isQueryBuilder(arg)) {
+    return arg;
+  }
+  if (Array.isArray(arg)) {
+    return getQueryBuilder(parseParam(arg));
+  }
+  return getQueryBuilder(arg);
 }
 
 export function parseParam(param: any): TermJson {
@@ -93,10 +109,16 @@ export function parseParam(param: any): TermJson {
       ]
     ];
   }
+  if (typeof param === 'object') {
+    return Object.entries(param).reduce(
+      (acc, [key, value]) => ({ ...acc, [key]: parseParam(value) }),
+      {}
+    );
+  }
   return param;
 }
 
-function queryTermBuilder(
+export function queryTermBuilder(
   termType: Term.TermType,
   minArgs: number,
   maxArgs: number,
@@ -110,22 +132,46 @@ function queryTermBuilder(
     if (!currentTerm) {
       localMaxArgs++;
     }
-    if (argsLength < minArgs) {
-      throw new RebirthdbError(`Expecting at least ${minArgs} arguments`);
-    }
     const maxArgsPlusOptarg =
       hasOptarg && localMaxArgs >= 0 ? localMaxArgs + 1 : localMaxArgs;
-    if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
+    if (minArgs === maxArgsPlusOptarg && argsLength !== minArgs) {
+      const termConf = funcConfig.find(c => c[0] === termType);
       throw new RebirthdbError(
-        `Expecting at most ${maxArgsPlusOptarg} arguments`
+        `\`${termConf ? termConf[1] : termType}\` takes ${minArgs} argument${
+          minArgs === 1 ? '' : 's'
+        }, ${argsLength} provided after:`,
+        { term: currentTerm }
+      );
+    }
+    if (argsLength < minArgs) {
+      const termConf = funcConfig.find(c => c[0] === termType);
+      throw new RebirthdbError(
+        `\`${
+          termConf ? termConf[1] : termType
+        }\` takes at least ${minArgs} argument${
+          minArgs === 1 ? '' : 's'
+        }, ${argsLength} provided after:`,
+        { term: currentTerm }
+      );
+    }
+    if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
+      const termConf = funcConfig.find(c => c[0] === termType);
+      throw new RebirthdbError(
+        `\`${
+          termConf ? termConf[1] : termType
+        }\` takes at most ${maxArgsPlusOptarg} argument${
+          maxArgsPlusOptarg === 1 ? '' : 's'
+        }, ${argsLength} provided after:`,
+        { term: currentTerm }
       );
     }
     const params: TermJson[] = currentTerm ? [currentTerm] : [];
     const maybeOptarg = args.length ? args.pop() : undefined;
     const optarg =
       hasOptarg &&
-      (argsLength >= maxArgsPlusOptarg ||
-        (!Array.isArray(maybeOptarg) &&
+      ((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
+        (argsLength > minArgs &&
+          !Array.isArray(maybeOptarg) &&
           typeof maybeOptarg === 'object' &&
           !(rSymbol in maybeOptarg)))
         ? maybeOptarg
@@ -139,66 +185,42 @@ function queryTermBuilder(
       term[1] = params;
     }
     if (optarg) {
-      term[2] = Object.entries(maybeOptarg).reduce(
-        (acc, [key, value]) => ({
-          ...acc,
-          [camelToSnake(key)]: parseParam(value)
-        }),
-        {}
-      );
-      console.log(inspect(term[2]));
+      term[2] = parseOptarg(maybeOptarg);
     }
     return getQueryBuilder(term);
   };
 }
 
-export const r: R = Object.assign(getQueryBuilder() as any, {
-  minval: { [rSymbol]: true, term: [Term.TermType.MINVAL] },
-  maxval: { [rSymbol]: true, term: [Term.TermType.MAXVAL] },
-  // row : { [rSymbol]: true, term: [Term.TermType.MINVAL] },
-  monday: { [rSymbol]: true, term: [Term.TermType.MONDAY] },
-  tuesday: { [rSymbol]: true, term: [Term.TermType.TUESDAY] },
-  wednesday: { [rSymbol]: true, term: [Term.TermType.WEDNESDAY] },
-  thursday: { [rSymbol]: true, term: [Term.TermType.THURSDAY] },
-  friday: { [rSymbol]: true, term: [Term.TermType.FRIDAY] },
-  saturday: { [rSymbol]: true, term: [Term.TermType.SATURDAY] },
-  sunday: { [rSymbol]: true, term: [Term.TermType.SUNDAY] },
-  january: { [rSymbol]: true, term: [Term.TermType.JANUARY] },
-  february: { [rSymbol]: true, term: [Term.TermType.FEBRUARY] },
-  march: { [rSymbol]: true, term: [Term.TermType.MARCH] },
-  april: { [rSymbol]: true, term: [Term.TermType.APRIL] },
-  may: { [rSymbol]: true, term: [Term.TermType.MAY] },
-  june: { [rSymbol]: true, term: [Term.TermType.JUNE] },
-  july: { [rSymbol]: true, term: [Term.TermType.JULY] },
-  august: { [rSymbol]: true, term: [Term.TermType.AUGUST] },
-  september: { [rSymbol]: true, term: [Term.TermType.SEPTEMBER] },
-  october: { [rSymbol]: true, term: [Term.TermType.OCTOBER] },
-  november: { [rSymbol]: true, term: [Term.TermType.NOVEMBER] },
-  december: { [rSymbol]: true, term: [Term.TermType.DECEMBER] },
-  expr: (arg: any) => {
-    if (isQueryBuilder(arg)) {
-      return arg;
+export const r: R = Object.assign(
+  getQueryBuilder() as any,
+  rConsts.reduce(
+    (acc, [term, key]) => ({ [key]: { [rSymbol]: true, term: [term] } }),
+    {}
+  ),
+  {
+    expr,
+    connect: async ({ pool = true, ...options }: ConnectionOptions = {}) => {
+      if (options.servers && !options.servers.length) {
+        throw new RebirthdbError(
+          'If `servers` is an array, it must contain at least one server.'
+        );
+      }
+      if (!pool) {
+        const c = new RebirthDBConnection(
+          options.servers && options.servers.length
+            ? options.servers[0]
+            : ({} as any),
+          options as any
+        );
+        await c.reconnect();
+        return c;
+      }
+      const cpool = new RebirthDBConnectionPool(options);
+      await cpool.waitForHealthy();
+      (r as any).pool = cpool;
+    },
+    getPoolMaster: () => {
+      return (r as any).pool;
     }
-    if (Array.isArray(arg)) {
-      return getQueryBuilder(parseParam(arg));
-    }
-    return getQueryBuilder([Term.TermType.DATUM, [arg]]);
-  },
-  connect: async (options: ConnectionOptions) => {
-    if (!options.pool) {
-      const c = new RebirthDBConnection(
-        options.servers && options.servers.length
-          ? options.servers[0]
-          : ({} as any),
-        options as any
-      );
-      await c.reconnect();
-      return c;
-    }
-    const pool = new RebirthDBConnectionPool(options);
-    (r as any).pool = pool;
-  },
-  getPoolMaster: () => {
-    return (r as any).pool;
   }
-});
+);

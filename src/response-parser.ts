@@ -31,8 +31,16 @@ export function getNativeTypes(
       case 'GROUPED_DATA':
         if (groupFormat === 'native') {
           return obj.data.map(([group, reduction]: any) => ({
-            group,
-            reduction
+            group: getNativeTypes(group, {
+              binaryFormat,
+              groupFormat,
+              timeFormat
+            }),
+            reduction: getNativeTypes(reduction, {
+              binaryFormat,
+              groupFormat,
+              timeFormat
+            })
           }));
         }
         break;

@@ -65,6 +65,22 @@ export class RebirthDBConnectionPool extends EventEmitter
       .map(() => this.createConnection());
   }
 
+  public waitForHealthy() {
+    return new Promise((resolve, reject) => {
+      if (this.getLength() > 0) {
+        resolve();
+      } else {
+        this.once('healthy', healthy => {
+          if (healthy) {
+            resolve();
+          } else {
+            reject(new RebirthdbError('Error initializing pool'));
+          }
+        });
+      }
+    });
+  }
+
   public async drain({ noreplyWait = false } = {}) {
     this.emit('draining');
     this.servers = [];
@@ -113,26 +129,26 @@ export class RebirthDBConnectionPool extends EventEmitter
   }
 
   private subscribeToConnection(conn: RebirthDBConnection) {
-    conn
-      .on('close', () => {
-        const size = this.getOpenConnections().length;
-        this.emit('size', size);
-        if (size === 0) {
-          this.emit('healthy', false);
-        }
-        conn.removeAllListeners();
-        this.persistConnection(conn);
-      })
-      .on('connect', () => {
-        const size = this.getOpenConnections().length;
-        this.emit('size', size);
-        if (size > 0) {
-          this.emit('healthy', true);
-        }
-        this.checkIdle(conn);
-      })
-      .on('data', () => this.checkIdle(conn))
-      .on('query', () => this.checkIdle(conn));
+    if (conn.getSocket().status === 'open') {
+      const size = this.getOpenConnections().length;
+      this.emit('size', size);
+      if (size > 0) {
+        this.emit('healthy', true);
+      }
+      this.checkIdle(conn);
+      conn
+        .on('close', () => {
+          const size1 = this.getOpenConnections().length;
+          this.emit('size', size1);
+          if (size === 0) {
+            this.emit('healthy', false);
+          }
+          conn.removeAllListeners();
+          this.persistConnection(conn);
+        })
+        .on('data', () => this.checkIdle(conn))
+        .on('query', () => this.checkIdle(conn));
+    }
   }
 
   private closeConnection(conn: Connection) {
