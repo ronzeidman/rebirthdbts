@@ -58,8 +58,12 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     });
   }
 
-  public getSocket() {
-    return this.socket;
+  public get isConnected() {
+    return this.socket.status === 'open';
+  }
+
+  public get numOfQueries() {
+    return this.socket.runningQueries.length;
   }
 
   public async close({ noreplyWait = false } = {}): Promise<void> {
@@ -74,6 +78,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       throw err;
     }
   }
+
   public async reconnect(
     options?: { noreplyWait: boolean },
     { host = this.clientAddress, port = this.clientPort } = {}

@@ -3,73 +3,75 @@ import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import {
-  Changes,
   ConnectionOptions,
   ConnectionPool,
-  RCursor,
+  RServer,
   RunOptions
 } from '../types';
 import { RebirthDBConnection } from './connection';
 
 const REBALANCE_EVERY = 30 * 1000;
 
-export class RebirthDBConnectionPool extends EventEmitter
+export class ServerConnectionPool extends EventEmitter
   implements ConnectionPool {
+  public readonly server: RServer;
+  private healthy: boolean | undefined = undefined;
   private buffer: number;
   private max: number;
   private timeoutError: number;
   private timeoutGb: number;
   private maxExponent: number;
   private silent: boolean;
-  private discovery: boolean;
-  private discoveryCursor?: RCursor<Changes<any>>;
   private log: (message: string) => any;
-  private servers: Array<{ host: string; port: number }>;
 
   private connParam: any;
 
   private connections: RebirthDBConnection[] = [];
   private timers = new Map<RebirthDBConnection, NodeJS.Timer>();
-  private nextServerConn = 0;
 
-  constructor({
-    db = 'test',
-    user = 'admin',
-    password = '',
-    discovery = false,
-    servers = [{ host: 'localhost', port: 28015 }],
-    buffer = servers.length,
-    max = servers.length,
-    timeout = 20,
-    pingInterval = -1,
-    timeoutError = 1000,
-    timeoutGb = 60 * 60 * 1000,
-    maxExponent = 6,
-    silent = false,
-    log = (message: string) => undefined
-  }: ConnectionOptions = {}) {
+  constructor(
+    { host = 'localhost', port = 28015 } = {},
+    {
+      db = 'test',
+      user = 'admin',
+      password = '',
+      buffer = 1,
+      max = 1,
+      timeout = 20,
+      pingInterval = -1,
+      timeoutError = 1000,
+      timeoutGb = 60 * 60 * 1000,
+      maxExponent = 6,
+      silent = false,
+      log = (message: string) => undefined
+    }: ConnectionOptions = {}
+  ) {
     super();
-    this.buffer = buffer;
-    this.max = max;
+    this.buffer = Math.max(buffer, 1);
+    this.max = Math.max(max, buffer);
     this.timeoutError = timeoutError;
     this.timeoutGb = timeoutGb;
     this.maxExponent = maxExponent;
     this.silent = silent;
     this.log = log;
-    this.servers = servers.map(({ host, port }) => ({
-      host,
-      port: port || 28015
-    }));
-    this.discovery = discovery;
+    this.server = { host, port };
     this.connParam = { db, user, password, timeout, pingInterval, silent, log };
-    this.connections = Array(buffer)
-      .fill(0)
-      .map(() => this.createConnection());
+    this.connections = [];
+  }
+
+  public async initConnections(): Promise<void> {
+    if (this.connections.length < this.buffer) {
+      return this.createConnection().then(() => this.initConnections());
+    }
+  }
+
+  public get isHealthy() {
+    return this.connections.some(conn => conn.isConnected);
   }
 
   public waitForHealthy() {
     return new Promise((resolve, reject) => {
-      if (this.getLength() > 0) {
+      if (this.isHealthy) {
         resolve();
       } else {
         this.once('healthy', healthy => {
@@ -80,18 +82,44 @@ export class RebirthDBConnectionPool extends EventEmitter
           }
         });
       }
-    }).then(() => (this.discovery ? this.initDiscovery() : undefined));
+    });
   }
 
-  public async drain({ noreplyWait = false } = {}) {
-    this.emit('draining');
-    this.servers = [];
+  public updateBufferMax({ buffer, max }: { buffer: number; max: number }) {
+    if (this.buffer > buffer && this.connections.length < buffer) {
+      this.buffer = buffer;
+      this.initConnections();
+    } else {
+      this.connections.forEach(conn => this.checkIdle(conn));
+    }
+    if (this.max > max) {
+      const connections = this.getIdleConnections();
+      for (let i = 0; i < this.max - max; i++) {
+        const conn = connections.pop();
+        if (!conn) {
+          break;
+        }
+        this.closeConnection(conn);
+      }
+    }
+    this.max = max;
+  }
+
+  public async drain({ noreplyWait = false } = {}, emit = true) {
+    if (emit) {
+      this.emit('draining');
+      this.setHealthy(undefined);
+    }
     await Promise.all(
       this.connections.map(conn => {
         conn.removeAllListeners();
         return conn.close({ noreplyWait });
       })
     );
+  }
+
+  public getConnections() {
+    return this.connections;
   }
 
   public getLength() {
@@ -102,17 +130,26 @@ export class RebirthDBConnectionPool extends EventEmitter
     return this.getIdleConnections().length;
   }
 
-  public getPools() {
-    return this.connections;
+  public getNumOfRunningQueries() {
+    return this.getOpenConnections().reduce(
+      (num, next) => next.numOfQueries + num,
+      0
+    );
   }
 
   public async queue(term: TermJson, globalArgs: RunOptions = {}) {
     this.emit('queueing');
     const idleConnections = this.getIdleConnections();
     if (!idleConnections.length) {
-      if (this.connections.length < this.max) {
-        const conn = this.createConnection();
-        return conn.query(term, globalArgs);
+      if (
+        this.connections.length < this.max &&
+        this.connections.length > this.buffer
+      ) {
+        const conn = await this.createConnection();
+        if (conn) {
+          // if couldnt go above buffer try using an open connection instead of waiting for timeout and reconnect
+          return conn.query(term, globalArgs);
+        }
       }
       const openConnections = this.getOpenConnections();
       if (!openConnections.length) {
@@ -123,27 +160,36 @@ export class RebirthDBConnectionPool extends EventEmitter
     return idleConnections[0].query(term, globalArgs);
   }
 
-  private createConnection() {
-    const conn = new RebirthDBConnection(this.servers[0], this.connParam);
-    this.persistConnection(conn);
+  private setHealthy(healthy: boolean | undefined) {
+    if (typeof healthy === 'undefined') {
+      this.healthy = undefined;
+    } else if (healthy !== this.healthy && typeof healthy !== 'undefined') {
+      this.healthy = healthy;
+      this.emit('healthy', healthy);
+    }
+  }
+
+  private async createConnection() {
+    const conn = new RebirthDBConnection(this.server, this.connParam);
     this.connections = [...this.connections, conn];
-    return conn;
+    return await this.persistConnection(conn);
   }
 
   private subscribeToConnection(conn: RebirthDBConnection) {
-    if (conn.getSocket().status === 'open') {
+    if (conn.isConnected) {
       const size = this.getOpenConnections().length;
       this.emit('size', size);
-      if (size > 0) {
-        this.emit('healthy', true);
-      }
+      this.setHealthy(true);
       this.checkIdle(conn);
       conn
         .on('close', () => {
           const size1 = this.getOpenConnections().length;
           this.emit('size', size1);
           if (size === 0) {
-            this.emit('healthy', false);
+            this.setHealthy(false);
+            // if no connections are available need to remove all connections and start over
+            // so it won't try to reconnect all connections at once
+            this.drain({}, false).then(() => this.initConnections());
           }
           conn.removeAllListeners();
           this.persistConnection(conn);
@@ -158,11 +204,11 @@ export class RebirthDBConnectionPool extends EventEmitter
     conn.removeAllListeners();
     conn.close();
     this.connections = this.connections.filter(c => c !== conn);
-    this.emit('size', this.connections.length);
+    this.emit('size', this.getOpenConnections().length);
   }
 
   private checkIdle(conn: RebirthDBConnection) {
-    if (!conn.getSocket().runningQueries.length) {
+    if (!conn.numOfQueries) {
       this.emit('available-size', this.getIdleConnections().length);
       this.timers.set(
         conn,
@@ -189,34 +235,30 @@ export class RebirthDBConnectionPool extends EventEmitter
 
   private async persistConnection(conn: RebirthDBConnection) {
     let exp = 0;
-    while (this.servers.length > 0 && conn.getSocket().status !== 'open') {
+    while (this.connections.includes(conn) && !conn.isConnected) {
       try {
-        await conn.reconnect(
-          { noreplyWait: false },
-          this.servers[this.nextServerConn]
-        );
+        await conn.reconnect();
       } catch (err) {
         this.reportError(err);
+        if (this.connections.length > this.buffer) {
+          // if trying to go above buffer and failing just use one of the open connections
+          this.closeConnection(conn);
+          break;
+        }
+        if (typeof this.healthy === 'undefined') {
+          this.setHealthy(false);
+        }
         await promisify(setTimeout)(2 ** exp * this.timeoutError);
         exp = Math.min(exp + 1, this.maxExponent);
       }
-      this.nextServerConn = (this.nextServerConn + 1) % this.servers.length;
     }
-    if (!this.servers.length) {
+    if (!this.connections.includes(conn)) {
+      // draining/removing
       await conn.close();
       return;
     }
     this.subscribeToConnection(conn);
-  }
-
-  private async initDiscovery() {
-    // this.discoveryCursor = await r
-    //   .db('rethinkdb')
-    //   .table('server_status')
-    //   .changes({ includeInitial: true })
-    //   .run();
-    // return this.discoveryCursor.eachAsync(server => {
-    // })
+    return conn;
   }
 
   private reportError(err: Error) {
@@ -229,13 +271,11 @@ export class RebirthDBConnectionPool extends EventEmitter
   }
 
   private getOpenConnections() {
-    return this.connections.filter(conn => conn.getSocket().status === 'open');
+    return this.connections.filter(conn => conn.isConnected);
   }
 
   private getIdleConnections() {
-    return this.getOpenConnections().filter(
-      conn => !conn.getSocket().runningQueries.length
-    );
+    return this.getOpenConnections().filter(conn => !conn.numOfQueries);
   }
 }
 
@@ -243,7 +283,5 @@ function minQueriesRunning(
   acc: RebirthDBConnection,
   next: RebirthDBConnection
 ) {
-  return acc.getSocket().runningQueries <= next.getSocket().runningQueries
-    ? acc
-    : next;
+  return acc.numOfQueries <= next.numOfQueries ? acc : next;
 }

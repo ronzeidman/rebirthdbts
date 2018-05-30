@@ -1,5 +1,5 @@
 import { RebirthDBConnection } from '../connection/connection';
-import { RebirthDBConnectionPool } from '../connection/connection-pool';
+import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
 import { ConnectionOptions, R } from '../types';
 import { toQuery } from './query';
@@ -26,7 +26,11 @@ export const r: R = expr as any;
     await c.reconnect();
     return c;
   }
-  const cpool = new RebirthDBConnectionPool(options);
+  if ((r as any).pool) {
+    ((r as any).pool as MasterConnectionPool).drain();
+  }
+  const cpool = new MasterConnectionPool(options);
+  cpool.initServers();
   await cpool.waitForHealthy();
   (r as any).pool = cpool;
 };

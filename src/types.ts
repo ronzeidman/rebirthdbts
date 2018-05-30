@@ -25,10 +25,7 @@ export interface ConnectionOptions {
   timeoutGb?: number; // default = 60*60*1000
   maxExponent?: number; // default 6
   silent?: boolean; // default = false
-  servers?: Array<{
-    host: string;
-    port?: number; // default 28015
-  }>; // default [{host: 'localhost', port: 28015}]
+  servers?: Array<Partial<RServer>>; // default [{host: 'localhost', port: 28015}]
   log?: (message: string) => any; // default undefined;
 }
 
@@ -259,14 +256,25 @@ export interface Connection extends EventEmitter {
   server(): Promise<ServerInfo>;
 }
 
+export interface MasterPool extends EventEmitter {
+  drain(options?: { noreplyWait: boolean }): Promise<void>;
+  getLength(): number;
+  getAvailableLength(): number;
+  getPools(): ConnectionPool[];
+}
 export interface ConnectionPool extends EventEmitter {
   drain(options?: { noreplyWait: boolean }): Promise<void>;
   getLength(): number;
   getAvailableLength(): number;
-  getPools(): Connection[];
+  getConnections(): Connection[];
 }
 
 export type RValue<T = any> = RDatum<T> | T;
+
+export interface RServer {
+  host: string;
+  port: number;
+}
 
 export interface RCursor<T = any> {
   next(): Promise<T>;
@@ -296,10 +304,9 @@ export interface RQuery<T = any> {
     options: RunOptions & { immidiateReturn: true }
   ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
   run(
-    connection: Connection,
+    connection?: Connection | RunOptions & { immidiateReturn?: false },
     noptions?: RunOptions & { immidiateReturn?: false }
   ): Promise<T>;
-  run(options?: RunOptions & { immidiateReturn?: false }): Promise<T>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
@@ -962,7 +969,7 @@ export interface R {
   error(message?: RValue<string>): any;
   expr<T>(val: T): RDatum<T>;
   <T>(val: T): RDatum<T>;
-  js(js: RValue<string>, { timeout: number }): RDatum;
+  js(js: RValue<string>, options?: { timeout: number }): RDatum;
   json(json: RValue<string>): RDatum;
   http(url: RValue<string>, options?: HttpRequestOptions): RDatum;
   http(url: RValue<string>, options?: HTTPStreamRequestOptions): RStream;
@@ -1022,10 +1029,8 @@ export interface R {
   ): T extends RStream ? T : RDatum;
 
   connect(options: ConnectionOptions & { pool: false }): Promise<Connection>;
-  connect(
-    options: ConnectionOptions & { pool?: true }
-  ): Promise<ConnectionPool>;
-  getPoolMaster(): ConnectionPool | undefined;
+  connect(options: ConnectionOptions & { pool?: true }): Promise<MasterPool>;
+  getPoolMaster(): MasterPool | undefined;
 }
 
 //#endregion operations

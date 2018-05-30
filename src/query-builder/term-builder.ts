@@ -1,5 +1,5 @@
 import { RebirthDBConnection } from '../connection/connection';
-import { RebirthDBConnectionPool } from '../connection/connection-pool';
+import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
 import { ComplexTermJson, TermJson } from '../internal-types';
 import { RunOptions } from '../types';
@@ -85,7 +85,7 @@ export const runQueryFunc = (term: TermJson) => {
     options?: RunOptions
   ) => {
     const c = conn instanceof RebirthDBConnection ? conn : undefined;
-    const cpool = r.getPoolMaster() as RebirthDBConnectionPool;
+    const cpool = r.getPoolMaster() as MasterConnectionPool;
     const opt = conn instanceof RebirthDBConnection ? options : conn;
     if (!c && !cpool) {
       throw new RebirthDBError(

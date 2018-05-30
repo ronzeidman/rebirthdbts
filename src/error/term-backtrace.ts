@@ -83,18 +83,12 @@ export function backtraceTerm(
       const parsedParams = params
         .map((a, i) => parseArg(a, i + 2))
         .reduce(joinMultiArray, ['', '']);
+      const parsedFunc = parseArg(func, 0);
+      const parsedCaller = parseArg(caller, 1, undefined, true);
       return getMarked(
         parsedParams[0]
-          ? combineMarks`${parseArg(
-              caller,
-              1,
-              undefined,
-              true
-            )}.do(${parsedParams}, ${parseArg(func, 0)})`
-          : combineMarks`${parseArg(caller, 1, undefined, true)}.do(${parseArg(
-              func,
-              0
-            )})`,
+          ? combineMarks`${parsedCaller}.do(${parsedParams}, ${parsedFunc})`
+          : combineMarks`${parsedCaller}.do(${parsedFunc})`,
         backtrace
       );
     }
@@ -149,20 +143,22 @@ export function backtraceTerm(
         );
       }
       const [caller, ...params] = args;
+      const hasParams = params.length > 0;
       const parsedParams = [...params]
         .map((a, i) => parseArg(a, i + 1))
         .reduce(joinMultiArray, ['', '']);
+      const parsedCaller = parseArg(caller, 0);
+      const parsedOptarg = optarg
+        ? backtraceObject(optarg, backtrace)
+        : undefined;
       return getMarked(
-        optarg
-          ? hasArgs
-            ? combineMarks`${parseArg(caller, 0)}.${
+        parsedOptarg
+          ? hasParams
+            ? combineMarks`${parsedCaller}.${
                 func[1]
-              }(${parsedParams}, ${backtraceObject(optarg, backtrace)})`
-            : combineMarks`${parseArg(caller, 0)}.${func[1]}(${backtraceObject(
-                optarg,
-                backtrace
-              )})`
-          : combineMarks`${parseArg(caller, 0)}.${func[1]}(${parsedParams})`,
+              }(${parsedParams}, ${parsedOptarg})`
+            : combineMarks`${parsedCaller}.${func[1]}(${parsedOptarg})`
+          : combineMarks`${parsedCaller}.${func[1]}(${parsedParams})`,
         backtrace
       );
     }

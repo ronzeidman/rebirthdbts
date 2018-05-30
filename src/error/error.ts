@@ -6,7 +6,7 @@ export interface RebirthDBErrorArgs {
   errorCode?: number;
   term?: TermJson;
   query?: QueryJson;
-  backtrace?: number[];
+  backtrace?: Array<number | string>;
   responseType?: Response.ResponseType;
   responseErrorType?: Response.ErrorType;
 }
@@ -46,7 +46,7 @@ function buildMessage(
   msg: string,
   query?: QueryJson,
   term?: TermJson,
-  backtrace?: number[]
+  backtrace?: Array<number | string>
 ) {
   const t = query ? query[1] : term;
   if (t) {
