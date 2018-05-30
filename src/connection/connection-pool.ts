@@ -3,12 +3,15 @@ import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import {
-  Connection,
+  Changes,
   ConnectionOptions,
   ConnectionPool,
+  RCursor,
   RunOptions
 } from '../types';
 import { RebirthDBConnection } from './connection';
+
+const REBALANCE_EVERY = 30 * 1000;
 
 export class RebirthDBConnectionPool extends EventEmitter
   implements ConnectionPool {
@@ -19,12 +22,12 @@ export class RebirthDBConnectionPool extends EventEmitter
   private maxExponent: number;
   private silent: boolean;
   private discovery: boolean;
+  private discoveryCursor?: RCursor<Changes<any>>;
   private log: (message: string) => any;
   private servers: Array<{ host: string; port: number }>;
 
   private connParam: any;
 
-  private idleTimer?: NodeJS.Timer;
   private connections: RebirthDBConnection[] = [];
   private timers = new Map<RebirthDBConnection, NodeJS.Timer>();
   private nextServerConn = 0;
@@ -77,7 +80,7 @@ export class RebirthDBConnectionPool extends EventEmitter
           }
         });
       }
-    });
+    }).then(() => (this.discovery ? this.initDiscovery() : undefined));
   }
 
   public async drain({ noreplyWait = false } = {}) {
@@ -115,7 +118,7 @@ export class RebirthDBConnectionPool extends EventEmitter
       if (!openConnections.length) {
         throw this.reportError(new RebirthDBError('No connections available'));
       }
-      return openConnections.reduce(min).query(term, globalArgs);
+      return openConnections.reduce(minQueriesRunning).query(term, globalArgs);
     }
     return idleConnections[0].query(term, globalArgs);
   }
@@ -150,7 +153,8 @@ export class RebirthDBConnectionPool extends EventEmitter
     }
   }
 
-  private closeConnection(conn: Connection) {
+  private closeConnection(conn: RebirthDBConnection) {
+    this.removeIdleTimer(conn);
     conn.removeAllListeners();
     conn.close();
     this.connections = this.connections.filter(c => c !== conn);
@@ -171,8 +175,16 @@ export class RebirthDBConnectionPool extends EventEmitter
         }, this.timeoutGb)
       );
     } else {
-      this.timers.delete(conn);
+      this.removeIdleTimer(conn);
     }
+  }
+
+  private removeIdleTimer(conn: RebirthDBConnection) {
+    const timer = this.timers.get(conn);
+    if (timer) {
+      clearTimeout(timer);
+    }
+    this.timers.delete(conn);
   }
 
   private async persistConnection(conn: RebirthDBConnection) {
@@ -197,6 +209,16 @@ export class RebirthDBConnectionPool extends EventEmitter
     this.subscribeToConnection(conn);
   }
 
+  private async initDiscovery() {
+    // this.discoveryCursor = await r
+    //   .db('rethinkdb')
+    //   .table('server_status')
+    //   .changes({ includeInitial: true })
+    //   .run();
+    // return this.discoveryCursor.eachAsync(server => {
+    // })
+  }
+
   private reportError(err: Error) {
     this.emit('error', err);
     this.log(err.toString());
@@ -217,7 +239,10 @@ export class RebirthDBConnectionPool extends EventEmitter
   }
 }
 
-function min(acc: RebirthDBConnection, next: RebirthDBConnection) {
+function minQueriesRunning(
+  acc: RebirthDBConnection,
+  next: RebirthDBConnection
+) {
   return acc.getSocket().runningQueries <= next.getSocket().runningQueries
     ? acc
     : next;
