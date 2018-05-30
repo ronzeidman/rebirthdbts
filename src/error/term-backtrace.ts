@@ -1,37 +1,11 @@
-import { funcConfig, rConsts } from './config';
-import { RebirthDBConnection } from './connection';
-import { QueryJson, TermJson } from './internal-types';
-import { Query, Term } from './proto/ql2';
-import { parseParam } from './query-builder';
-
-export function parseOptarg(obj: object) {
-  return Object.entries(obj).reduce(
-    (acc, [key, value]) => ({
-      ...acc,
-      [camelToSnake(key)]: parseParam(value)
-    }),
-    {}
-  );
-}
-
-export function camelToSnake(name: string) {
-  return name.replace(/([A-Z])/g, x => `_${x.toLowerCase()}`);
-}
-
-export function count(acc: number, next: any) {
-  return acc + 1;
-}
-
-export function min(acc: RebirthDBConnection, next: RebirthDBConnection) {
-  return acc.getSocket().runningQueries <= next.getSocket().runningQueries
-    ? acc
-    : next;
-}
+import { QueryJson, TermJson } from '../internal-types';
+import { Query, Term } from '../proto/ql2';
+import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
 export function parseTerm(
   term?: TermJson,
   head = true,
-  backtrace?: number[]
+  backtrace?: Array<number | string>
 ): [string, string] {
   const parseArg = (
     arg: TermJson,
@@ -48,24 +22,23 @@ export function parseTerm(
     return getMarked('');
   }
   if (!Array.isArray(term)) {
-    let termStr = '';
+    let termStr: [string, string] = ['', ''];
     if (term === null) {
-      termStr = 'null';
+      termStr = getMarked('null');
     } else if (typeof term === 'object') {
-      termStr =
-        '{ ' +
-        Object.entries(term)
-          .map(([key, val]) => `${key}: ${parseTerm(val, false)[0]}`)
-          .join(', ') +
-        ' }';
+      termStr = parseOptarg(term, backtrace);
     } else if (typeof term === 'string') {
-      termStr = `"${term}"`;
+      termStr = getMarked(`"${term}"`);
     } else {
-      termStr = term.toString();
+      termStr = getMarked(term.toString());
     }
-    return getMarked(head ? `r.expr(${termStr})` : termStr, backtrace);
+    return getMarked(
+      head ? combineMarks`r.expr(${termStr})` : termStr,
+      backtrace
+    );
   }
   const [type, args, optarg] = term;
+  const hasArgs = !!args && !!args.length;
   switch (type) {
     case Term.TermType.MAKE_ARRAY: {
       if (!args) {
@@ -131,7 +104,7 @@ export function parseTerm(
       }
       const [caller, ...params] = args;
       if (Array.isArray(caller)) {
-        const parsedParams = [...params, ...(optarg ? [optarg] : [])]
+        const parsedParams = [...params]
           .map((a, i) => parseArg(a, i + 1))
           .reduce(joinMultiArray, ['', '']);
         return getMarked(
@@ -146,32 +119,69 @@ export function parseTerm(
       if (c) {
         return getMarked(`r.${c[1]}`, backtrace);
       }
-      const func = funcConfig.find(conf => conf[0] === type);
+      const func = termConfig.find(conf => conf[0] === type);
       if (!func) {
+        const rfunc = rConfig.find(conf => conf[0] === type);
+        if (rfunc) {
+          const rparsedParams = [...(args || [])]
+            .map(parseArg)
+            .reduce(joinMultiArray, ['', '']);
+          return getMarked(
+            optarg
+              ? hasArgs
+                ? combineMarks`r.${rfunc[1]}(${rparsedParams}, ${parseOptarg(
+                    optarg,
+                    backtrace
+                  )})`
+                : combineMarks`r.${rfunc[1]}(${parseOptarg(optarg, backtrace)})`
+              : combineMarks`r.${rfunc[1]}(${rparsedParams})`,
+            backtrace
+          );
+        }
         return getMarked('');
       }
       if (!args) {
         return getMarked(
-          combineMarks`r.${func[1]}(${parseTerm(optarg, false)})`,
+          combineMarks`r.${func[1]}(${parseOptarg(optarg, backtrace)})`,
           backtrace
         );
       }
       const [caller, ...params] = args;
-      if (Array.isArray(caller)) {
-        const parsedParams = [...params, ...(optarg ? [optarg] : [])]
-          .map((a, i) => parseArg(a, i + 1))
-          .reduce(joinMultiArray, ['', '']);
-        return getMarked(
-          combineMarks`${parseArg(caller, 0)}.${func[1]}(${parsedParams})`,
-          backtrace
-        );
-      }
-      const parsedArgs = [...args, ...(optarg ? [optarg] : [])]
-        .map(parseArg)
+      const parsedParams = [...params]
+        .map((a, i) => parseArg(a, i + 1))
         .reduce(joinMultiArray, ['', '']);
-      return getMarked(combineMarks`r.${func[1]}(${parsedArgs})`, backtrace);
+      return getMarked(
+        optarg
+          ? hasArgs
+            ? combineMarks`${parseArg(caller, 0)}.${
+                func[1]
+              }(${parsedParams}, ${parseOptarg(optarg, backtrace)})`
+            : combineMarks`${parseArg(caller, 0)}.${func[1]}(${parseOptarg(
+                optarg,
+                backtrace
+              )})`
+          : combineMarks`${parseArg(caller, 0)}.${func[1]}(${parsedParams})`,
+        backtrace
+      );
     }
   }
+}
+
+function parseOptarg(optarg: any, backtrace?: Array<number | string>) {
+  const [param, ...nextB]: any = backtrace || [];
+  return combineMarks`{ ${Object.entries(optarg)
+    .map(([key, val]) => {
+      const next = param === key ? nextB : undefined;
+      return getMarked(
+        combineMarks`${snakeToCamel(key)}: ${parseTerm(val, false, next)}`,
+        next
+      );
+    })
+    .reduce(joinMultiArray, ['', ''])} }`;
+}
+
+function snakeToCamel(name: string) {
+  return name.replace(/(_[a-z])/g, x => x.charAt(1).toUpperCase());
 }
 
 export function parseQuery(
@@ -191,7 +201,7 @@ export function parseQuery(
   }
 }
 
-function nextBacktrace(i: number, backtrace?: number[]) {
+function nextBacktrace(i: number, backtrace?: Array<number | string>) {
   if (backtrace && backtrace[0] === i) {
     return backtrace.slice(1);
   }
@@ -205,7 +215,7 @@ function joinMultiArray(acc: string[], next: string[]): [string, string] {
 
 function getMarked(
   str: string | [string, string],
-  backtrace?: number[]
+  backtrace?: Array<number | string>
 ): [string, string] {
   const s = Array.isArray(str) ? str[0] : str;
   const emptyMarks = Array.isArray(str) ? str[1] : ' '.repeat(str.length);

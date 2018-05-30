@@ -1,13 +1,13 @@
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
-import { Cursor } from './cursor';
-import { RebirthDBError } from './error';
-import { NULL_BUFFER } from './handshake';
-import { parseOptarg } from './helper';
-import { QueryJson, TermJson } from './internal-types';
-import { Query, Response, Term } from './proto/ql2';
+import { RebirthDBError } from '../error/error';
+import { QueryJson, TermJson } from '../internal-types';
+import { Query, Response, Term } from '../proto/ql2';
+import { parseOptarg } from '../query-builder/param-parser';
+import { Cursor } from '../response/cursor';
+import { Connection, RunOptions, ServerInfo } from '../types';
+import { NULL_BUFFER } from './handshake-utils';
 import { RebirthDBSocket } from './socket';
-import { Connection, RunOptions, ServerInfo } from './types';
 
 const tableQueries = [
   Term.TermType.TABLE_CREATE,

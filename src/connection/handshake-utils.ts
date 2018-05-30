@@ -1,7 +1,7 @@
 import { createHash, createHmac, pbkdf2, randomBytes } from 'crypto';
 import { promisify } from 'util';
-import { RebirthDBError } from './error';
-import { VersionDummy } from './proto/ql2';
+import { RebirthDBError } from '../error/error';
+import { VersionDummy } from '../proto/ql2';
 
 export const NULL_BUFFER = new Buffer('\0', 'binary');
 const PROTOCOL_VERSION = 0;
@@ -29,31 +29,6 @@ export function buildAuthBuffer(user: string) {
   return {
     randomString,
     authBuffer: Buffer.concat([versionBuffer, mainBuffer, NULL_BUFFER])
-  };
-}
-
-function handleMessage(
-  func: (message: any) => Promise<void>,
-  reject: (error: Error) => void
-) {
-  let prevMessage = '';
-  return (data: Buffer) => {
-    prevMessage += data.toString('utf8');
-    const messages = prevMessage.split('\0');
-    prevMessage = messages.pop() || '';
-    let msg: string | undefined;
-    while ((msg = messages.pop())) {
-      try {
-        const jsonMsg = JSON.parse(msg);
-        if (jsonMsg.success) {
-          func(msg).catch(reject);
-        } else {
-          reject(new RebirthDBError(jsonMsg.error, jsonMsg.error_code));
-        }
-      } catch {
-        reject(new RebirthDBError(msg));
-      }
-    }
   };
 }
 

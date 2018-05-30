@@ -490,6 +490,11 @@ export interface RDatum<T = any> extends RQuery<T> {
   ceil(): T extends number ? RDatum<number> : never;
   floor(): T extends number ? RDatum<number> : never;
   // Works only for bool
+  branch(
+    trueBranch: T,
+    falseBranchOrTest: any,
+    ...branches: any[]
+  ): T extends boolean ? RDatum<number> : never;
   and(
     ...bool: Array<RDatum<boolean>>
   ): T extends boolean ? RDatum<number> : never;
@@ -835,8 +840,8 @@ export interface R {
   october: RValue;
   november: RValue;
   december: RValue;
-  desc(indexName: string): any;
-  asc(indexName: string): any;
+  desc(indexName: RValue<string>): any;
+  asc(indexName: RValue<string>): any;
   grant(
     userName: string,
     options?: {
@@ -957,7 +962,7 @@ export interface R {
   error(message?: RValue<string>): any;
   expr<T>(val: T): RDatum<T>;
   <T>(val: T): RDatum<T>;
-  js(js: RValue<string>): RDatum;
+  js(js: RValue<string>, { timeout: number }): RDatum;
   json(json: RValue<string>): RDatum;
   http(url: RValue<string>, options?: HttpRequestOptions): RDatum;
   http(url: RValue<string>, options?: HTTPStreamRequestOptions): RStream;

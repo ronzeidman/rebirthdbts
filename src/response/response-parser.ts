@@ -1,4 +1,4 @@
-import { RunOptions } from './types';
+import { RunOptions } from '../types';
 
 export function getNativeTypes(
   obj: any,

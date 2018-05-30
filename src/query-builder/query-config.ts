@@ -1,67 +1,16 @@
-import { Term } from './proto/ql2';
+import { Term } from '../proto/ql2';
 
 // [TermType, funcName, min arg number, max arg number (-1 = infinite), can have optional args]
 // for operations directly under 'r' the max arg number can be increased by 1 since there is no `this`
 
-export const rConsts = [
-  [Term.TermType.MINVAL, 'minval'],
-  [Term.TermType.MAXVAL, 'maxval'],
-  [Term.TermType.MONDAY, 'monday'],
-  [Term.TermType.TUESDAY, 'tuesday'],
-  [Term.TermType.WEDNESDAY, 'wednesday'],
-  [Term.TermType.THURSDAY, 'thursday'],
-  [Term.TermType.FRIDAY, 'friday'],
-  [Term.TermType.SATURDAY, 'saturday'],
-  [Term.TermType.SUNDAY, 'sunday'],
-  [Term.TermType.JANUARY, 'january'],
-  [Term.TermType.FEBRUARY, 'february'],
-  [Term.TermType.MARCH, 'march'],
-  [Term.TermType.APRIL, 'april'],
-  [Term.TermType.MAY, 'may'],
-  [Term.TermType.JUNE, 'june'],
-  [Term.TermType.JULY, 'july'],
-  [Term.TermType.AUGUST, 'august'],
-  [Term.TermType.SEPTEMBER, 'september'],
-  [Term.TermType.OCTOBER, 'october'],
-  [Term.TermType.NOVEMBER, 'november'],
-  [Term.TermType.DECEMBER, 'december']
-];
+export type TermConfig = [Term.TermType, string, number, number, boolean];
 
-export const funcConfig: Array<
-  [Term.TermType, string, number, number, boolean]
-> = [
-  // DATUM arg parse
-  // MAKE_ARRAY arg parse
-  // MAKE_OBJ arg parse
-  // VAR - function parsing
-  // FUNC - function parsing
-  // FUNCALL - r.do - special parsing
-  // IMPLICIT_VAR - r.row
-  // MINVAL - r.minval
-  // MAXVAL - r.maxval
-  // [Term.TermType.MONDAY, '', -1, false],
-  // [Term.TermType.TUESDAY, '', -1, false],
-  // [Term.TermType.WEDNESDAY, '', -1, false],
-  // [Term.TermType.THURSDAY, '', -1, false],
-  // [Term.TermType.FRIDAY, '', -1, false],
-  // [Term.TermType.SATURDAY, '', -1, false],
-  // [Term.TermType.SUNDAY, '', -1, false],
-  // [Term.TermType.JANUARY, '', -1, false],
-  // [Term.TermType.FEBRUARY, '', -1, false],
-  // [Term.TermType.MARCH, '', -1, false],
-  // [Term.TermType.APRIL, '', -1, false],
-  // [Term.TermType.MAY, '', -1, false],
-  // [Term.TermType.JUNE, '', -1, false],
-  // [Term.TermType.JULY, '', -1, false],
-  // [Term.TermType.AUGUST, '', -1, false],
-  // [Term.TermType.SEPTEMBER, '', -1, false],
-  // [Term.TermType.OCTOBER, '', -1, false],
-  // [Term.TermType.NOVEMBER, '', -1, false],
-  // [Term.TermType.DECEMBER, '', -1, false],
-  [Term.TermType.JAVASCRIPT, 'js', 1, 1, false],
+export const bracket: TermConfig = [Term.TermType.BRACKET, '', 1, 1, false];
+export const funcall: TermConfig = [Term.TermType.FUNCALL, 'do', 1, -1, false];
+
+export const termConfig: TermConfig[] = [
   [Term.TermType.UUID, 'uuid', 1, 1, false],
   [Term.TermType.HTTP, 'http', 1, 1, true],
-  [Term.TermType.ERROR, 'error', 1, 1, false],
   [Term.TermType.TABLE, 'table', 1, 1, true],
   [Term.TermType.GET, 'get', 1, 1, false],
   [Term.TermType.GET_ALL, 'getAll', 1, -1, true],
@@ -95,13 +44,11 @@ export const funcConfig: Array<
   [Term.TermType.GET_FIELD, 'getField', 1, 1, false],
   [Term.TermType.KEYS, 'keys', 0, 0, false],
   [Term.TermType.VALUES, 'values', 0, 0, false],
-  [Term.TermType.OBJECT, 'object', -1, -1, false],
-  [Term.TermType.HAS_FIELDS, 'hasFields', -1, -1, false],
-  [Term.TermType.WITH_FIELDS, 'withFields', -1, -1, false],
-  [Term.TermType.PLUCK, 'pluck', -1, -1, false],
-  [Term.TermType.WITHOUT, 'without', -1, -1, false],
-  [Term.TermType.MERGE, 'merge', -1, -1, false],
-  // [Term.TermType.BETWEEN_DEPRECATED, '', -1, false],
+  [Term.TermType.HAS_FIELDS, 'hasFields', 1, -1, false],
+  [Term.TermType.WITH_FIELDS, 'withFields', 1, -1, false],
+  [Term.TermType.PLUCK, 'pluck', 1, -1, false],
+  [Term.TermType.WITHOUT, 'without', 1, -1, false],
+  [Term.TermType.MERGE, 'merge', 1, -1, false],
   [Term.TermType.BETWEEN, 'between', 2, 2, true],
   [Term.TermType.REDUCE, 'reduce', 1, 1, false],
   [Term.TermType.MAP, 'map', 1, -1, false],
@@ -114,7 +61,6 @@ export const funcConfig: Array<
   [Term.TermType.IS_EMPTY, 'isEmpty', 0, 0, false],
   [Term.TermType.UNION, 'union', 0, -1, true],
   [Term.TermType.NTH, 'nth', 1, 1, false],
-  // [Term.TermType.BRACKET, '', 1, 1, false],
   [Term.TermType.INNER_JOIN, 'innerJoin', 2, 2, false],
   [Term.TermType.OUTER_JOIN, 'outerJoin', 2, 2, false],
   [Term.TermType.EQ_JOIN, 'eqJoin', 2, 2, true],
@@ -125,14 +71,14 @@ export const funcConfig: Array<
   [Term.TermType.CHANGE_AT, 'changeAt', 2, 2, false],
   [Term.TermType.SPLICE_AT, 'spliceAt', 2, 2, false],
   [Term.TermType.COERCE_TO, 'coerceTo', 1, 1, false],
-  [Term.TermType.TYPE_OF, 'typeOf', 1, 1, false],
+  [Term.TermType.TYPE_OF, 'typeOf', 0, 0, false],
   [Term.TermType.UPDATE, 'update', 1, 1, true],
   [Term.TermType.DELETE, 'delete', 0, 0, true],
   [Term.TermType.REPLACE, 'replace', 1, 1, true],
   [Term.TermType.INSERT, 'insert', 1, 1, true],
-  [Term.TermType.TABLE_CREATE, 'tableCreate', 0, 1, true],
-  [Term.TermType.TABLE_DROP, 'tableDrop', 0, 1, false],
-  [Term.TermType.TABLE_LIST, 'tableList', 0, 1, false],
+  [Term.TermType.TABLE_CREATE, 'tableCreate', 1, 1, true],
+  [Term.TermType.TABLE_DROP, 'tableDrop', 1, 1, false],
+  [Term.TermType.TABLE_LIST, 'tableList', 0, 0, false],
   [Term.TermType.CONFIG, 'config', 0, 0, false],
   [Term.TermType.STATUS, 'status', 0, 0, false],
   [Term.TermType.WAIT, 'wait', 0, 0, true],
@@ -146,8 +92,7 @@ export const funcConfig: Array<
   [Term.TermType.INDEX_STATUS, 'indexStatus', 1, -1, false],
   [Term.TermType.INDEX_WAIT, 'indexWait', 1, -1, false],
   [Term.TermType.INDEX_RENAME, 'indexRename', 2, 2, true],
-  // [Term.TermType.FUNCALL, 'do', 1, -1, false], special implementation
-  [Term.TermType.BRANCH, 'branch', 3, -1, false],
+  [Term.TermType.BRANCH, 'branch', 2, -1, false],
   [Term.TermType.OR, 'or', 1, -1, false],
   [Term.TermType.AND, 'and', 1, -1, false],
   [Term.TermType.FOR_EACH, 'forEach', 1, 1, false],
@@ -157,11 +102,8 @@ export const funcConfig: Array<
   [Term.TermType.DOWNCASE, 'downcase', 0, 0, false],
   [Term.TermType.SAMPLE, 'sample', 1, 1, false],
   [Term.TermType.DEFAULT, 'default', 1, 1, false],
-  [Term.TermType.JSON, 'json', 1, 1, false],
-  [Term.TermType.ISO8601, 'ISO8601', 1, 1, true],
   [Term.TermType.TO_ISO8601, 'toISO8601', 0, 0, false],
   [Term.TermType.TO_EPOCH_TIME, 'toEpochTime', 0, 0, false],
-  [Term.TermType.NOW, 'now', 0, 0, false],
   [Term.TermType.IN_TIMEZONE, 'inTimezone', 1, 1, false],
   [Term.TermType.DURING, 'during', 2, 2, true],
   [Term.TermType.DATE, 'date', 0, 0, false],
@@ -175,8 +117,6 @@ export const funcConfig: Array<
   [Term.TermType.HOURS, 'hours', 0, 0, false],
   [Term.TermType.MINUTES, 'minutes', 0, 0, false],
   [Term.TermType.SECONDS, 'seconds', 0, 0, false],
-  [Term.TermType.TIME, 'time', 4, 7, false],
-  [Term.TermType.LITERAL, 'literal', 1, 1, false],
   [Term.TermType.GROUP, 'group', 0, -1, true],
   [Term.TermType.SUM, 'sum', 0, 1, false],
   [Term.TermType.AVG, 'avg', 0, 1, false],
@@ -186,31 +126,17 @@ export const funcConfig: Array<
   [Term.TermType.UNGROUP, 'ungroup', 0, 0, false],
   [Term.TermType.RANDOM, 'random', 0, 2, true],
   [Term.TermType.CHANGES, 'changes', 0, 0, true],
-  [Term.TermType.ARGS, 'args', 1, 1, false],
-  [Term.TermType.BINARY, 'binary', 1, 1, false],
   [Term.TermType.GEOJSON, 'geojson', 1, 1, false],
   [Term.TermType.TO_GEOJSON, 'toGeojson', 0, 0, false],
-  [Term.TermType.POINT, 'point', 2, 2, false],
-  [Term.TermType.LINE, 'line', 2, -1, false],
-  [Term.TermType.POLYGON, 'polygon', 2, -1, false],
   [Term.TermType.DISTANCE, 'distance', 2, 2, true],
   [Term.TermType.INTERSECTS, 'intersects', 2, 2, false],
   [Term.TermType.INCLUDES, 'includes', 1, 1, false],
-  [Term.TermType.CIRCLE, 'circle', 2, 2, true],
   [Term.TermType.GET_INTERSECTING, 'getIntersecting', 1, 1, true],
   [Term.TermType.FILL, 'fill', 0, 0, false],
   [Term.TermType.GET_NEAREST, 'getNearest', 1, 1, true],
   [Term.TermType.POLYGON_SUB, 'polygonSub', 1, 1, false],
   [Term.TermType.TO_JSON_STRING, 'toJSON', 1, 1, false],
-  [Term.TermType.TO_JSON_STRING, 'toJsonString', 1, 1, false],
-  // only under 'r'
-  [Term.TermType.DB, 'db', 0, 0, false],
-  [Term.TermType.DB_LIST, 'dbList', 0, 0, false],
-  [Term.TermType.DB_CREATE, 'dbCreate', 0, 0, false],
-  [Term.TermType.DB_DROP, 'dbDrop', 0, 0, false],
-  [Term.TermType.ASC, 'asc', 0, 0, false],
-  [Term.TermType.DESC, 'desc', 0, 0, false],
-  [Term.TermType.EPOCH_TIME, 'epochTime', 0, 0, false]
+  [Term.TermType.TO_JSON_STRING, 'toJsonString', 1, 1, false]
   // not documented
   // [Term.TermType.SET_WRITE_HOOK, 'setWriteHook', -1, -1, true],
   // [Term.TermType.GET_WRITE_HOOK, 'getWriteHoot', -1, -1, true],
@@ -220,4 +146,56 @@ export const funcConfig: Array<
   // [Term.TermType.BIT_NOT, 'bitNot', -1, -1, true],
   // [Term.TermType.BIT_SAL, 'bitShiftLeft', -1, -1, true],
   // [Term.TermType.BIT_SAR, 'bitShiftRight', -1, -1, true]
+];
+
+export const rConfig: TermConfig[] = [
+  [Term.TermType.DB, 'db', 1, 1, false],
+  [Term.TermType.DB_CREATE, 'dbCreate', 1, 1, false],
+  [Term.TermType.DB_DROP, 'dbDrop', 1, 1, false],
+  [Term.TermType.DB_LIST, 'dbList', 0, 0, false],
+  [Term.TermType.TABLE, 'table', 1, 1, true],
+  [Term.TermType.TABLE_CREATE, 'tableCreate', 1, 1, true],
+  [Term.TermType.TABLE_DROP, 'tableDrop', 1, 1, false],
+  [Term.TermType.TABLE_LIST, 'tableList', 0, 0, false],
+  [Term.TermType.ASC, 'asc', 1, 1, false],
+  [Term.TermType.DESC, 'desc', 1, 1, false],
+  [Term.TermType.EPOCH_TIME, 'epochTime', 1, 1, false],
+  [Term.TermType.NOW, 'now', 0, 0, false],
+  [Term.TermType.BINARY, 'binary', 1, 1, false],
+  [Term.TermType.ARGS, 'args', 1, 1, false],
+  [Term.TermType.TIME, 'time', 4, 7, false],
+  [Term.TermType.ISO8601, 'ISO8601', 1, 1, true],
+  [Term.TermType.ERROR, 'error', 1, 1, false],
+  [Term.TermType.JAVASCRIPT, 'js', 1, 1, true],
+  [Term.TermType.JSON, 'json', 1, 1, false],
+  [Term.TermType.POINT, 'point', 2, 2, false],
+  [Term.TermType.LINE, 'line', 2, -1, false],
+  [Term.TermType.POLYGON, 'polygon', 2, -1, false],
+  [Term.TermType.CIRCLE, 'circle', 2, 2, true],
+  [Term.TermType.LITERAL, 'literal', 0, 1, false],
+  [Term.TermType.OBJECT, 'object', 1, -1, false]
+];
+
+export const rConsts: Array<[Term.TermType, string]> = [
+  [Term.TermType.MINVAL, 'minval'],
+  [Term.TermType.MAXVAL, 'maxval'],
+  [Term.TermType.MONDAY, 'monday'],
+  [Term.TermType.TUESDAY, 'tuesday'],
+  [Term.TermType.WEDNESDAY, 'wednesday'],
+  [Term.TermType.THURSDAY, 'thursday'],
+  [Term.TermType.FRIDAY, 'friday'],
+  [Term.TermType.SATURDAY, 'saturday'],
+  [Term.TermType.SUNDAY, 'sunday'],
+  [Term.TermType.JANUARY, 'january'],
+  [Term.TermType.FEBRUARY, 'february'],
+  [Term.TermType.MARCH, 'march'],
+  [Term.TermType.APRIL, 'april'],
+  [Term.TermType.MAY, 'may'],
+  [Term.TermType.JUNE, 'june'],
+  [Term.TermType.JULY, 'july'],
+  [Term.TermType.AUGUST, 'august'],
+  [Term.TermType.SEPTEMBER, 'september'],
+  [Term.TermType.OCTOBER, 'october'],
+  [Term.TermType.NOVEMBER, 'november'],
+  [Term.TermType.DECEMBER, 'december']
 ];

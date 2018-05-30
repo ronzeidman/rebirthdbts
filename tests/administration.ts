@@ -3,7 +3,6 @@ import assert from 'assert';
 import { r } from '../src';
 import * as config from './config';
 import { uuid } from './util/common';
-r.connect(config);
 let dbName: string;
 let tableName: string;
 let result: any;
@@ -11,6 +10,7 @@ let pks: string[];
 
 it('Init for `administration.js`', async () => {
   try {
+    await r.connect(config);
     dbName = uuid();
     tableName = uuid();
 

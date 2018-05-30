@@ -1,6 +1,6 @@
-import { parseTerm } from './helper';
-import { QueryJson, TermJson } from './internal-types';
-import { Response } from './proto/ql2';
+import { QueryJson, TermJson } from '../internal-types';
+import { Response } from '../proto/ql2';
+import { parseTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
   errorCode?: number;
@@ -10,11 +10,16 @@ export interface RebirthDBErrorArgs {
   responseType?: Response.ResponseType;
   responseErrorType?: Response.ErrorType;
 }
+
+export function isRebirthDBError(error: any) {
+  return error instanceof RebirthDBError;
+}
+
 export class RebirthDBError extends Error {
   public errorCode?: number;
   private term?: TermJson;
   private query?: QueryJson;
-  private backtrace?: number[];
+  private backtrace?: Array<number | string>;
 
   constructor(
     public msg: string,
@@ -45,7 +50,10 @@ function buildMessage(
 ) {
   const t = query ? query[1] : term;
   if (t) {
-    msg = msg.substring(0, msg.length - 1) + ' in:';
+    msg =
+      msg.charAt(msg.length - 1) === '.'
+        ? msg.substring(0, msg.length - 1) + ' in:'
+        : msg;
     const [str, mark] = parseTerm(t, true, backtrace);
     msg += `\n${str}`;
     if (backtrace) {

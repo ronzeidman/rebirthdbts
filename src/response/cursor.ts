@@ -1,10 +1,10 @@
 import { inspect } from 'util';
-import { RebirthDBError } from './error';
-import { QueryJson } from './internal-types';
-import { Query, Response } from './proto/ql2';
+import { RebirthDBSocket } from '../connection/socket';
+import { RebirthDBError } from '../error/error';
+import { QueryJson } from '../internal-types';
+import { Query, Response } from '../proto/ql2';
+import { RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
-import { RebirthDBSocket } from './socket';
-import { RunOptions } from './types';
 
 export class Cursor {
   private position = 0;
@@ -23,8 +23,7 @@ export class Cursor {
   ) {}
 
   public async close() {
-    this.conn.sendQuery([Query.QueryType.STOP], this.token);
-    await this.conn.readNext(this.token);
+    this.conn.stopQuery(this.token);
   }
 
   public async next() {

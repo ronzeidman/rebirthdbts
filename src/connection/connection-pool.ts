@@ -1,15 +1,14 @@
 import { EventEmitter } from 'events';
 import { promisify } from 'util';
-import { RebirthDBConnection } from './connection';
-import { RebirthDBError } from './error';
-import { min } from './helper';
-import { TermJson } from './internal-types';
+import { RebirthDBError } from '../error/error';
+import { TermJson } from '../internal-types';
 import {
   Connection,
   ConnectionOptions,
   ConnectionPool,
   RunOptions
-} from './types';
+} from '../types';
+import { RebirthDBConnection } from './connection';
 
 export class RebirthDBConnectionPool extends EventEmitter
   implements ConnectionPool {
@@ -216,4 +215,10 @@ export class RebirthDBConnectionPool extends EventEmitter
       conn => !conn.getSocket().runningQueries.length
     );
   }
+}
+
+function min(acc: RebirthDBConnection, next: RebirthDBConnection) {
+  return acc.getSocket().runningQueries <= next.getSocket().runningQueries
+    ? acc
+    : next;
 }
