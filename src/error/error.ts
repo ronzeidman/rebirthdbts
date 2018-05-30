@@ -1,6 +1,6 @@
 import { QueryJson, TermJson } from '../internal-types';
 import { Response } from '../proto/ql2';
-import { parseTerm } from './term-backtrace';
+import { backtraceTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
   errorCode?: number;
@@ -54,7 +54,7 @@ function buildMessage(
       msg.charAt(msg.length - 1) === '.'
         ? msg.substring(0, msg.length - 1) + ' in:'
         : msg;
-    const [str, mark] = parseTerm(t, true, backtrace);
+    const [str, mark] = backtraceTerm(t, true, backtrace);
     msg += `\n${str}`;
     if (backtrace) {
       msg += `\n${mark}\n`;

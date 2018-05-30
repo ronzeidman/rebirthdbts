@@ -2,7 +2,7 @@ import { QueryJson, TermJson } from '../internal-types';
 import { Query, Term } from '../proto/ql2';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
-export function parseTerm(
+export function backtraceTerm(
   term?: TermJson,
   head = true,
   backtrace?: Array<number | string>
@@ -13,7 +13,7 @@ export function parseTerm(
     all?: any[],
     forceHead = false
   ) =>
-    parseTerm(
+    backtraceTerm(
       arg,
       forceHead || (!all && index === 0),
       nextBacktrace(index, backtrace)
@@ -26,7 +26,7 @@ export function parseTerm(
     if (term === null) {
       termStr = getMarked('null');
     } else if (typeof term === 'object') {
-      termStr = parseOptarg(term, backtrace);
+      termStr = backtraceObject(term, backtrace);
     } else if (typeof term === 'string') {
       termStr = getMarked(`"${term}"`);
     } else {
@@ -64,7 +64,7 @@ export function parseTerm(
         combineMarks`(${params.reduce(joinMultiArray, [
           '',
           ''
-        ])}) => ${parseTerm(
+        ])}) => ${backtraceTerm(
           (args as any)[1],
           true,
           nextBacktrace(1, backtrace)
@@ -129,11 +129,13 @@ export function parseTerm(
           return getMarked(
             optarg
               ? hasArgs
-                ? combineMarks`r.${rfunc[1]}(${rparsedParams}, ${parseOptarg(
+                ? combineMarks`r.${
+                    rfunc[1]
+                  }(${rparsedParams}, ${backtraceObject(optarg, backtrace)})`
+                : combineMarks`r.${rfunc[1]}(${backtraceObject(
                     optarg,
                     backtrace
                   )})`
-                : combineMarks`r.${rfunc[1]}(${parseOptarg(optarg, backtrace)})`
               : combineMarks`r.${rfunc[1]}(${rparsedParams})`,
             backtrace
           );
@@ -142,7 +144,7 @@ export function parseTerm(
       }
       if (!args) {
         return getMarked(
-          combineMarks`r.${func[1]}(${parseOptarg(optarg, backtrace)})`,
+          combineMarks`r.${func[1]}(${backtraceObject(optarg, backtrace)})`,
           backtrace
         );
       }
@@ -155,8 +157,8 @@ export function parseTerm(
           ? hasArgs
             ? combineMarks`${parseArg(caller, 0)}.${
                 func[1]
-              }(${parsedParams}, ${parseOptarg(optarg, backtrace)})`
-            : combineMarks`${parseArg(caller, 0)}.${func[1]}(${parseOptarg(
+              }(${parsedParams}, ${backtraceObject(optarg, backtrace)})`
+            : combineMarks`${parseArg(caller, 0)}.${func[1]}(${backtraceObject(
                 optarg,
                 backtrace
               )})`
@@ -167,13 +169,13 @@ export function parseTerm(
   }
 }
 
-function parseOptarg(optarg: any, backtrace?: Array<number | string>) {
+function backtraceObject(optarg: any, backtrace?: Array<number | string>) {
   const [param, ...nextB]: any = backtrace || [];
   return combineMarks`{ ${Object.entries(optarg)
     .map(([key, val]) => {
       const next = param === key ? nextB : undefined;
       return getMarked(
-        combineMarks`${snakeToCamel(key)}: ${parseTerm(val, false, next)}`,
+        combineMarks`${snakeToCamel(key)}: ${backtraceTerm(val, false, next)}`,
         next
       );
     })
@@ -184,14 +186,14 @@ function snakeToCamel(name: string) {
   return name.replace(/(_[a-z])/g, x => x.charAt(1).toUpperCase());
 }
 
-export function parseQuery(
+export function backtraceQuery(
   query: QueryJson,
   backtrace?: number[]
 ): [string] | [string, string] {
   const [type, term, optarg] = query;
   switch (type) {
     case Query.QueryType.START:
-      return parseTerm(term, true); // `${parseTerm(term)}.run(${parseTerm(optarg, false)})`
+      return backtraceTerm(term, true); // `${backtraceTerm(term)}.run(${backtraceObject(optarg)})`
     case Query.QueryType.SERVER_INFO:
       return ['conn.server()'];
     case Query.QueryType.NOREPLY_WAIT:
