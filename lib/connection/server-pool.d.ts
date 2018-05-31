@@ -1,10 +1,11 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
-import { ConnectionOptions, ConnectionPool, RServer, RunOptions } from '../types';
+import { ConnectionPool, RConnectionOptions, RServerConnectionOptions, RunOptions } from '../types';
 import { RebirthDBConnection } from './connection';
+import { RNConnOpts } from './socket';
 export declare class ServerConnectionPool extends EventEmitter implements ConnectionPool {
-    readonly server: RServer;
+    readonly server: RNConnOpts;
     private healthy;
     private buffer;
     private max;
@@ -16,10 +17,7 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     private connParam;
     private connections;
     private timers;
-    constructor({host, port}?: {
-        host?: string;
-        port?: number;
-    }, {db, user, password, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: ConnectionOptions);
+    constructor(connectionOptions: RServerConnectionOptions, {db, user, password, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RConnectionOptions);
     initConnections(): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;

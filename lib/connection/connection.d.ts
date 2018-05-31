@@ -1,10 +1,12 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
-import { Connection, RunOptions, ServerInfo } from '../types';
+import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
 export declare class RebirthDBConnection extends EventEmitter implements Connection {
+    private connectionOptions;
     clientPort: number;
     clientAddress: string;
+    private options;
     private socket;
     private timeout;
     private pingInterval;
@@ -12,10 +14,7 @@ export declare class RebirthDBConnection extends EventEmitter implements Connect
     private log;
     private pingTimer?;
     private db;
-    constructor({host, port}?: {
-        host?: string;
-        port?: number;
-    }, {db, user, password, timeout, pingInterval, silent, log}?: {
+    constructor(connectionOptions: RServerConnectionOptions, {db, user, password, timeout, pingInterval, silent, log}?: {
         db?: string;
         user?: string;
         password?: string;
@@ -31,9 +30,6 @@ export declare class RebirthDBConnection extends EventEmitter implements Connect
     }): Promise<void>;
     reconnect(options?: {
         noreplyWait: boolean;
-    }, {host, port}?: {
-        host?: string;
-        port?: number;
     }): Promise<this>;
     use(db: string): void;
     noreplyWait(): Promise<void>;

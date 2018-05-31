@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
-import { ConnectionOptions, MasterPool, RunOptions } from '../types';
+import { MasterPool, RPoolConnectionOptions, RunOptions } from '../types';
 import { ServerConnectionPool } from './server-pool';
 export declare class MasterConnectionPool extends EventEmitter implements MasterPool {
     private healthy;
@@ -18,7 +18,7 @@ export declare class MasterConnectionPool extends EventEmitter implements Master
     private serverPools;
     private connParam;
     private timers;
-    constructor({db, user, password, discovery, servers, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: ConnectionOptions);
+    constructor({db, user, password, discovery, servers, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RPoolConnectionOptions);
     initServers(serverNum?: number): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;

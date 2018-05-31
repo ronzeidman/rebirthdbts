@@ -1,10 +1,13 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
-import { SocketConnectOpts } from 'net';
+import { RServerConnectionOptions } from '..';
 import { QueryJson, ResponseJson } from '../internal-types';
-export declare class RebirthDBSocket extends EventEmitter {
-    port: number;
+export declare type RNConnOpts = RServerConnectionOptions & {
     host: string;
+    port: number;
+};
+export declare class RebirthDBSocket extends EventEmitter {
+    connectionOptions: RNConnOpts;
     readonly user: string;
     readonly password: Buffer;
     runningQueries: number[];
@@ -16,16 +19,13 @@ export declare class RebirthDBSocket extends EventEmitter {
     private buffer;
     private mode;
     private data;
-    constructor({port, host, user, password}?: {
-        port?: number;
-        host?: string;
+    private ca?;
+    constructor({connectionOptions, user, password}: {
+        connectionOptions: RNConnOpts;
         user?: string;
         password?: Buffer;
     });
-    connect(options?: Partial<SocketConnectOpts>, {host, port}?: {
-        host?: string;
-        port?: number;
-    }): Promise<void>;
+    connect(): Promise<void>;
     sendQuery(query: QueryJson, token?: number): number;
     stopQuery(token: number): void;
     readNext<T = ResponseJson>(token: number, timeout?: number): Promise<T>;
@@ -38,3 +38,4 @@ export declare class RebirthDBSocket extends EventEmitter {
     private setData(token, response?);
     private handleError(err);
 }
+export declare function setConnectionDefaults(connectionOptions: RServerConnectionOptions): RNConnOpts;

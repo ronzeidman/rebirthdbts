@@ -1,5 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
+import { TcpNetConnectOpts } from 'net';
+import { ConnectionOptions } from 'tls';
 export declare type Format = 'native' | 'raw';
 export declare type Durability = 'hard' | 'soft';
 export declare type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
@@ -9,7 +11,12 @@ export interface ServerInfo {
     name: string;
     proxy: boolean;
 }
-export interface ConnectionOptions {
+export declare type RServerConnectionOptions = (Partial<ConnectionOptions> & {
+    tls: boolean;
+}) | (Partial<TcpNetConnectOpts> & {
+    tls?: false;
+});
+export interface RBaseConnectionOptions {
     db?: string;
     user?: string;
     password?: string;
@@ -23,9 +30,20 @@ export interface ConnectionOptions {
     timeoutGb?: number;
     maxExponent?: number;
     silent?: boolean;
-    servers?: Array<Partial<RServer>>;
     log?: (message: string) => any;
+    [other: string]: any;
 }
+export declare type RPoolConnectionOptions = RBaseConnectionOptions & {
+    servers?: RServerConnectionOptions[];
+};
+export declare type RConnectionOptions = RBaseConnectionOptions & ({
+    servers: RServerConnectionOptions[];
+} | {
+    server: RServerConnectionOptions;
+} | {
+    host?: string;
+    port?: number;
+});
 export interface TableCreateOptions {
     primaryKey?: string;
     shards?: number;
@@ -705,10 +723,10 @@ export interface R {
     do<T>(arg1: RDatum, arg2: RDatum, func: (arg1: RDatum, arg2: RDatum) => T): T extends RStream ? T : RDatum;
     do<T>(arg1: RDatum, arg2: RDatum, arg3: RDatum, func: (arg1: RDatum, arg2: RDatum, arg3: RDatum) => T): T extends RStream ? T : RDatum;
     do<T>(arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum, func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T): T extends RStream ? T : RDatum;
-    connect(options: ConnectionOptions & {
+    connect(options: RConnectionOptions & {
         pool: false;
     }): Promise<Connection>;
-    connect(options?: ConnectionOptions & {
+    connect(options?: RConnectionOptions & {
         pool?: true;
     }): Promise<MasterPool>;
     getPoolMaster(): MasterPool | undefined;
