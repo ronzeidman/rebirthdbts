@@ -357,9 +357,15 @@ export interface RDatum<T = any> extends RQuery<T> {
   concatMap<Res = any, U = T extends Array<infer T1> ? T1 : never>(
     ...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>
   ): T extends any[] ? RDatum<Res[]> : never;
-  forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never>(
-    func: (res: RDatum<ONE>) => RDatum<WriteResult<U>>
-  ): T extends any[] ? RDatum<WriteResult<U>> : never;
+  forEach<
+    U = any,
+    ONE = T extends Array<infer T1> ? T1 : never,
+    RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<
+      WriteResult<U>
+    >
+  >(
+    func: (res: RDatum<ONE>) => RES
+  ): T extends any[] ? RES : never;
 
   withFields(
     ...fields: Array<RValue<string>>
@@ -508,7 +514,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   or(
     ...bool: Array<RDatum<boolean>>
   ): T extends boolean ? RDatum<number> : never;
-  not(): T extends boolean ? RDatum<number> : never;
+  not(): T extends boolean ? RDatum<boolean> : never;
   // Works only for Date
   inTimezone(timezone: string): T extends Date ? RDatum<Date> : never;
   timezone(): T extends Date ? RDatum<string> : never;
@@ -869,8 +875,8 @@ export interface R {
     >;
   }>;
 
-  dbCreate(dbName: string): RDatum<DBChangeResult>;
-  dbDrop(dbName: string): RDatum<DBChangeResult>;
+  dbCreate(dbName: RValue<string>): RDatum<DBChangeResult>;
+  dbDrop(dbName: RValue<string>): RDatum<DBChangeResult>;
   dbList(): RDatum<string[]>;
   db(dbName: string): RDatabase;
 

@@ -50,9 +50,9 @@ export function termBuilder(
     const maybeOptarg = args.length ? args.pop() : undefined;
     const optarg =
       hasOptarg &&
-      ((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
-        (argsLength > minArgs &&
-          !Array.isArray(maybeOptarg) &&
+      (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
+        argsLength > minArgs) &&
+        (!Array.isArray(maybeOptarg) &&
           typeof maybeOptarg === 'object' &&
           !isQuery(maybeOptarg)))
         ? maybeOptarg
