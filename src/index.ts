@@ -3,6 +3,10 @@ export * from './types';
 export { isRebirthDBError } from './error/error';
 export { isCursor } from './response/cursor';
 
+// STATUS:
+//  Fully working typescript driver!
+//  Rebuilt from scrach using the latest ES/TS features for readability and maintainability
+//  Drop-in replacement for rethinkdbdash with only some minor changes
 // NEW FEATURES:
 //  Closing a cursor actually works and throws on a cursor that's waiting in `await cursor.next()`
 //  isHealthy on pools and isConnected on a connection
