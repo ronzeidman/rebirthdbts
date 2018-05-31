@@ -57,6 +57,14 @@ export function termBuilder(
           !isQuery(maybeOptarg)))
         ? maybeOptarg
         : undefined;
+    if (hasOptarg && argsLength === maxArgsPlusOptarg && !optarg) {
+      throw new RebirthDBError(
+        `${numToString(
+          argsLength
+        )} argument of \`${termName}\` must be an object.`,
+        { term: currentTerm }
+      );
+    }
     if (maybeOptarg && !optarg) {
       args.push(maybeOptarg);
     }
@@ -106,3 +114,10 @@ export const expr = (arg: any) => {
   }
   return toQuery(parseParam(arg));
 };
+
+const numToStringArr = ['', 'First', 'Second', 'Third', 'Fourth', 'Fifth'];
+function numToString(num: number) {
+  return numToStringArr.map((_, i) => i).includes(num)
+    ? numToStringArr[num]
+    : num.toString();
+}
