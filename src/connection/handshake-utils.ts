@@ -1,7 +1,7 @@
 import { createHash, createHmac, pbkdf2, randomBytes } from 'crypto';
-import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { Version } from '../proto/enums';
+import { promisify } from 'util';
 
 export const NULL_BUFFER = new Buffer('\0', 'binary');
 const PROTOCOL_VERSION = 0;

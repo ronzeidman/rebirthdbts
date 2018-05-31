@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events';
+import { TcpNetConnectOpts } from 'net';
+import { ConnectionOptions } from 'tls';
 
 //#region optargs
 export type Format = 'native' | 'raw';
@@ -11,7 +13,12 @@ export interface ServerInfo {
   name: string;
   proxy: boolean;
 }
-export interface ConnectionOptions {
+
+export type RServerConnectionOptions =
+  | (Partial<ConnectionOptions> & { tls: boolean })
+  | (Partial<TcpNetConnectOpts> & { tls?: false });
+
+export interface RBaseConnectionOptions {
   db?: string; // default 'test'
   user?: string; // default 'admin'
   password?: string; // default ''
@@ -25,9 +32,19 @@ export interface ConnectionOptions {
   timeoutGb?: number; // default = 60*60*1000
   maxExponent?: number; // default 6
   silent?: boolean; // default = false
-  servers?: Array<Partial<RServer>>; // default [{host: 'localhost', port: 28015}]
   log?: (message: string) => any; // default undefined;
+  [other: string]: any;
 }
+
+export type RPoolConnectionOptions = RBaseConnectionOptions & {
+  servers?: RServerConnectionOptions[];
+};
+
+export type RConnectionOptions = RBaseConnectionOptions &
+  (
+    | { servers: RServerConnectionOptions[] }
+    | { server: RServerConnectionOptions }
+    | { host?: string; port?: number });
 
 export interface TableCreateOptions {
   primaryKey?: string; // default: "id"
@@ -1039,8 +1056,8 @@ export interface R {
     func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T
   ): T extends RStream ? T : RDatum;
 
-  connect(options: ConnectionOptions & { pool: false }): Promise<Connection>;
-  connect(options?: ConnectionOptions & { pool?: true }): Promise<MasterPool>;
+  connect(options: RConnectionOptions & { pool: false }): Promise<Connection>;
+  connect(options?: RConnectionOptions & { pool?: true }): Promise<MasterPool>;
   getPoolMaster(): MasterPool | undefined;
 }
 

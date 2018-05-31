@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events';
-import { Socket, SocketConnectOpts } from 'net';
+import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
+import { connect as tlsConnect } from 'tls';
+import { RServerConnectionOptions } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
@@ -11,9 +13,13 @@ import {
   validateVersion
 } from './handshake-utils';
 
+export type RNConnOpts = RServerConnectionOptions & {
+  host: string;
+  port: number;
+};
+
 export class RebirthDBSocket extends EventEmitter {
-  public port: number;
-  public host: string;
+  public connectionOptions: RNConnOpts;
   public readonly user: string;
   public readonly password: Buffer;
   public runningQueries: number[] = [];
@@ -34,30 +40,34 @@ export class RebirthDBSocket extends EventEmitter {
   private buffer = new Buffer(0);
   private mode: 'handshake' | 'response' = 'handshake';
   private data: Array<ResponseJson | ((arg: ResponseJson) => void)> = [];
+  private ca?: Buffer[];
 
   constructor({
-    port = 28015,
-    host = 'localhost',
+    connectionOptions,
     user = 'admin',
     password = NULL_BUFFER
-  } = {}) {
+  }: {
+    connectionOptions: RNConnOpts;
+    user?: string;
+    password?: Buffer;
+  }) {
     super();
-    this.port = port;
-    this.host = host;
+    this.connectionOptions = setConnectionDefaults(connectionOptions);
     this.user = user;
     this.password = password;
   }
 
-  public async connect(
-    options: Partial<SocketConnectOpts> = {},
-    { host = this.host, port = this.port } = {}
-  ) {
-    this.host = host;
-    this.port = port;
+  public async connect() {
     if (this.socket) {
       throw new RebirthDBError('Socket already connected');
     }
-    const socket = new Socket()
+    const { tls = false, ...options } = this.connectionOptions;
+    const socket = await new Promise<Socket>(resolve => {
+      const s: Socket = tls
+        ? tlsConnect(options, () => resolve(s))
+        : netConnect(options as TcpNetConnectOpts, () => resolve(s));
+    });
+    socket
       .on('close', () => this.close())
       .on('error', error => this.handleError(error))
       .on('data', data => {
@@ -75,11 +85,8 @@ export class RebirthDBSocket extends EventEmitter {
           this.handleError(error);
         }
       });
-    this.socket = socket;
-    await new Promise(resolve =>
-      socket.connect({ port, host, ...options }, resolve)
-    );
     socket.setKeepAlive(true);
+    this.socket = socket;
     this.isOpen = true;
     await this.performHandshake();
     this.emit('connect');
@@ -271,4 +278,12 @@ export class RebirthDBSocket extends EventEmitter {
     this.lastError = err;
     this.emit('error', err);
   }
+}
+
+export function setConnectionDefaults(
+  connectionOptions: RServerConnectionOptions
+): RNConnOpts {
+  connectionOptions.host = connectionOptions.host || 'localhost';
+  connectionOptions.port = connectionOptions.port || 28015;
+  return connectionOptions as any;
 }

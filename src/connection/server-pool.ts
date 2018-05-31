@@ -1,20 +1,20 @@
 import { EventEmitter } from 'events';
-import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import {
-  ConnectionOptions,
   ConnectionPool,
-  RServer,
+  RConnectionOptions,
+  RServerConnectionOptions,
   RunOptions
 } from '../types';
 import { RebirthDBConnection } from './connection';
+import { RNConnOpts, setConnectionDefaults } from './socket';
 
 const REBALANCE_EVERY = 30 * 1000;
 
 export class ServerConnectionPool extends EventEmitter
   implements ConnectionPool {
-  public readonly server: RServer;
+  public readonly server: RNConnOpts;
   private healthy: boolean | undefined = undefined;
   private buffer: number;
   private max: number;
@@ -30,7 +30,7 @@ export class ServerConnectionPool extends EventEmitter
   private timers = new Map<RebirthDBConnection, NodeJS.Timer>();
 
   constructor(
-    { host = 'localhost', port = 28015 } = {},
+    connectionOptions: RServerConnectionOptions,
     {
       db = 'test',
       user = 'admin',
@@ -44,7 +44,7 @@ export class ServerConnectionPool extends EventEmitter
       maxExponent = 6,
       silent = false,
       log = (message: string) => undefined
-    }: ConnectionOptions = {}
+    }: RConnectionOptions = {}
   ) {
     super();
     this.buffer = Math.max(buffer, 1);
@@ -54,7 +54,7 @@ export class ServerConnectionPool extends EventEmitter
     this.maxExponent = maxExponent;
     this.silent = silent;
     this.log = log;
-    this.server = { host, port };
+    this.server = setConnectionDefaults(connectionOptions);
     this.connParam = { db, user, password, timeout, pingInterval, silent, log };
     this.connections = [];
   }
@@ -248,7 +248,9 @@ export class ServerConnectionPool extends EventEmitter
         if (typeof this.healthy === 'undefined') {
           this.setHealthy(false);
         }
-        await promisify(setTimeout)(2 ** exp * this.timeoutError);
+        await new Promise(resolve =>
+          setTimeout(resolve, 2 ** exp * this.timeoutError)
+        );
         exp = Math.min(exp + 1, this.maxExponent);
       }
     }

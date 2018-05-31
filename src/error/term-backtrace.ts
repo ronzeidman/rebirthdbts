@@ -30,7 +30,7 @@ export function backtraceTerm(
     } else if (typeof term === 'string') {
       termStr = getMarked(`"${term}"`);
     } else {
-      termStr = getMarked(toString());
+      termStr = getMarked(term.toString());
     }
     return getMarked(
       head ? combineMarks`r.expr(${termStr})` : termStr,

@@ -1,18 +1,18 @@
 import { EventEmitter } from 'events';
 import { isIPv6 } from 'net';
-import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
 import {
   Changes,
-  ConnectionOptions,
   MasterPool,
   RCursor,
+  RPoolConnectionOptions,
   RServer,
   RunOptions
 } from '../types';
 import { ServerConnectionPool } from './server-pool';
+import { setConnectionDefaults } from './socket';
 
 export class MasterConnectionPool extends EventEmitter implements MasterPool {
   private healthy: boolean | undefined = undefined;
@@ -47,7 +47,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     maxExponent = 6,
     silent = false,
     log = (message: string) => undefined
-  }: ConnectionOptions = {}) {
+  }: RPoolConnectionOptions = {}) {
     super();
     // min one per server but wont redistribute conn from failed servers
     this.buffer = Math.max(buffer, 1);
@@ -59,10 +59,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     this.log = log;
     this.discovery = discovery;
     this.connParam = { db, user, password, timeout, pingInterval, silent, log };
-    this.servers = servers.map(server => ({
-      host: server.host || 'localhost',
-      port: server.port || 28015
-    }));
+    this.servers = servers.map(setConnectionDefaults);
     this.serverPools = [];
   }
 
@@ -195,7 +192,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
           }
         })
         // handle disconnections
-        .catch(() => promisify(setTimeout)(20 * 1000))
+        .catch(() => new Promise(resolve => setTimeout(resolve, 20 * 1000)))
         .then(() => (this.discovery ? this.discover() : undefined))
     );
   }

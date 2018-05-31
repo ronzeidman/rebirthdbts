@@ -1,13 +1,17 @@
 import { EventEmitter } from 'events';
-import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import { Connection, RunOptions, ServerInfo } from '../types';
+import {
+  Connection,
+  RServerConnectionOptions,
+  RunOptions,
+  ServerInfo
+} from '../types';
 import { NULL_BUFFER } from './handshake-utils';
-import { RebirthDBSocket } from './socket';
+import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
 
 const tableQueries = [
   TermType.TABLE_CREATE,
@@ -19,6 +23,7 @@ const tableQueries = [
 export class RebirthDBConnection extends EventEmitter implements Connection {
   public clientPort: number;
   public clientAddress: string;
+  private options: RNConnOpts;
   private socket: RebirthDBSocket;
   private timeout: number;
   private pingInterval: number;
@@ -28,7 +33,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
   private db = 'test';
 
   constructor(
-    { host = 'localhost', port = 28015 } = {},
+    private connectionOptions: RServerConnectionOptions,
     {
       db = 'test',
       user = 'admin',
@@ -40,8 +45,11 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     } = {}
   ) {
     super();
-    this.clientPort = port;
-    this.clientAddress = host;
+    this.options = setConnectionDefaults(connectionOptions);
+    this.clientPort = connectionOptions.port || 28015;
+    this.clientAddress = connectionOptions.host || 'localhost';
+    connectionOptions.port = this.clientPort;
+    connectionOptions.host = this.clientAddress;
     this.timeout = timeout;
     this.pingInterval = pingInterval;
     this.silent = silent;
@@ -49,8 +57,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     this.use(db);
 
     this.socket = new RebirthDBSocket({
-      port,
-      host,
+      connectionOptions: this.options,
       user,
       password: password
         ? Buffer.concat([new Buffer(password), NULL_BUFFER])
@@ -79,12 +86,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
   }
 
-  public async reconnect(
-    options?: { noreplyWait: boolean },
-    { host = this.clientAddress, port = this.clientPort } = {}
-  ) {
-    this.clientPort = port;
-    this.clientAddress = host;
+  public async reconnect(options?: { noreplyWait: boolean }) {
     if (this.socket.status === 'open' || this.socket.status === 'handshake') {
       await this.close(options);
     }
@@ -99,8 +101,8 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
         }
       });
     await Promise.race([
-      promisify(setTimeout)(this.timeout * 1000),
-      this.socket.connect({}, { host, port })
+      new Promise(resolve => setTimeout(resolve, this.timeout * 1000)),
+      this.socket.connect()
     ]);
     if (this.socket.status === 'errored') {
       this.reportError(this.socket.lastError as any);
@@ -113,7 +115,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.emit('close');
       this.close();
       throw new RebirthDBError(
-        `Failed to connect to ${host}:${port} in less than ${this.timeout}s.`
+        `Failed to connect to ${this.connectionOptions.host}:${
+          this.connectionOptions.port
+        } in less than ${this.timeout}s.`
       );
     }
     this.startPinging();

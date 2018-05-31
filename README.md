@@ -8,6 +8,7 @@
 
 # NEW FEATURES:
 
+* No dependencies
 * Closing a cursor works and throws on a cursor that's waiting in `await cursor.next()`
 * `isHealthy` on pools and `isConnected` on a connection
 * API of getting the actual underlying connections from a pool
@@ -35,7 +36,6 @@
 
 # TODO:
 
-* Support TLS
 * Make an exception enum and utility functions for filtering and handling the right exceptions
 * Translate the fixed tests to TS and run all the tests
 * Fork this to RebirthDB org, add build step & publish
