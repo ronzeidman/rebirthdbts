@@ -1,6 +1,6 @@
 import { RebirthDBSocket } from '../connection/socket';
 import { QueryJson } from '../internal-types';
-import { Response } from '../proto/ql2';
+import { ResponseType } from '../proto/enums';
 import { RCursor, RunOptions } from '../types';
 export declare class Cursor implements RCursor {
     private conn;
@@ -17,6 +17,6 @@ export declare class Cursor implements RCursor {
     next(): Promise<any>;
     toArray(): Promise<any[]>;
     eachAsync(rowHandler: (row: any) => Promise<void>): Promise<void>;
-    resolve(): Promise<Response.ResponseType.SUCCESS_ATOM | Response.ResponseType.SUCCESS_SEQUENCE | Response.ResponseType.SUCCESS_PARTIAL>;
+    resolve(): Promise<ResponseType.SUCCESS_ATOM | ResponseType.SUCCESS_SEQUENCE | ResponseType.SUCCESS_PARTIAL>;
 }
 export declare function isCursor<T = any>(cursor: any): cursor is RCursor<T>;

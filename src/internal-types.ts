@@ -1,4 +1,10 @@
-import { Query, Response, Term } from './proto/ql2';
+import {
+  ErrorType,
+  QueryType,
+  ResponseNote,
+  ResponseType,
+  TermType
+} from './proto/enums';
 
 export type TermJson =
   | ComplexTermJson
@@ -9,22 +15,21 @@ export type TermJson =
   | null;
 export type OptargsJson = { [key: string]: any } | undefined;
 export interface ComplexTermJson
-  extends Array<Term.TermType | TermJson[] | OptargsJson> {
-  0: Term.TermType;
+  extends Array<TermType | TermJson[] | OptargsJson> {
+  0: TermType;
   1?: TermJson[];
   2?: OptargsJson;
 }
-export interface QueryJson
-  extends Array<Query.QueryType | TermJson | OptargsJson> {
-  0: Query.QueryType;
+export interface QueryJson extends Array<QueryType | TermJson | OptargsJson> {
+  0: QueryType;
   1?: TermJson;
   2?: OptargsJson;
 }
 export interface ResponseJson {
-  t: Response.ResponseType;
+  t: ResponseType;
   r: any[];
-  n: Response.ResponseNote[];
-  e?: Response.ErrorType;
+  n: ResponseNote[];
+  e?: ErrorType;
   p?: any;
   b?: Array<number | string>;
 }

@@ -8,13 +8,9 @@
     "test": "test"
   },
   "scripts": {
-    "test":
-      "ts-mocha -p ./tsconfig.test.json --check-leaks -t 20000 ./tests/*.ts",
-    "build": "tsc && npm run proto-build",
-    "proto-build":
-      "mkdirp lib/proto && pbjs -t static-module -w commonjs -o lib/proto/ql2.js src/proto/ql2.proto && pbts -o lib/proto/ql2.d.ts lib/proto/ql2.js",
-    "proto":
-      "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js"
+    "test": "ts-mocha -p ./tsconfig.test.json --check-leaks -t 20000 ./tests/*.ts",
+    "build": "tsc",
+    "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"
   },
   "repository": {
     "type": "git",
@@ -27,19 +23,14 @@
   },
   "homepage": "https://github.com/ronzeidman/rebirthdbts#readme",
   "devDependencies": {
-    "@types/expect": "^1.20.3",
     "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.17",
-    "longjohn": "^0.2.12",
-    "mkdirp": "^0.5.1",
     "mocha": "^5.2.0",
-    "trace": "^3.1.0",
+    "protobufjs": "^6.8.6",
     "ts-mocha": "^1.2.0",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",
     "typescript": "^2.8.3"
   },
-  "dependencies": {
-    "protobufjs": "^6.8.6"
-  }
+  "dependencies": {}
 }

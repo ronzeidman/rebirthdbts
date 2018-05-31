@@ -1,7 +1,7 @@
 import { isBuffer, isDate, isFunction } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
-import { Term } from '../proto/ql2';
+import { TermType } from '../proto/enums';
 import { isQuery, toQuery } from './query';
 import { r } from './r';
 
@@ -16,7 +16,7 @@ export function parseParam(param: any): TermJson {
     return param.term;
   }
   if (Array.isArray(param)) {
-    return [Term.TermType.MAKE_ARRAY, param.map(p => parseParam(p))];
+    return [TermType.MAKE_ARRAY, param.map(p => parseParam(p))];
   }
   if (isDate(param)) {
     return {
@@ -35,10 +35,10 @@ export function parseParam(param: any): TermJson {
     const { nextVarId } = r as any;
     (r as any).nextVarId = nextVarId + param.length;
     const term = [
-      Term.TermType.FUNC,
+      TermType.FUNC,
       [
         [
-          Term.TermType.MAKE_ARRAY,
+          TermType.MAKE_ARRAY,
           Array(param.length)
             .fill(0)
             .map((_, i) => i + nextVarId)
@@ -47,7 +47,7 @@ export function parseParam(param: any): TermJson {
           param(
             ...Array(param.length)
               .fill(0)
-              .map((_, i) => toQuery([Term.TermType.VAR, [i + 1]]))
+              .map((_, i) => toQuery([TermType.VAR, [i + 1]]))
           )
         )
       ]

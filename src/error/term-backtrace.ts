@@ -1,5 +1,5 @@
 import { QueryJson, TermJson } from '../internal-types';
-import { Query, Term } from '../proto/ql2';
+import { QueryType, TermType } from '../proto/enums';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
 export function backtraceTerm(
@@ -30,7 +30,7 @@ export function backtraceTerm(
     } else if (typeof term === 'string') {
       termStr = getMarked(`"${term}"`);
     } else {
-      termStr = getMarked(term.toString());
+      termStr = getMarked(toString());
     }
     return getMarked(
       head ? combineMarks`r.expr(${termStr})` : termStr,
@@ -40,7 +40,7 @@ export function backtraceTerm(
   const [type, args, optarg] = term;
   const hasArgs = !!args && !!args.length;
   switch (type) {
-    case Term.TermType.MAKE_ARRAY: {
+    case TermType.MAKE_ARRAY: {
       if (!args) {
         return getMarked('');
       }
@@ -55,7 +55,7 @@ export function backtraceTerm(
         backtrace
       );
     }
-    case Term.TermType.FUNC: {
+    case TermType.FUNC: {
       const paramsBacktrace = nextBacktrace(0, backtrace);
       const params = (args as any)[0][1].map((i: number) =>
         getMarked(`var${i}`, nextBacktrace(i, paramsBacktrace))
@@ -72,10 +72,10 @@ export function backtraceTerm(
         backtrace
       );
     }
-    case Term.TermType.VAR: {
+    case TermType.VAR: {
       return getMarked(`var${(args as any)[0]}`, backtrace);
     }
-    case Term.TermType.FUNCALL: {
+    case TermType.FUNCALL: {
       if (!args) {
         return getMarked('');
       }
@@ -92,7 +92,7 @@ export function backtraceTerm(
         backtrace
       );
     }
-    case Term.TermType.BRACKET: {
+    case TermType.BRACKET: {
       if (!args) {
         return getMarked('');
       }
@@ -188,11 +188,11 @@ export function backtraceQuery(
 ): [string] | [string, string] {
   const [type, term, optarg] = query;
   switch (type) {
-    case Query.QueryType.START:
+    case QueryType.START:
       return backtraceTerm(term, true); // `${backtraceTerm(term)}.run(${backtraceObject(optarg)})`
-    case Query.QueryType.SERVER_INFO:
+    case QueryType.SERVER_INFO:
       return ['conn.server()'];
-    case Query.QueryType.NOREPLY_WAIT:
+    case QueryType.NOREPLY_WAIT:
       return ['conn.noreplyWait()'];
     default:
       return [''];

@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { Socket, SocketConnectOpts } from 'net';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
-import { Query, Response } from '../proto/ql2';
+import { QueryType, ResponseType } from '../proto/enums';
 import {
   NULL_BUFFER,
   buildAuthBuffer,
@@ -109,7 +109,7 @@ export class RebirthDBSocket extends EventEmitter {
   }
 
   public stopQuery(token: number) {
-    this.sendQuery([Query.QueryType.STOP], token);
+    this.sendQuery([QueryType.STOP], token);
     this.setData(token);
     this.finishQuery(token);
   }
@@ -232,7 +232,7 @@ export class RebirthDBSocket extends EventEmitter {
 
       this.setData(token, response);
       this.buffer = this.buffer.slice(12 + responseLength);
-      if (response.t !== Response.ResponseType.SUCCESS_PARTIAL) {
+      if (response.t !== ResponseType.SUCCESS_PARTIAL) {
         this.finishQuery(token);
       }
       this.emit('data', response, token);

@@ -1,5 +1,5 @@
 import { QueryJson, TermJson } from '../internal-types';
-import { Response } from '../proto/ql2';
+import { ErrorType, ResponseType } from '../proto/enums';
 import { backtraceTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
@@ -7,8 +7,8 @@ export interface RebirthDBErrorArgs {
   term?: TermJson;
   query?: QueryJson;
   backtrace?: Array<number | string>;
-  responseType?: Response.ResponseType;
-  responseErrorType?: Response.ErrorType;
+  responseType?: ResponseType;
+  responseErrorType?: ErrorType;
 }
 
 export function isRebirthDBError(error: any) {

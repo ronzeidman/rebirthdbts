@@ -1,7 +1,7 @@
 import { createHash, createHmac, pbkdf2, randomBytes } from 'crypto';
 import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
-import { VersionDummy } from '../proto/ql2';
+import { Version } from '../proto/enums';
 
 export const NULL_BUFFER = new Buffer('\0', 'binary');
 const PROTOCOL_VERSION = 0;
@@ -17,7 +17,7 @@ enum HandshakeState {
 
 export function buildAuthBuffer(user: string) {
   const versionBuffer = new Buffer(4);
-  versionBuffer.writeInt32LE(VersionDummy.Version.V1_0, 0);
+  versionBuffer.writeInt32LE(Version.V1_0, 0);
   const randomString = randomBytes(18).toString('base64');
   const mainBuffer = Buffer.from(
     JSON.stringify({

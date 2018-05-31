@@ -1,3 +1,5 @@
+`npm i ronzeidman/rebirthdbts`
+
 # STATUS:
 
 * Fully working typescript driver!

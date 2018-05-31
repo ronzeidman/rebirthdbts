@@ -2,13 +2,13 @@ import { inspect } from 'util';
 import { RebirthDBSocket } from '../connection/socket';
 import { RebirthDBError } from '../error/error';
 import { QueryJson } from '../internal-types';
-import { Query, Response } from '../proto/ql2';
+import { QueryType, ResponseType } from '../proto/enums';
 import { RCursor, RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
 
 export class Cursor implements RCursor {
   private position = 0;
-  private responseType?: Response.ResponseType;
+  private responseType?: ResponseType;
   private profile: any;
   constructor(
     private conn: RebirthDBSocket,
@@ -30,7 +30,7 @@ export class Cursor implements RCursor {
     if (!this.results) {
       await this.resolve();
     } else if (this.hasNext && this.position >= this.results.length) {
-      this.conn.sendQuery([Query.QueryType.CONTINUE], this.token);
+      this.conn.sendQuery([QueryType.CONTINUE], this.token);
       await this.resolve();
     }
     if (this.profile) {
@@ -38,8 +38,7 @@ export class Cursor implements RCursor {
       return {
         profile: this.profile,
         result:
-          this.responseType === Response.ResponseType.SUCCESS_ATOM &&
-          this.results
+          this.responseType === ResponseType.SUCCESS_ATOM && this.results
             ? this.results[0]
             : this.results
       };
@@ -77,21 +76,21 @@ export class Cursor implements RCursor {
       e: error
     } = response;
     switch (type) {
-      case Response.ResponseType.CLIENT_ERROR:
-      case Response.ResponseType.COMPILE_ERROR:
-      case Response.ResponseType.RUNTIME_ERROR:
+      case ResponseType.CLIENT_ERROR:
+      case ResponseType.COMPILE_ERROR:
+      case ResponseType.RUNTIME_ERROR:
         console.error(inspect(response));
         console.error(inspect(this.query[1], { depth: null }));
-        throw new RebirthDBError(response.r[0], {
+        throw new RebirthDBError(results[0], {
           responseErrorType: error,
           responseType: type,
           query: this.query,
           backtrace
         });
-      case Response.ResponseType.SUCCESS_ATOM:
-      case Response.ResponseType.SUCCESS_PARTIAL:
-      case Response.ResponseType.SUCCESS_SEQUENCE:
-        this.hasNext = type === Response.ResponseType.SUCCESS_PARTIAL;
+      case ResponseType.SUCCESS_ATOM:
+      case ResponseType.SUCCESS_PARTIAL:
+      case ResponseType.SUCCESS_SEQUENCE:
+        this.hasNext = type === ResponseType.SUCCESS_PARTIAL;
         this.profile = profile;
         this.results = getNativeTypes(results, this.runOptions);
         this.position = 0;

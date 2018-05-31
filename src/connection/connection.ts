@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { promisify } from 'util';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, TermJson } from '../internal-types';
-import { Query, Response, Term } from '../proto/ql2';
+import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
 import { Connection, RunOptions, ServerInfo } from '../types';
@@ -10,10 +10,10 @@ import { NULL_BUFFER } from './handshake-utils';
 import { RebirthDBSocket } from './socket';
 
 const tableQueries = [
-  Term.TermType.TABLE_CREATE,
-  Term.TermType.TABLE_DROP,
-  Term.TermType.TABLE_LIST,
-  Term.TermType.TABLE
+  TermType.TABLE_CREATE,
+  TermType.TABLE_DROP,
+  TermType.TABLE_LIST,
+  TermType.TABLE
 ];
 
 export class RebirthDBConnection extends EventEmitter implements Connection {
@@ -123,9 +123,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     this.db = db;
   }
   public async noreplyWait(): Promise<void> {
-    const token = this.socket.sendQuery([Query.QueryType.NOREPLY_WAIT]);
+    const token = this.socket.sendQuery([QueryType.NOREPLY_WAIT]);
     const result = await this.socket.readNext(token);
-    if (result.t !== Response.ResponseType.WAIT_COMPLETE) {
+    if (result.t !== ResponseType.WAIT_COMPLETE) {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
@@ -135,9 +135,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
   }
   public async server(): Promise<ServerInfo> {
-    const token = this.socket.sendQuery([Query.QueryType.SERVER_INFO]);
+    const token = this.socket.sendQuery([QueryType.SERVER_INFO]);
     const result = await this.socket.readNext(token);
-    if (result.t !== Response.ResponseType.SERVER_INFO) {
+    if (result.t !== ResponseType.SERVER_INFO) {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
@@ -157,14 +157,14 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     } = globalArgs;
     gargs.db = gargs.db || this.db;
     this.findTableTermAndAddDb(term, gargs.db);
-    const query: QueryJson = [Query.QueryType.START, term, parseOptarg(gargs)];
+    const query: QueryJson = [QueryType.START, term, parseOptarg(gargs)];
     const token = this.socket.sendQuery(query);
     const cursor = new Cursor(this.socket, token, globalArgs, query);
     if (globalArgs.immidiateReturn) {
       return cursor;
     }
     const type = await cursor.resolve();
-    if (type === Response.ResponseType.SUCCESS_ATOM) {
+    if (type === ResponseType.SUCCESS_ATOM) {
       return await cursor.next();
     }
     return cursor;
@@ -178,14 +178,14 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       const termParam = term[1];
       if (tableQueries.includes(term[0])) {
         if (!termParam) {
-          term[1] = [[Term.TermType.DB, [db]]];
+          term[1] = [[TermType.DB, [db]]];
           return;
         }
         const innerTerm = termParam[0];
-        if (Array.isArray(innerTerm) && innerTerm[0] === Term.TermType.DB) {
+        if (Array.isArray(innerTerm) && innerTerm[0] === TermType.DB) {
           return;
         }
-        termParam.unshift([Term.TermType.DB, [db]]);
+        termParam.unshift([TermType.DB, [db]]);
         return;
       }
       term = termParam && termParam[0];
@@ -196,13 +196,13 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     if (this.pingInterval > 0) {
       this.pingTimer = setTimeout(async () => {
         const token = this.socket.sendQuery([
-          Query.QueryType.START,
-          [Term.TermType.ERROR, ['ping']]
+          QueryType.START,
+          [TermType.ERROR, ['ping']]
         ]);
         const result = await this.socket.readNext(token, 5000);
         if (
-          result.t !== Response.ResponseType.RUNTIME_ERROR ||
-          result.e !== Response.ErrorType.USER ||
+          result.t !== ResponseType.RUNTIME_ERROR ||
+          result.e !== ErrorType.USER ||
           result.r[0] !== 'ping'
         ) {
           this.reportError(new RebirthDBError('Ping error'));
