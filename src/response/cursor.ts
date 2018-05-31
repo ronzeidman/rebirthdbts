@@ -3,10 +3,10 @@ import { RebirthDBSocket } from '../connection/socket';
 import { RebirthDBError } from '../error/error';
 import { QueryJson } from '../internal-types';
 import { Query, Response } from '../proto/ql2';
-import { RunOptions } from '../types';
+import { RCursor, RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
 
-export class Cursor {
+export class Cursor implements RCursor {
   private position = 0;
   private responseType?: Response.ResponseType;
   private profile: any;
@@ -102,4 +102,8 @@ export class Cursor {
     this.responseType = type;
     return type;
   }
+}
+
+export function isCursor<T = any>(cursor: any): cursor is RCursor<T> {
+  return cursor instanceof Cursor;
 }

@@ -247,6 +247,7 @@ export interface MatchResults {
 
 //#region operations
 export interface Connection extends EventEmitter {
+  readonly isConnected: boolean;
   clientPort: number;
   clientAddress: string;
   close(options?: { noreplyWait: boolean }): Promise<void>;
@@ -257,12 +258,16 @@ export interface Connection extends EventEmitter {
 }
 
 export interface MasterPool extends EventEmitter {
+  readonly isHealthy: boolean;
+
   drain(options?: { noreplyWait: boolean }): Promise<void>;
   getLength(): number;
   getAvailableLength(): number;
   getPools(): ConnectionPool[];
 }
 export interface ConnectionPool extends EventEmitter {
+  readonly isHealthy: boolean;
+
   drain(options?: { noreplyWait: boolean }): Promise<void>;
   getLength(): number;
   getAvailableLength(): number;
