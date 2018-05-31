@@ -708,7 +708,7 @@ export interface R {
     connect(options: ConnectionOptions & {
         pool: false;
     }): Promise<Connection>;
-    connect(options: ConnectionOptions & {
+    connect(options?: ConnectionOptions & {
         pool?: true;
     }): Promise<MasterPool>;
     getPoolMaster(): MasterPool | undefined;

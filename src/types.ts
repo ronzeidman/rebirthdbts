@@ -1040,7 +1040,7 @@ export interface R {
   ): T extends RStream ? T : RDatum;
 
   connect(options: ConnectionOptions & { pool: false }): Promise<Connection>;
-  connect(options: ConnectionOptions & { pool?: true }): Promise<MasterPool>;
+  connect(options?: ConnectionOptions & { pool?: true }): Promise<MasterPool>;
   getPoolMaster(): MasterPool | undefined;
 }
 

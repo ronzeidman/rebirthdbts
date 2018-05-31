@@ -3,12 +3,14 @@
   "version": "0.0.1",
   "description": "Experimental RebirthDB TypeScript driver",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "ts-mocha -p ./tsconfig.test.json --check-leaks -t 20000 ./tests/*.ts",
-    "build": "tsc",
+    "build": "tsc && npm run proto-build",
+    "proto-build": "mkdirp lib/proto && pbjs -t static-module -w commonjs -o lib/proto/ql2.js src/proto/ql2.proto && pbts -o lib/proto/ql2.d.ts lib/proto/ql2.js",
     "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js"
   },
   "repository": {
@@ -26,6 +28,7 @@
     "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.17",
     "longjohn": "^0.2.12",
+    "mkdirp": "^0.5.1",
     "mocha": "^5.2.0",
     "protobufjs": "^6.8.6",
     "trace": "^3.1.0",
