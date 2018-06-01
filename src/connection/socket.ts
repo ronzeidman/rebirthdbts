@@ -5,13 +5,7 @@ import { RServerConnectionOptions } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
-import {
-  NULL_BUFFER,
-  buildAuthBuffer,
-  compareDigest,
-  computeSaltedPassword,
-  validateVersion
-} from './handshake-utils';
+import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake-utils';
 
 export type RNConnOpts = RServerConnectionOptions & {
   host: string;
@@ -47,10 +41,10 @@ export class RebirthDBSocket extends EventEmitter {
     user = 'admin',
     password = NULL_BUFFER
   }: {
-    connectionOptions: RNConnOpts;
-    user?: string;
-    password?: Buffer;
-  }) {
+      connectionOptions: RNConnOpts;
+      user?: string;
+      password?: Buffer;
+    }) {
     super();
     this.connectionOptions = setConnectionDefaults(connectionOptions);
     this.user = user;
@@ -109,7 +103,8 @@ export class RebirthDBSocket extends EventEmitter {
     buffer.write(encoded, 12);
     delete this.data[token];
     this.socket.write(buffer);
-    if (this.startQuery(token)) {
+    const optargs = query[2] || {};
+    if (optargs.noreply || this.startQuery(token)) {
       this.emit('query', token);
     }
     return token;

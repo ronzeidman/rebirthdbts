@@ -37,8 +37,6 @@ export declare type RPoolConnectionOptions = RBaseConnectionOptions & {
     servers?: RServerConnectionOptions[];
 };
 export declare type RConnectionOptions = RBaseConnectionOptions & ({
-    servers: RServerConnectionOptions[];
-} | {
     server: RServerConnectionOptions;
 } | {
     host?: string;
@@ -234,7 +232,7 @@ export interface MatchResults {
     }>;
 }
 export interface Connection extends EventEmitter {
-    readonly isConnected: boolean;
+    readonly open: boolean;
     clientPort: number;
     clientAddress: string;
     close(options?: {
@@ -300,9 +298,15 @@ export interface RQuery<T = any> {
     }): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
     run(connection?: Connection | RunOptions & {
         immidiateReturn?: false;
-    }, noptions?: RunOptions & {
+    }, options?: RunOptions & {
         immidiateReturn?: false;
     }): Promise<T>;
+    run(options: RunOptions & {
+        noreply: true;
+    }): Promise<undefined>;
+    run(connection: Connection, options: RunOptions & {
+        noreply: true;
+    }): Promise<undefined>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
     do<U>(...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>): U extends RStream ? RStream : RDatum;

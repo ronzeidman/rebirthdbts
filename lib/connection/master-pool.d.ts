@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
-import { MasterPool, RPoolConnectionOptions, RunOptions } from '../types';
+import { Connection, MasterPool, RPoolConnectionOptions, RunOptions } from '../types';
 import { ServerConnectionPool } from './server-pool';
 export declare class MasterConnectionPool extends EventEmitter implements MasterPool {
     private healthy;
@@ -30,7 +30,7 @@ export declare class MasterConnectionPool extends EventEmitter implements Master
         noreplyWait?: boolean;
     }): Promise<void>;
     getPools(): ServerConnectionPool[];
-    getConnections(): any[];
+    getConnections(): Connection[];
     getLength(): number;
     getAvailableLength(): number;
     queue(term: TermJson, globalArgs?: RunOptions): Promise<any>;

@@ -42,7 +42,6 @@ export type RPoolConnectionOptions = RBaseConnectionOptions & {
 
 export type RConnectionOptions = RBaseConnectionOptions &
   (
-    | { servers: RServerConnectionOptions[] }
     | { server: RServerConnectionOptions }
     | { host?: string; port?: number });
 
@@ -76,10 +75,10 @@ export interface DeleteOptions {
 
 export interface InsertOptions extends DeleteOptions {
   conflict?:
-    | 'error'
-    | 'replace'
-    | 'update'
-    | ((id: RDatum, oldDoc: RDatum, newDoc: RDatum) => RDatum | object);
+  | 'error'
+  | 'replace'
+  | 'update'
+  | ((id: RDatum, oldDoc: RDatum, newDoc: RDatum) => RDatum | object);
 }
 
 export interface UpdateOptions extends DeleteOptions {
@@ -128,19 +127,19 @@ export interface HttpRequestOptions {
 export interface HTTPStreamRequestOptions extends HttpRequestOptions {
   // Pagination
   page:
-    | 'link-next'
-    | ((
-        param: RDatum<{ params: any; header: any; body: any }>
-      ) => RValue<string>);
+  | 'link-next'
+  | ((
+    param: RDatum<{ params: any; header: any; body: any }>
+  ) => RValue<string>);
   pageLimit: number; // -1 = no limit.
 }
 
 export interface WaitOptions {
   waitFor?:
-    | 'ready_for_outdated_reads'
-    | 'ready_for_reads'
-    | 'ready_for_writes'
-    | 'all_replicas_ready';
+  | 'ready_for_outdated_reads'
+  | 'ready_for_reads'
+  | 'ready_for_writes'
+  | 'all_replicas_ready';
   timeout?: number;
 }
 
@@ -264,7 +263,7 @@ export interface MatchResults {
 
 //#region operations
 export interface Connection extends EventEmitter {
-  readonly isConnected: boolean;
+  readonly open: boolean;
   clientPort: number;
   clientAddress: string;
   close(options?: { noreplyWait: boolean }): Promise<void>;
@@ -327,8 +326,15 @@ export interface RQuery<T = any> {
   ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
   run(
     connection?: Connection | RunOptions & { immidiateReturn?: false },
-    noptions?: RunOptions & { immidiateReturn?: false }
+    options?: RunOptions & { immidiateReturn?: false }
   ): Promise<T>;
+  run(
+    options: RunOptions & { noreply: true }
+  ): Promise<undefined>;
+  run(
+    connection: Connection,
+    options: RunOptions & { noreply: true }
+  ): Promise<undefined>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
@@ -383,11 +389,11 @@ export interface RDatum<T = any> extends RQuery<T> {
     U = any,
     ONE = T extends Array<infer T1> ? T1 : never,
     RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<
-      WriteResult<U>
+    WriteResult<U>
     >
-  >(
-    func: (res: RDatum<ONE>) => RES
-  ): T extends any[] ? RES : never;
+    >(
+      func: (res: RDatum<ONE>) => RES
+    ): T extends any[] ? RES : never;
 
   withFields(
     ...fields: Array<RValue<string>>
@@ -414,9 +420,9 @@ export interface RDatum<T = any> extends RQuery<T> {
   group<
     F extends T extends Array<infer T1> ? keyof T1 : never,
     D extends T extends Array<infer T2> ? T2 : never
-  >(
-    ...fieldOrFunc: Array<F | Func<D>>
-  ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
+    >(
+      ...fieldOrFunc: Array<F | Func<D>>
+    ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
 
   ungroup(): RDatum<Array<GroupResults<any, any>>>;
 
@@ -632,12 +638,12 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
     U2 extends keyof T,
     U3 extends keyof T,
     U4 extends keyof T
-  >(
-    field1: RValue<U1>,
-    field2: RValue<U2>,
-    field3: RValue<U3>,
-    field4: RValue<U4>
-  ): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3> & Pick<T, U4>>;
+    >(
+      field1: RValue<U1>,
+      field2: RValue<U2>,
+      field3: RValue<U3>,
+      field4: RValue<U4>
+    ): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3> & Pick<T, U4>>;
   withFields(...fields: Array<RValue<keyof T>>): RStream<Partial<T>>;
   hasFields(...fields: Array<RValue<keyof T>>): RStream<T>;
   filter(
@@ -662,7 +668,7 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
   group<U extends keyof T>(
     ...fieldOrFunc: Array<
       U | ((row: RDatum<T>) => any) | { index?: string; multi?: boolean }
-    >
+      >
   ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
 
   // SELECT FUNCTIONS
@@ -743,12 +749,12 @@ export interface RTable<T = any> extends RSelection<T> {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-      ValueChange<{
-        read: boolean;
-        write: boolean;
-        connect: boolean;
-        config: boolean;
-      }>
+    ValueChange<{
+      read: boolean;
+      write: boolean;
+      connect: boolean;
+      config: boolean;
+    }>
     >;
   }>;
   indexCreate(
@@ -830,12 +836,12 @@ export interface RDatabase {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-      ValueChange<{
-        read: boolean;
-        write: boolean;
-        connect: boolean;
-        config: boolean;
-      }>
+    ValueChange<{
+      read: boolean;
+      write: boolean;
+      connect: boolean;
+      config: boolean;
+    }>
     >;
   }>;
   tableCreate(
@@ -888,12 +894,12 @@ export interface R {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-      ValueChange<{
-        read: boolean;
-        write: boolean;
-        connect: boolean;
-        config: boolean;
-      }>
+    ValueChange<{
+      read: boolean;
+      write: boolean;
+      connect: boolean;
+      config: boolean;
+    }>
     >;
   }>;
 

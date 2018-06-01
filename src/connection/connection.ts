@@ -4,12 +4,7 @@ import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import {
-  Connection,
-  RServerConnectionOptions,
-  RunOptions,
-  ServerInfo
-} from '../types';
+import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
 import { NULL_BUFFER } from './handshake-utils';
 import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
 
@@ -65,7 +60,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     });
   }
 
-  public get isConnected() {
+  public get open() {
     return this.socket.status === 'open';
   }
 
@@ -116,7 +111,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.close();
       throw new RebirthDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
-          this.connectionOptions.port
+        this.connectionOptions.port
         } in less than ${this.timeout}s.`
       );
     }
@@ -163,6 +158,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     this.findTableTermAndAddDb(term, gargs.db);
     const query: QueryJson = [QueryType.START, term, parseOptarg(gargs)];
     const token = this.socket.sendQuery(query);
+    if (globalArgs.noreply) {
+      return;
+    }
     const cursor = new Cursor(this.socket, token, globalArgs, query);
     if (globalArgs.immidiateReturn) {
       return cursor;

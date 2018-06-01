@@ -1,12 +1,7 @@
 import { EventEmitter } from 'events';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
-import {
-  ConnectionPool,
-  RConnectionOptions,
-  RServerConnectionOptions,
-  RunOptions
-} from '../types';
+import { ConnectionPool, RConnectionOptions, RServerConnectionOptions, RunOptions } from '../types';
 import { RebirthDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
 
@@ -66,7 +61,7 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   public get isHealthy() {
-    return this.connections.some(conn => conn.isConnected);
+    return this.connections.some(conn => conn.open);
   }
 
   public waitForHealthy() {
@@ -176,7 +171,7 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   private subscribeToConnection(conn: RebirthDBConnection) {
-    if (conn.isConnected) {
+    if (conn.open) {
       const size = this.getOpenConnections().length;
       this.emit('size', size);
       this.setHealthy(true);
@@ -235,7 +230,7 @@ export class ServerConnectionPool extends EventEmitter
 
   private async persistConnection(conn: RebirthDBConnection) {
     let exp = 0;
-    while (this.connections.includes(conn) && !conn.isConnected) {
+    while (this.connections.includes(conn) && !conn.open) {
       try {
         await conn.reconnect();
       } catch (err) {
@@ -273,7 +268,7 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   private getOpenConnections() {
-    return this.connections.filter(conn => conn.isConnected);
+    return this.connections.filter(conn => conn.open);
   }
 
   private getIdleConnections() {

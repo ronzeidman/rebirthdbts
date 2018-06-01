@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "ts-mocha -p ./tsconfig.test.json --check-leaks -t 20000 ./tests/*.ts",
+    "test": "mocha --check-leaks -t 20000 ./tests/*.js",
     "build": "tsc",
     "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"
   },
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.17",
+    "iterall": "^1.2.2",
     "mocha": "^5.2.0",
     "protobufjs": "^6.8.6",
     "ts-mocha": "^1.2.0",

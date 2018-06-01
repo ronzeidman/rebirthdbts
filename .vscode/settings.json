@@ -1,3 +1,6 @@
 {
-  "prettier.printWidth": 80
+  "prettier.printWidth": 80,
+  "mocha.options": {
+    "timeout": 20000
+  }
 }

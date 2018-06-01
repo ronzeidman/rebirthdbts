@@ -18,9 +18,9 @@ export function termBuilder(
     if (minArgs === maxArgsPlusOptarg && argsLength !== minArgs) {
       throw new RebirthDBError(
         `\`${
-          !currentTerm ? `r.${termName}` : termName
+        !currentTerm ? `r.${termName}` : termName
         }\` takes ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+        minArgs === 1 ? '' : 's'
         }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
         { term: currentTerm }
       );
@@ -29,9 +29,9 @@ export function termBuilder(
       const termConf = termConfig.find(c => c[0] === termType);
       throw new RebirthDBError(
         `\`${
-          !currentTerm ? `r.${termName}` : termName
+        !currentTerm ? `r.${termName}` : termName
         }\` takes at least ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+        minArgs === 1 ? '' : 's'
         }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
         { term: currentTerm }
       );
@@ -39,9 +39,9 @@ export function termBuilder(
     if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
       throw new RebirthDBError(
         `\`${
-          !currentTerm ? `r.${termName}` : termName
+        !currentTerm ? `r.${termName}` : termName
         }\` takes at most ${maxArgsPlusOptarg} argument${
-          maxArgsPlusOptarg === 1 ? '' : 's'
+        maxArgsPlusOptarg === 1 ? '' : 's'
         }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
         { term: currentTerm }
       );
@@ -50,11 +50,11 @@ export function termBuilder(
     const maybeOptarg = args.length ? args.pop() : undefined;
     const optarg =
       hasOptarg &&
-      (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
-        argsLength > minArgs) &&
-        (!Array.isArray(maybeOptarg) &&
-          typeof maybeOptarg === 'object' &&
-          !isQuery(maybeOptarg)))
+        (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
+          argsLength > minArgs) &&
+          (!Array.isArray(maybeOptarg) &&
+            typeof maybeOptarg === 'object' &&
+            !isQuery(maybeOptarg)))
         ? maybeOptarg
         : undefined;
     if (hasOptarg && argsLength === maxArgsPlusOptarg && !optarg) {
@@ -101,10 +101,9 @@ export const runQueryFunc = (term: TermJson) => {
         { term }
       );
     }
-    if (c) {
-      return await c.query(term, opt);
-    }
-    return await cpool.queue(term, opt);
+    const noreply = opt && opt.noreply;
+    const query = c ? c.query(term, opt) : cpool.queue(term, opt);
+    return noreply ? undefined : await query;
   };
 };
 

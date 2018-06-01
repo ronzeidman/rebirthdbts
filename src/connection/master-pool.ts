@@ -3,14 +3,8 @@ import { isIPv6 } from 'net';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
-import {
-  Changes,
-  MasterPool,
-  RCursor,
-  RPoolConnectionOptions,
-  RServer,
-  RunOptions
-} from '../types';
+import { Changes, Connection, MasterPool, RCursor, RPoolConnectionOptions, RServer, RunOptions } from '../types';
+import { RebirthDBConnection } from './connection';
 import { ServerConnectionPool } from './server-pool';
 import { setConnectionDefaults } from './socket';
 
@@ -114,7 +108,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     return this.serverPools;
   }
 
-  public getConnections() {
+  public getConnections(): Connection[] {
     return this.serverPools.map(pool => pool.getConnections()).reduce(flat, []);
   }
 
@@ -276,15 +270,15 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   private getOpenConnections() {
-    return this.getConnections().filter(conn => conn.isConnected);
+    return this.getConnections().filter(conn => conn.open);
   }
 
   private getIdleConnections() {
-    return this.getConnections().filter(conn => !conn.numOfQueries);
+    return this.getConnections().filter(conn => !(conn as RebirthDBConnection).numOfQueries);
   }
 }
 
-function flat(acc: any[], next: any[]) {
+function flat<T>(acc: T[], next: T[]) {
   return [...acc, ...next];
 }
 
