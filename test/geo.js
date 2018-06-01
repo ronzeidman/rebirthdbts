@@ -1,17 +1,17 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
-const {uuid} = require(path.join(__dirname, '/util/common.js'))
+const { r } = require('../lib')
+const { uuid } = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 
 
 describe('geo', () => {
-  let r, dbName, tableName
+  let dbName, tableName
 
   const numDocs = 10
 
   before(async function () {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
     dbName = uuid()
     tableName = uuid()
 
@@ -21,11 +21,11 @@ describe('geo', () => {
     result = await r.db(dbName).tableCreate(tableName).run()
     assert.equal(result.tables_created, 1)
 
-    result = await r.db(dbName).table(tableName).indexCreate('location', {geo: true}).run()
+    result = await r.db(dbName).table(tableName).indexCreate('location', { geo: true }).run()
     assert.equal(result.created, 1)
     await r.db(dbName).table(tableName).indexWait('location').run()
     result = await r.db(dbName).table(tableName).insert(
-      Array(numDocs).fill({location: r.point(r.random(0, 1, {float: true}), r.random(0, 1, {float: true}))})
+      Array(numDocs).fill({ location: r.point(r.random(0, 1, { float: true }), r.random(0, 1, { float: true })) })
     ).run()
     assert.equal(result.inserted, numDocs)
   })
@@ -47,27 +47,27 @@ describe('geo', () => {
     assert.equal(result.type, 'Polygon')
     assert.equal(result.coordinates[0].length, 33)
 
-    result = await r.circle(r.point(0, 0), 2, {numVertices: 40}).run()
+    result = await r.circle(r.point(0, 0), 2, { numVertices: 40 }).run()
     assert.equal(result.$reql_type$, 'GEOMETRY')
     assert.equal(result.type, 'Polygon')
     assert.equal(result.coordinates[0].length, 41)
   })
 
   it('`r.circle` should work - 3', async function () {
-    const result = await r.circle(r.point(0, 0), 2, {numVertices: 40, fill: false}).run()
+    const result = await r.circle(r.point(0, 0), 2, { numVertices: 40, fill: false }).run()
     assert.equal(result.$reql_type$, 'GEOMETRY')
     assert.equal(result.type, 'LineString')
     assert.equal(result.coordinates.length, 41)
   })
 
   it('`r.circle` should work - 4', async function () {
-    const result = await r.circle(r.point(0, 0), 1, {unit: 'km'}).eq(r.circle(r.point(0, 0), 1000, {unit: 'm'})).run()
+    const result = await r.circle(r.point(0, 0), 1, { unit: 'km' }).eq(r.circle(r.point(0, 0), 1000, { unit: 'm' })).run()
     assert(result)
   })
 
   it('`r.circle` should throw with non recognized arguments', async function () {
     try {
-      await r.circle(r.point(0, 0), 1, {foo: 'bar'}).run()
+      await r.circle(r.point(0, 0), 1, { foo: 'bar' }).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message.match(/^Unrecognized option `foo` in `circle`/))
@@ -103,7 +103,7 @@ describe('geo', () => {
   })
 
   it('`distance` should work - 2', async function () {
-    const result = await r.point(0, 0).distance(r.point(1, 1), {unit: 'km'}).run()
+    const result = await r.point(0, 0).distance(r.point(1, 1), { unit: 'km' }).run()
     assert.equal(Math.floor(result), 156)
   })
 
@@ -126,7 +126,7 @@ describe('geo', () => {
   })
 
   it('`fill` should work', async function () {
-    const result = await r.circle(r.point(0, 0), 2, {numVertices: 40, fill: false}).fill().run()
+    const result = await r.circle(r.point(0, 0), 2, { numVertices: 40, fill: false }).fill().run()
     assert.equal(result.$reql_type$, 'GEOMETRY')
     assert.equal(result.type, 'Polygon')
     assert.equal(result.coordinates[0].length, 41)
@@ -134,15 +134,15 @@ describe('geo', () => {
 
   it('`fill` arity error', async function () {
     try {
-      await r.circle(r.point(0, 0), 2, {numVertices: 40, fill: false}).fill(1).run()
+      await r.circle(r.point(0, 0), 2, { numVertices: 40, fill: false }).fill(1).run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`fill` takes 0 argument, 1 provided/))
+      assert(e.message.match(/^`fill` takes 0 arguments, 1 provided/))
     }
   })
 
   it('`geojson` should work', async function () {
-    const result = await r.geojson({'coordinates': [0, 0], 'type': 'Point'}).run()
+    const result = await r.geojson({ 'coordinates': [0, 0], 'type': 'Point' }).run()
     assert.equal(result.$reql_type$, 'GEOMETRY')
   })
 
@@ -156,7 +156,7 @@ describe('geo', () => {
   })
 
   it('`toGeojson` should work', async function () {
-    const result = await r.geojson({'coordinates': [0, 0], 'type': 'Point'}).toGeojson().run()
+    const result = await r.geojson({ 'coordinates': [0, 0], 'type': 'Point' }).toGeojson().run()
     assert.equal(result.$reql_type$, undefined)
   })
 
@@ -165,13 +165,13 @@ describe('geo', () => {
       await r.point(0, 0).toGeojson(1, 2, 3).run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`toGeojson` takes 0 argument, 3 provided/))
+      assert(e.message.match(/^`toGeojson` takes 0 arguments, 3 provided/))
     }
   })
 
   it('`getIntersecting` should work', async function () {
     // All points are in [0,1]x[0,1]
-    const result = await r.db(dbName).table(tableName).getIntersecting(r.polygon([0, 0], [0, 1], [1, 1], [1, 0]), {index: 'location'}).count().run()
+    const result = await r.db(dbName).table(tableName).getIntersecting(r.polygon([0, 0], [0, 1], [1, 1], [1, 0]), { index: 'location' }).count().run()
     assert.equal(result, numDocs)
   })
 

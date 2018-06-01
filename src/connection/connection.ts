@@ -60,6 +60,10 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     });
   }
 
+  public eventNames() {
+    return ['release', 'close', 'timeout', 'error'];
+  }
+
   public get open() {
     return this.socket.status === 'open';
   }

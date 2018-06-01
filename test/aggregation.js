@@ -1,15 +1,15 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
-const {uuid} = require(path.join(__dirname, './util/common.js'))
+const { uuid } = require(path.join(__dirname, './util/common.js'))
 
 
 describe('aggregation', () => {
-  let r, dbName, tableName, result
+  let dbName, tableName, result
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
 
     dbName = uuid()
     tableName = uuid()
@@ -47,10 +47,10 @@ describe('aggregation', () => {
     result = await r.expr(['foo', 'bar', 'buzz', 'hello', 'world']).fold(0, function (acc, row) {
       return acc.add(1)
     }, {
-      emit: function (oldAcc, element, newAcc) {
-        return [oldAcc, element, newAcc]
-      }
-    }).run()
+        emit: function (oldAcc, element, newAcc) {
+          return [oldAcc, element, newAcc]
+        }
+      }).run()
     assert.deepEqual(result, [0, 'foo', 1, 1, 'bar', 2, 2, 'buzz', 3, 3, 'hello', 4, 4, 'world', 5])
   })
 
@@ -58,13 +58,13 @@ describe('aggregation', () => {
     result = await r.expr(['foo', 'bar', 'buzz', 'hello', 'world']).fold(0, function (acc, row) {
       return acc.add(1)
     }, {
-      emit: function (oldAcc, element, newAcc) {
-        return [oldAcc, element, newAcc]
-      },
-      finalEmit: function (acc) {
-        return [acc]
-      }
-    }).run()
+        emit: function (oldAcc, element, newAcc) {
+          return [oldAcc, element, newAcc]
+        },
+        finalEmit: function (acc) {
+          return [acc]
+        }
+      }).run()
     assert.deepEqual(result, [0, 'foo', 1, 1, 'bar', 2, 2, 'buzz', 3, 3, 'hello', 4, 4, 'world', 5, 5])
   })
 
@@ -74,7 +74,7 @@ describe('aggregation', () => {
   })
 
   it('`count` should work -- filter ', async () => {
-    result = await r.expr([0, 1, 2, 3, 4, 5]).count(r.row.eq(2)).run()
+    result = await r.expr([0, 1, 2, 3, 4, 5]).count(row => row.eq(2)).run()
     assert.equal(result, 1)
 
     result = await r.expr([0, 1, 2, 3, 4, 5]).count(function (doc) { return doc.eq(2) }).run()
@@ -82,31 +82,31 @@ describe('aggregation', () => {
   })
 
   it('`group` should work ', async () => {
-    result = await r.expr([{name: 'Michel', grownUp: true}, {name: 'Laurent', grownUp: true},
-      {name: 'Sophie', grownUp: true}, {name: 'Luke', grownUp: false}, {name: 'Mino', grownUp: false}]).group('grownUp').run()
+    result = await r.expr([{ name: 'Michel', grownUp: true }, { name: 'Laurent', grownUp: true },
+    { name: 'Sophie', grownUp: true }, { name: 'Luke', grownUp: false }, { name: 'Mino', grownUp: false }]).group('grownUp').run()
     result.sort()
 
-    assert.deepEqual(result, [ { 'group': false, 'reduction': [ { 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' } ] }, { 'group': true, 'reduction': [ { 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' } ] } ])
+    assert.deepEqual(result, [{ 'group': false, 'reduction': [{ 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' }] }, { 'group': true, 'reduction': [{ 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' }] }])
   })
 
-  it('`group` should work with r.row', async () => {
-    result = await r.expr([{name: 'Michel', grownUp: true}, {name: 'Laurent', grownUp: true},
-      {name: 'Sophie', grownUp: true}, {name: 'Luke', grownUp: false}, {name: 'Mino', grownUp: false}]).group(r.row('grownUp')).run()
+  it('`group` should work with row => row', async () => {
+    result = await r.expr([{ name: 'Michel', grownUp: true }, { name: 'Laurent', grownUp: true },
+    { name: 'Sophie', grownUp: true }, { name: 'Luke', grownUp: false }, { name: 'Mino', grownUp: false }]).group(row => row('grownUp')).run()
     result.sort()
 
-    assert.deepEqual(result, [ { 'group': false, 'reduction': [ { 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' } ] }, { 'group': true, 'reduction': [ { 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' } ] } ])
+    assert.deepEqual(result, [{ 'group': false, 'reduction': [{ 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' }] }, { 'group': true, 'reduction': [{ 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' }] }])
   })
 
   it('`group` should work with an index ', async () => {
     result = await r.db(dbName).table(tableName).insert([
-      {id: 1, group: 1},
-      {id: 2, group: 1},
-      {id: 3, group: 1},
-      {id: 4, group: 4}
+      { id: 1, group: 1 },
+      { id: 2, group: 1 },
+      { id: 3, group: 1 },
+      { id: 4, group: 4 }
     ]).run()
     result = await r.db(dbName).table(tableName).indexCreate('group').run()
     result = await r.db(dbName).table(tableName).indexWait('group').run()
-    result = await r.db(dbName).table(tableName).group({index: 'group'}).run()
+    result = await r.db(dbName).table(tableName).group({ index: 'group' }).run()
 
     assert.equal(result.length, 2)
     assert(result[0].reduction.length === 3 || result[0].reduction.length === 1)
@@ -114,26 +114,26 @@ describe('aggregation', () => {
   })
 
   it('`groupFormat` should work -- with raw', async () => {
-    result = await r.expr([{name: 'Michel', grownUp: true}, {name: 'Laurent', grownUp: true},
-      {name: 'Sophie', grownUp: true}, {name: 'Luke', grownUp: false}, {name: 'Mino', grownUp: false}]).group('grownUp').run({groupFormat: 'raw'})
+    result = await r.expr([{ name: 'Michel', grownUp: true }, { name: 'Laurent', grownUp: true },
+    { name: 'Sophie', grownUp: true }, { name: 'Luke', grownUp: false }, { name: 'Mino', grownUp: false }]).group('grownUp').run({ groupFormat: 'raw' })
 
-    assert.deepEqual(result, { '$reql_type$': 'GROUPED_DATA', 'data': [ [ false, [ { 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' } ] ], [ true, [ { 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' } ] ] ] })
+    assert.deepEqual(result, { '$reql_type$': 'GROUPED_DATA', 'data': [[false, [{ 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' }]], [true, [{ 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' }]]] })
   })
 
   it('`group` results should be properly parsed ', async () => {
-    result = await r.expr([{name: 'Michel', date: r.now()}, {name: 'Laurent', date: r.now()},
-      {name: 'Sophie', date: r.now().sub(1000)}]).group('date').run()
+    result = await r.expr([{ name: 'Michel', date: r.now() }, { name: 'Laurent', date: r.now() },
+    { name: 'Sophie', date: r.now().sub(1000) }]).group('date').run()
     assert.equal(result.length, 2)
     assert(result[0].group instanceof Date)
     assert(result[0].reduction[0].date instanceof Date)
   })
 
   it('`ungroup` should work ', async () => {
-    result = await r.expr([{name: 'Michel', grownUp: true}, {name: 'Laurent', grownUp: true},
-      {name: 'Sophie', grownUp: true}, {name: 'Luke', grownUp: false}, {name: 'Mino', grownUp: false}]).group('grownUp').ungroup().run()
+    result = await r.expr([{ name: 'Michel', grownUp: true }, { name: 'Laurent', grownUp: true },
+    { name: 'Sophie', grownUp: true }, { name: 'Luke', grownUp: false }, { name: 'Mino', grownUp: false }]).group('grownUp').ungroup().run()
     result.sort()
 
-    assert.deepEqual(result, [ { 'group': false, 'reduction': [ { 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' } ] }, { 'group': true, 'reduction': [ { 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' } ] } ])
+    assert.deepEqual(result, [{ 'group': false, 'reduction': [{ 'grownUp': false, 'name': 'Luke' }, { 'grownUp': false, 'name': 'Mino' }] }, { 'group': true, 'reduction': [{ 'grownUp': true, 'name': 'Michel' }, { 'grownUp': true, 'name': 'Laurent' }, { 'grownUp': true, 'name': 'Sophie' }] }])
   })
 
   it('`contains` should work ', async () => {
@@ -149,13 +149,13 @@ describe('aggregation', () => {
     result = await r.expr([1, 2, 3]).contains(function (doc) { return doc.eq(1) }).run()
     assert.equal(result, true)
 
-    result = await r.expr([1, 2, 3]).contains(r.row.eq(1)).run()
+    result = await r.expr([1, 2, 3]).contains(row => row.eq(1)).run()
     assert.equal(result, true)
 
-    result = await r.expr([1, 2, 3]).contains(r.row.eq(1), r.row.eq(2)).run()
+    result = await r.expr([1, 2, 3]).contains(row => row.eq(1), row => row.eq(2)).run()
     assert.equal(result, true)
 
-    result = await r.expr([1, 2, 3]).contains(r.row.eq(1), r.row.eq(5)).run()
+    result = await r.expr([1, 2, 3]).contains(row => row.eq(1), row => row.eq(5)).run()
     assert.equal(result, false)
   })
 
@@ -174,7 +174,7 @@ describe('aggregation', () => {
   })
 
   it('`sum` should work with a field', async () => {
-    result = await r.expr([{a: 2}, {a: 10}, {a: 9}]).sum('a').run()
+    result = await r.expr([{ a: 2 }, { a: 10 }, { a: 9 }]).sum('a').run()
     assert.deepEqual(result, 21)
   })
 
@@ -189,12 +189,12 @@ describe('aggregation', () => {
   })
 
   it('`avg` should work with a field', async () => {
-    result = await r.expr([{a: 2}, {a: 10}, {a: 9}]).avg('a').run()
+    result = await r.expr([{ a: 2 }, { a: 10 }, { a: 9 }]).avg('a').run()
     assert.equal(result, 7)
   })
 
   it('`r.avg` should work with a field', async () => {
-    result = await r.avg([{a: 2}, {a: 10}, {a: 9}], 'a').run()
+    result = await r.avg([{ a: 2 }, { a: 10 }, { a: 9 }], 'a').run()
     assert.equal(result, 7)
   })
 
@@ -209,13 +209,13 @@ describe('aggregation', () => {
   })
 
   it('`min` should work with a field', async () => {
-    result = await r.expr([{a: 2}, {a: 10}, {a: 9}]).min('a').run()
-    assert.deepEqual(result, {a: 2})
+    result = await r.expr([{ a: 2 }, { a: 10 }, { a: 9 }]).min('a').run()
+    assert.deepEqual(result, { a: 2 })
   })
 
   it('`r.min` should work with a field', async () => {
-    result = await r.min([{a: 2}, {a: 10}, {a: 9}], 'a').run()
-    assert.deepEqual(result, {a: 2})
+    result = await r.min([{ a: 2 }, { a: 10 }, { a: 9 }], 'a').run()
+    assert.deepEqual(result, { a: 2 })
   })
 
   it('`max` should work ', async () => {
@@ -229,17 +229,17 @@ describe('aggregation', () => {
   })
 
   it('`distinct` should work', async () => {
-    result = await r.expr([1, 2, 3, 1, 2, 1, 3, 2, 2, 1, 4]).distinct().orderBy(r.row).run()
+    result = await r.expr([1, 2, 3, 1, 2, 1, 3, 2, 2, 1, 4]).distinct().orderBy(row => row).run()
     assert.deepEqual(result, [1, 2, 3, 4])
   })
 
   it('`r.distinct` should work', async () => {
-    result = await r.distinct([1, 2, 3, 1, 2, 1, 3, 2, 2, 1, 4]).orderBy(r.row).run()
+    result = await r.distinct([1, 2, 3, 1, 2, 1, 3, 2, 2, 1, 4]).orderBy(row => row).run()
     assert.deepEqual(result, [1, 2, 3, 4])
   })
 
   it('`distinct` should work with an index', async () => {
-    result = await r.db(dbName).table(tableName).distinct({index: 'id'}).count().run()
+    result = await r.db(dbName).table(tableName).distinct({ index: 'id' }).count().run()
     const result2 = await r.db(dbName).table(tableName).count().run()
     assert.equal(result, result2)
   })

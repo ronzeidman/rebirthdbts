@@ -1,15 +1,15 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
-const {uuid} = require(path.join(__dirname, '/util/common.js'))
+const { r } = require('../lib')
+const { uuid } = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 
 
 describe('manipulating tables', () => {
-  let r, dbName
+  let dbName
 
   before(async function () {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
     dbName = uuid() // export to the global scope
     const result = await r.dbCreate(dbName).run()
     assert.equal(result.dbs_created, 1)
@@ -45,7 +45,7 @@ describe('manipulating tables', () => {
   it('`tableCreate` should create a table -- primaryKey', async function () {
     const tableName = uuid()
 
-    let result = await r.db(dbName).tableCreate(tableName, {primaryKey: 'foo'}).run()
+    let result = await r.db(dbName).tableCreate(tableName, { primaryKey: 'foo' }).run()
     assert.equal(result.tables_created, 1)
 
     result = await r.db(dbName).table(tableName).info().run()
@@ -55,7 +55,7 @@ describe('manipulating tables', () => {
   it('`tableCreate` should create a table -- all args', async function () {
     const tableName = uuid()
 
-    let result = await r.db(dbName).tableCreate(tableName, {durability: 'soft', primaryKey: 'foo'}).run()
+    let result = await r.db(dbName).tableCreate(tableName, { durability: 'soft', primaryKey: 'foo' }).run()
     assert.equal(result.tables_created, 1) // We can't really check other parameters...
 
     result = await r.db(dbName).table(tableName).info().run()
@@ -66,7 +66,7 @@ describe('manipulating tables', () => {
     try {
       const tableName = uuid()
 
-      await r.db(dbName).tableCreate(tableName, {nonValidArg: true}).run()
+      await r.db(dbName).tableCreate(tableName, { nonValidArg: true }).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message.match(/^Unrecognized option `nonValidArg` in `tableCreate`/))
@@ -130,78 +130,78 @@ describe('manipulating tables', () => {
 
     it('index operations', async function () {
       let result = await r.db(dbName).table(tableName).indexCreate('newField').run()
-      assert.deepEqual(result, {created: 1})
+      assert.deepEqual(result, { created: 1 })
 
       result = await r.db(dbName).table(tableName).indexList().run()
       assert.deepEqual(result, ['newField'])
 
       result = await r.db(dbName).table(tableName).indexWait().pluck('index', 'ready').run()
-      assert.deepEqual(result, [{index: 'newField', ready: true}])
+      assert.deepEqual(result, [{ index: 'newField', ready: true }])
       result = await r.db(dbName).table(tableName).indexStatus().pluck('index', 'ready').run()
-      assert.deepEqual(result, [{index: 'newField', ready: true}])
+      assert.deepEqual(result, [{ index: 'newField', ready: true }])
 
       result = await r.db(dbName).table(tableName).indexDrop('newField').run()
-      assert.deepEqual(result, {dropped: 1})
+      assert.deepEqual(result, { dropped: 1 })
 
       result = await r.db(dbName).table(tableName).indexCreate('field1', function (doc) { return doc('field1') }).run()
-      assert.deepEqual(result, {created: 1})
+      assert.deepEqual(result, { created: 1 })
 
       result = await r.db(dbName).table(tableName).indexWait('field1').pluck('index', 'ready').run()
-      assert.deepEqual(result, [{index: 'field1', ready: true}])
+      assert.deepEqual(result, [{ index: 'field1', ready: true }])
       result = await r.db(dbName).table(tableName).indexStatus('field1').pluck('index', 'ready').run()
-      assert.deepEqual(result, [{index: 'field1', ready: true}])
+      assert.deepEqual(result, [{ index: 'field1', ready: true }])
 
       result = await r.db(dbName).table(tableName).indexDrop('field1').run()
-      assert.deepEqual(result, {dropped: 1})
+      assert.deepEqual(result, { dropped: 1 })
     })
 
     it('`indexCreate` should work with options', async function () {
-      let result = await r.db(dbName).table(tableName).indexCreate('foo', {multi: true}).run()
-      assert.deepEqual(result, {created: 1})
+      let result = await r.db(dbName).table(tableName).indexCreate('foo', { multi: true }).run()
+      assert.deepEqual(result, { created: 1 })
 
-      result = await r.db(dbName).table(tableName).indexCreate('foo1', r.row('foo'), {multi: true}).run()
-      assert.deepEqual(result, {created: 1})
+      result = await r.db(dbName).table(tableName).indexCreate('foo1', row => row('foo'), { multi: true }).run()
+      assert.deepEqual(result, { created: 1 })
 
-      result = await r.db(dbName).table(tableName).indexCreate('foo2', function (doc) { return doc('foo') }, {multi: true}).run()
-      assert.deepEqual(result, {created: 1})
+      result = await r.db(dbName).table(tableName).indexCreate('foo2', function (doc) { return doc('foo') }, { multi: true }).run()
+      assert.deepEqual(result, { created: 1 })
 
       await r.db(dbName).table(tableName).indexWait().run()
 
-      result = await r.db(dbName).table(tableName).insert({foo: ['bar1', 'bar2'], buzz: 1}).run()
+      result = await r.db(dbName).table(tableName).insert({ foo: ['bar1', 'bar2'], buzz: 1 }).run()
       assert.equal(result.inserted, 1)
 
-      result = await r.db(dbName).table(tableName).insert({foo: ['bar1', 'bar3'], buzz: 2}).run()
+      result = await r.db(dbName).table(tableName).insert({ foo: ['bar1', 'bar3'], buzz: 2 }).run()
       assert.equal(result.inserted, 1)
 
-      result = await r.db(dbName).table(tableName).getAll('bar1', {index: 'foo'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar1', { index: 'foo' }).count().run()
       assert.equal(result, 2)
 
-      result = await r.db(dbName).table(tableName).getAll('bar1', {index: 'foo1'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar1', { index: 'foo1' }).count().run()
       assert.equal(result, 2)
-      result = await r.db(dbName).table(tableName).getAll('bar1', {index: 'foo2'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar1', { index: 'foo2' }).count().run()
       assert.equal(result, 2)
 
-      result = await r.db(dbName).table(tableName).getAll('bar2', {index: 'foo'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar2', { index: 'foo' }).count().run()
       assert.equal(result, 1)
-      result = await r.db(dbName).table(tableName).getAll('bar2', {index: 'foo1'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar2', { index: 'foo1' }).count().run()
       assert.equal(result, 1)
-      result = await r.db(dbName).table(tableName).getAll('bar2', {index: 'foo2'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar2', { index: 'foo2' }).count().run()
       assert.equal(result, 1)
 
-      result = await r.db(dbName).table(tableName).getAll('bar3', {index: 'foo'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar3', { index: 'foo' }).count().run()
       assert.equal(result, 1)
-      result = await r.db(dbName).table(tableName).getAll('bar3', {index: 'foo1'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar3', { index: 'foo1' }).count().run()
       assert.equal(result, 1)
-      result = await r.db(dbName).table(tableName).getAll('bar3', {index: 'foo2'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll('bar3', { index: 'foo2' }).count().run()
       assert.equal(result, 1)
 
       // Test when the function is wrapped in an array
-      result = await r.db(dbName).table(tableName).indexCreate('buzz', [r.row('buzz')]).run()
-      assert.deepEqual(result, {created: 1})
+      result = await r.db(dbName).table(tableName).indexCreate('buzz', [row => row('buzz')]).run()
+      assert.deepEqual(result, { created: 1 })
 
       await r.db(dbName).table(tableName).indexWait().run()
 
-      result = await r.db(dbName).table(tableName).getAll([1], {index: 'buzz'}).count().run()
+      result = await r.db(dbName).table(tableName).getAll([1], { index: 'buzz' }).count().run()
       assert.equal(result, 1)
     })
 
@@ -229,16 +229,16 @@ describe('manipulating tables', () => {
       const existing = uuid()
 
       let result = await r.db(dbName).table(tableName).indexCreate(toRename).run()
-      assert.deepEqual(result, {created: 1})
+      assert.deepEqual(result, { created: 1 })
 
       result = await r.db(dbName).table(tableName).indexRename(toRename, renamed).run()
-      assert.deepEqual(result, {renamed: 1})
+      assert.deepEqual(result, { renamed: 1 })
 
       result = await r.db(dbName).table(tableName).indexCreate(existing).run()
-      assert.deepEqual(result, {created: 1})
+      assert.deepEqual(result, { created: 1 })
 
-      result = await r.db(dbName).table(tableName).indexRename(renamed, existing, {overwrite: true}).run()
-      assert.deepEqual(result, {renamed: 1})
+      result = await r.db(dbName).table(tableName).indexRename(renamed, existing, { overwrite: true }).run()
+      assert.deepEqual(result, { renamed: 1 })
     })
 
     it('`indexRename` should not overwrite an index if not specified', async function () {
@@ -247,10 +247,10 @@ describe('manipulating tables', () => {
         const otherName = uuid()
 
         let result = await r.db(dbName).table(tableName).indexCreate(name).run()
-        assert.deepEqual(result, {created: 1})
+        assert.deepEqual(result, { created: 1 })
 
         result = await r.db(dbName).table(tableName).indexCreate(otherName).run()
-        assert.deepEqual(result, {created: 1})
+        assert.deepEqual(result, { created: 1 })
 
         await r.db(dbName).table(tableName).indexRename(otherName, name).run()
         assert.fail('should throw')
@@ -261,7 +261,7 @@ describe('manipulating tables', () => {
 
     it('`indexRename` should throw -- non valid args', async function () {
       try {
-        await r.db(dbName).table(tableName).indexRename('foo', 'bar', {nonValidArg: true}).run()
+        await r.db(dbName).table(tableName).indexRename('foo', 'bar', { nonValidArg: true }).run()
         assert.fail('should throw')
       } catch (e) {
         assert(e.message.match(/^Unrecognized option `nonValidArg` in `indexRename`/))

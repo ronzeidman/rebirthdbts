@@ -1,14 +1,14 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
 const { uuid } = require(path.join(__dirname, '/util/common.js'))
 
 describe('extra', () => {
-  let r, dbName, tableName
+  let dbName, tableName
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
     dbName = uuid()
     tableName = uuid() // Big table to test partial sequence
 

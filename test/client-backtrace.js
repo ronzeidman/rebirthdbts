@@ -1,16 +1,16 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const util = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 const uuid = util.uuid
 
 
 describe('client backtraces', () => {
-  let r, dbName, tableName, result
+  let dbName, tableName, result
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
 
     dbName = uuid()
     tableName = uuid()
@@ -115,7 +115,7 @@ r.db("aa802b7a7ec470632ddb3c515e7ab30b").table("fe82af2d2203e8fbed96e0cbbc29e936
   it('Test backtrace for r.db(dbName).table(tableName).merge(function(user) { return r.branch( user("location").eq("US"), { adult: user("age").gt(NaN) }, {radult: user("age").gt(18) }) })', async () => {
     try {
       r.nextVarId = 1
-      await r.db(dbName).table(tableName).merge(function (user) { return r.branch(user('location').eq('US'), {adult: user('age').gt(NaN)}, {radult: user('age').gt(18)}) }).run()
+      await r.db(dbName).table(tableName).merge(function (user) { return r.branch(user('location').eq('US'), { adult: user('age').gt(NaN) }, { radult: user('age').gt(18) }) }).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message === 'Cannot convert `NaN` to JSON in:\nr.db("' + dbName + '").table("' + tableName + '")\n    .merge(function(var_1) {\n        return r.branch(var_1("location").eq("US"), {\n            adult: var_1("age").gt(NaN)\n                                   ^^^ \n        }, {\n            radult: var_1("age").gt(18)\n        })\n    })\n')

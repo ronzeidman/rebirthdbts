@@ -268,11 +268,23 @@ export interface RServer {
     host: string;
     port: number;
 }
-export interface RCursor<T = any> {
+export declare type RCursorType = 'Atom' | 'Cursor' | 'Feed' | 'AtomFeed' | 'OrderByLimitFeed' | 'UnionedFeed';
+export interface RCursor<T = any> extends NodeJS.ReadableStream {
+    readonly profile: any;
+    getType(): RCursorType;
     next(): Promise<T>;
     toArray(): Promise<T[]>;
     close(): Promise<void>;
-    eachAsync(rowHandler: (row: T) => Promise<void>): Promise<void>;
+    each(callback: (err: RebirthDBError | undefined, row: any) => any, onFinishedCallback?: () => any): Promise<any>;
+    eachAsync(rowHandler: (row: any, rowFinished?: (error?: any) => any) => any, final?: (error: any) => any): Promise<void>;
+}
+export interface RebirthDBError extends Error {
+    readonly type: RebirthDBErrorType;
+}
+export declare enum RebirthDBErrorType {
+    UNKNOWN_ERROR = 0,
+    AUTH_ERROR = 1,
+    CURSOR_END = 2,
 }
 export interface RQuery<T = any> {
     typeOf(): RDatum<string>;

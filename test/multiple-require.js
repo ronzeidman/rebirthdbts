@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const rethinkdb_ = require(path.join(__dirname, '/../lib'))
 const assert = require('assert')
 

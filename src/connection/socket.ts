@@ -51,6 +51,10 @@ export class RebirthDBSocket extends EventEmitter {
     this.password = password;
   }
 
+  public eventNames() {
+    return ['connect', 'query', 'data', 'release', 'error'];
+  }
+
   public async connect() {
     if (this.socket) {
       throw new RebirthDBError('Socket already connected');
@@ -111,7 +115,9 @@ export class RebirthDBSocket extends EventEmitter {
   }
 
   public stopQuery(token: number) {
-    this.sendQuery([QueryType.STOP], token);
+    if (this.runningQueries.includes(token)) {
+      this.sendQuery([QueryType.STOP], token);
+    }
     this.setData(token);
     this.finishQuery(token);
   }

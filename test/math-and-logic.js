@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
 
 
@@ -8,7 +8,7 @@ describe('math and logic', () => {
   let r
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async () => {
@@ -508,11 +508,11 @@ describe('math and logic', () => {
     assert((result >= 5) && (result < 10))
     assert.equal(Math.floor(result), result)
 
-    result = await r.random(5, 10, {float: true}).run()
+    result = await r.random(5, 10, { float: true }).run()
     assert((result >= 5) && (result < 10))
     assert.notEqual(Math.floor(result), result) // that's "almost" safe
 
-    result = await r.random(5, {float: true}).run()
+    result = await r.random(5, { float: true }).run()
     assert((result < 5) && (result > 0))
     assert.notEqual(Math.floor(result), result) // that's "almost" safe
   })

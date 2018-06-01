@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --check-leaks -t 20000 ./tests/*.js",
+    "test": "mocha --check-leaks -t 20000 ./test/*.js",
     "build": "tsc",
     "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"
   },

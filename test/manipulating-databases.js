@@ -1,7 +1,7 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
-const {uuid} = require(path.join(__dirname, '/util/common.js'))
+const { r } = require('../lib')
+const { uuid } = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 
 
@@ -9,7 +9,7 @@ describe('manipulating databases', () => {
   let r
 
   before(async function () {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async function () {

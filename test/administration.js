@@ -1,16 +1,16 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const util = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 const uuid = util.uuid
 
 
 describe('administration', () => {
-  let r, dbName, tableName, result
+  let dbName, tableName, result
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
 
     dbName = uuid()
     tableName = uuid()
@@ -43,7 +43,7 @@ describe('administration', () => {
       await r.db(dbName).config('hello').run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`config` takes 0 argument, 1 provided after:/))
+      assert(e.message.match(/^`config` takes 0 arguments, 1 provided after:/))
     }
   })
 
@@ -58,7 +58,7 @@ describe('administration', () => {
       await r.db(dbName).table(tableName).status('hello').run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`status` takes 0 argument, 1 provided after:/))
+      assert(e.message.match(/^`status` takes 0 arguments, 1 provided after:/))
     }
   })
 
@@ -68,10 +68,10 @@ describe('administration', () => {
   })
 
   it('`wait` should work with options', async function () {
-    result = await r.db(dbName).table(tableName).wait({waitFor: 'ready_for_writes'}).run()
+    result = await r.db(dbName).table(tableName).wait({ waitFor: 'ready_for_writes' }).run()
     assert.equal(result.ready, 1)
 
-    result = await r.db(dbName).table(tableName).wait({waitFor: 'ready_for_writes', timeout: 2000}).run()
+    result = await r.db(dbName).table(tableName).wait({ waitFor: 'ready_for_writes', timeout: 2000 }).run()
     assert.equal(result.ready, 1)
   })
 
@@ -94,12 +94,12 @@ describe('administration', () => {
   })
 
   it('`reconfigure` should work - 1', async function () {
-    result = await r.db(dbName).table(tableName).reconfigure({shards: 1, replicas: 1}).run()
+    result = await r.db(dbName).table(tableName).reconfigure({ shards: 1, replicas: 1 }).run()
     assert.equal(result.reconfigured, 1)
   })
 
   it('`reconfigure` should work - 2 - dryRun', async function () {
-    result = await r.db(dbName).table(tableName).reconfigure({shards: 1, replicas: 1, dryRun: true}).run()
+    result = await r.db(dbName).table(tableName).reconfigure({ shards: 1, replicas: 1, dryRun: true }).run()
     assert.equal(result.reconfigured, 0)
   })
 
@@ -114,7 +114,7 @@ describe('administration', () => {
 
   it('`reconfigure` should throw on an unrecognized key', async function () {
     try {
-      result = await r.db(dbName).table(tableName).reconfigure({foo: 1}).run()
+      result = await r.db(dbName).table(tableName).reconfigure({ foo: 1 }).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message.match(/^Unrecognized option `foo` in `reconfigure` after:/))
@@ -149,7 +149,7 @@ describe('administration', () => {
       result = await r.db(dbName).table(tableName).rebalance(1).run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`rebalance` takes 0 argument, 1 provided after:/))
+      assert(e.message.match(/^`rebalance` takes 0 arguments, 1 provided after:/))
     }
   })
 })

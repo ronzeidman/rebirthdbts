@@ -18,6 +18,7 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     private connections;
     private timers;
     constructor(connectionOptions: RServerConnectionOptions, {db, user, password, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RConnectionOptions);
+    eventNames(): string[];
     initConnections(): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;

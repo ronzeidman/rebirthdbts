@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
 
 
@@ -9,7 +9,7 @@ describe('dates and times', () => {
   let r
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async () => {
@@ -20,16 +20,16 @@ describe('dates and times', () => {
     let result = await r.now().run()
     assert(result instanceof Date)
 
-    result = await r.expr({a: r.now()}).run()
+    result = await r.expr({ a: r.now() }).run()
     assert(result.a instanceof Date)
 
     result = await r.expr([r.now()]).run()
     assert(result[0] instanceof Date)
 
-    result = await r.expr([{}, {a: r.now()}]).run()
+    result = await r.expr([{}, { a: r.now() }]).run()
     assert(result[1].a instanceof Date)
 
-    result = await r.expr({b: [{}, {a: r.now()}]}).run()
+    result = await r.expr({ b: [{}, { a: r.now() }] }).run()
     assert(result.b[1].a instanceof Date)
   })
 
@@ -119,7 +119,7 @@ describe('dates and times', () => {
   })
 
   it('`ISO8601` should work with a timezone', async () => {
-    const result = await r.ISO8601('1986-11-03T08:30:00', {defaultTimezone: '-08:00'}).run()
+    const result = await r.ISO8601('1986-11-03T08:30:00', { defaultTimezone: '-08:00' }).run()
     assert(result, new Date(1986, 11, 3, 8, 30, 0, -8))
   })
 
@@ -281,12 +281,12 @@ describe('dates and times', () => {
 
   it('`epochTime` should work', async () => {
     const now = new Date()
-    const result = await r.epochTime(now.getTime() / 1000).run({timeFormat: 'raw'})
+    const result = await r.epochTime(now.getTime() / 1000).run({ timeFormat: 'raw' })
     assert.equal(result.$reql_type$, 'TIME')
   })
 
   it('`ISO8601` run parameter should work', async () => {
-    const result = await r.time(2018, 5, 2, 13, 0, 0, '-03:00').run({timeFormat: 'ISO8601'})
+    const result = await r.time(2018, 5, 2, 13, 0, 0, '-03:00').run({ timeFormat: 'ISO8601' })
     assert.equal(typeof result, 'string')
     assert.equal(result, '2018-05-02T13:00:00.000-03:00')
   })

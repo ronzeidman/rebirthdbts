@@ -124,7 +124,6 @@ export const termConfig: TermConfig[] = [
   [TermType.MAX, 'max', 0, 1, true],
   [TermType.SPLIT, 'split', 1, 2, false],
   [TermType.UNGROUP, 'ungroup', 0, 0, false],
-  [TermType.RANDOM, 'random', 0, 2, true],
   [TermType.CHANGES, 'changes', 0, 0, true],
   [TermType.GEOJSON, 'geojson', 1, 1, false],
   [TermType.TO_GEOJSON, 'toGeojson', 0, 0, false],
@@ -173,7 +172,8 @@ export const rConfig: TermConfig[] = [
   [TermType.POLYGON, 'polygon', 2, -1, false],
   [TermType.CIRCLE, 'circle', 2, 2, true],
   [TermType.LITERAL, 'literal', 0, 1, false],
-  [TermType.OBJECT, 'object', 1, -1, false]
+  [TermType.OBJECT, 'object', 1, -1, false],
+  [TermType.RANDOM, 'random', 0, 2, true],
 ];
 
 export const rConsts: Array<[TermType, string]> = [

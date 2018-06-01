@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
 
 
@@ -9,7 +9,7 @@ describe('errors', () => {
   let r
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async () => {
@@ -18,7 +18,7 @@ describe('errors', () => {
 
   it('ReqlResourceError', async function () {
     try {
-      await r.expr([1, 2, 3, 4]).run({arrayLimit: 2})
+      await r.expr([1, 2, 3, 4]).run({ arrayLimit: 2 })
       assert.fail('should throw')
     } catch (e) {
       assert.equal(e.name, 'ReqlResourceError')
@@ -53,7 +53,7 @@ describe('errors', () => {
   })
 
   describe('Missing tests', function () {
-    it('ReqlInternalError no easy way to trigger', function () {})
-    it('ReqlOpIndeterminateError no easy way to trigger', function () {})
+    it('ReqlInternalError no easy way to trigger', function () { })
+    it('ReqlOpIndeterminateError no easy way to trigger', function () { })
   })
 })

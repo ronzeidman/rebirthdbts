@@ -57,6 +57,10 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     this.serverPools = [];
   }
 
+  public eventNames() {
+    return ['draining', 'queueing', 'size', 'available-size', 'healthy', 'error'];
+  }
+
   public async initServers(serverNum = 0): Promise<void> {
     if (serverNum < this.servers.length) {
       return this.createServerPool(this.servers[serverNum]).then(() =>

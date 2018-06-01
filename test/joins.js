@@ -1,15 +1,15 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
-const {uuid} = require(path.join(__dirname, '/util/common.js'))
+const { uuid } = require(path.join(__dirname, '/util/common.js'))
 
 
 describe('joins', () => {
-  let r, dbName, tableName, pks
+  let dbName, tableName, pks
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
     dbName = uuid()
     tableName = uuid()
 
@@ -17,7 +17,7 @@ describe('joins', () => {
     assert.equal(result.dbs_created, 1)
     result = await r.db(dbName).tableCreate(tableName).run()
     assert.equal(result.tables_created, 1)
-    result = await r.db(dbName).table(tableName).insert([{val: 1}, {val: 2}, {val: 3}]).run()
+    result = await r.db(dbName).table(tableName).insert([{ val: 1 }, { val: 2 }, { val: 3 }]).run()
     pks = result.generated_keys
     assert.equal(result.inserted, 3)
 
@@ -32,7 +32,7 @@ describe('joins', () => {
 
   it('`innerJoin` should return -- array-array', async function () {
     const result = await r.expr([1, 2, 3]).innerJoin(r.expr([1, 2, 3]), function (left, right) { return left.eq(right) }).run()
-    assert.deepEqual(result, [{left: 1, right: 1}, {left: 2, right: 2}, {left: 3, right: 3}])
+    assert.deepEqual(result, [{ left: 1, right: 1 }, { left: 2, right: 2 }, { left: 3, right: 3 }])
   })
 
   it('`innerJoin` should return -- array-stream', async function () {
@@ -77,7 +77,7 @@ describe('joins', () => {
 
   it('`outerJoin` should return -- array-array', async function () {
     const result = await r.expr([1, 2, 3]).outerJoin(r.expr([1, 2, 3]), function (left, right) { return left.eq(right) }).run()
-    assert.deepEqual(result, [{left: 1, right: 1}, {left: 2, right: 2}, {left: 3, right: 3}])
+    assert.deepEqual(result, [{ left: 1, right: 1 }, { left: 2, right: 2 }, { left: 3, right: 3 }])
   })
 
   it('`outerJoin` should return -- array-stream - 1', async function () {
@@ -144,8 +144,8 @@ describe('joins', () => {
     assert(result[2].right)
   })
 
-  it('`eqJoin` should return -- pk -- array-stream - r.row', async function () {
-    const result = await r.expr(pks).eqJoin(r.row, r.db(dbName).table(tableName)).run()
+  it('`eqJoin` should return -- pk -- array-stream - row => row', async function () {
+    const result = await r.expr(pks).eqJoin(row => row, r.db(dbName).table(tableName)).run()
     assert.equal(result.length, 3)
     assert(result[0].left)
     assert(result[0].right)
@@ -155,8 +155,8 @@ describe('joins', () => {
     assert(result[2].right)
   })
 
-  it('`eqJoin` should return -- secondary index -- array-stream - r.row', async function () {
-    const result = await r.expr([1, 2, 3]).eqJoin(r.row, r.db(dbName).table(tableName), {index: 'val'}).run()
+  it('`eqJoin` should return -- secondary index -- array-stream - row => row', async function () {
+    const result = await r.expr([1, 2, 3]).eqJoin(row => row, r.db(dbName).table(tableName), { index: 'val' }).run()
     assert.equal(result.length, 3)
     assert(result[0].left)
     assert(result[0].right)
@@ -177,7 +177,7 @@ describe('joins', () => {
 
   it('`eqJoin` should throw with a non valid key', async function () {
     try {
-      await r.expr([1, 2, 3]).eqJoin(r.row, r.db(dbName).table(tableName), {nonValidKey: 'val'}).run()
+      await r.expr([1, 2, 3]).eqJoin(row => row, r.db(dbName).table(tableName), { nonValidKey: 'val' }).run()
       assert.fail('should throw')
     } catch (e) {
       assert.equal(e.message, 'Unrecognized option `nonValidKey` in `eqJoin` after:\nr.expr([1, 2, 3])\nAvailable options are index <string>, ordered <boolean>')

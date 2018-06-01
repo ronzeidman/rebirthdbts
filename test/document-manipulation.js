@@ -1,15 +1,15 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
-const {uuid} = require(path.join(__dirname, '/util/common.js'))
+const { uuid } = require(path.join(__dirname, '/util/common.js'))
 
 
 describe('dates and times', () => {
-  let r, dbName, tableName
+  let dbName, tableName
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
     dbName = uuid()
     tableName = uuid()
 
@@ -24,42 +24,42 @@ describe('dates and times', () => {
     await r.getPoolMaster().drain()
   })
 
-  it('`r.row` should work - 1', async function () {
-    const result = await r.expr([1, 2, 3]).map(r.row).run()
+  it('`row => row` should work - 1', async function () {
+    const result = await r.expr([1, 2, 3]).map(row => row).run()
     assert.deepEqual(result, [1, 2, 3])
   })
 
-  it('`r.row` should work - 2', async function () {
+  it('`row => row` should work - 2', async function () {
     let result = await r.db(dbName).table(tableName).insert({}).run()
     assert.equal(result.inserted, 1)
 
-    result = await r.db(dbName).table(tableName).update({idCopyUpdate: r.row('id')}).run()
+    result = await r.db(dbName).table(tableName).update({ idCopyUpdate: row => row('id') }).run()
     assert.equal(result.replaced, 1)
   })
 
-  it('`r.row` should work - 3', async function () {
-    const result = await r.db(dbName).table(tableName).replace(r.row).run()
+  it('`row => row` should work - 3', async function () {
+    const result = await r.db(dbName).table(tableName).replace(row => row).run()
     assert.equal(result.replaced, 0)
   })
 
-  it('`r.row` should work - 4', async function () {
+  it('`row => row` should work - 4', async function () {
     const result = await r.db(dbName).table(tableName).replace(function (doc) {
-      return doc.merge({idCopyReplace: doc('id')})
+      return doc.merge({ idCopyReplace: doc('id') })
     }).run()
     assert.equal(result.replaced, 1)
   })
 
-  it('`r.row` should work - 5', async function () {
+  it('`row => row` should work - 5', async function () {
     const result = await r.db(dbName).table(tableName).delete().run()
     assert.equal(result.deleted, 1)
   })
 
   it('`pluck` should work', async function () {
-    let result = await r.expr({a: 0, b: 1, c: 2}).pluck('a', 'b').run()
-    assert.deepEqual(result, {a: 0, b: 1})
+    let result = await r.expr({ a: 0, b: 1, c: 2 }).pluck('a', 'b').run()
+    assert.deepEqual(result, { a: 0, b: 1 })
 
-    result = await r.expr([{a: 0, b: 1, c: 2}, {a: 0, b: 10, c: 20}]).pluck('a', 'b').run()
-    assert.deepEqual(result, [{a: 0, b: 1}, {a: 0, b: 10}])
+    result = await r.expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }]).pluck('a', 'b').run()
+    assert.deepEqual(result, [{ a: 0, b: 1 }, { a: 0, b: 10 }])
   })
 
   it('`pluck` should throw if no argument has been passed', async function () {
@@ -72,11 +72,11 @@ describe('dates and times', () => {
   })
 
   it('`without` should work', async function () {
-    let result = await r.expr({a: 0, b: 1, c: 2}).without('c').run()
-    assert.deepEqual(result, {a: 0, b: 1})
+    let result = await r.expr({ a: 0, b: 1, c: 2 }).without('c').run()
+    assert.deepEqual(result, { a: 0, b: 1 })
 
-    result = await r.expr([{a: 0, b: 1, c: 2}, {a: 0, b: 10, c: 20}]).without('a', 'c').run()
-    assert.deepEqual(result, [{b: 1}, {b: 10}])
+    result = await r.expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }]).without('a', 'c').run()
+    assert.deepEqual(result, [{ b: 1 }, { b: 10 }])
   })
 
   it('`without` should throw if no argument has been passed', async function () {
@@ -88,38 +88,38 @@ describe('dates and times', () => {
   })
 
   it('`merge` should work', async function () {
-    let result = await r.expr({a: 0}).merge({b: 1}).run()
-    assert.deepEqual(result, {a: 0, b: 1})
+    let result = await r.expr({ a: 0 }).merge({ b: 1 }).run()
+    assert.deepEqual(result, { a: 0, b: 1 })
 
-    result = await r.expr([{a: 0}, {a: 1}, {a: 2}]).merge({b: 1}).run()
-    assert.deepEqual(result, [{a: 0, b: 1}, {a: 1, b: 1}, {a: 2, b: 1}])
+    result = await r.expr([{ a: 0 }, { a: 1 }, { a: 2 }]).merge({ b: 1 }).run()
+    assert.deepEqual(result, [{ a: 0, b: 1 }, { a: 1, b: 1 }, { a: 2, b: 1 }])
 
-    result = await r.expr({a: 0, c: {l: 'tt'}}).merge({b: {c: {d: {e: 'fff'}}, k: 'pp'}}).run()
-    assert.deepEqual(result, {a: 0, b: {c: {d: {e: 'fff'}}, k: 'pp'}, c: {l: 'tt'}})
+    result = await r.expr({ a: 0, c: { l: 'tt' } }).merge({ b: { c: { d: { e: 'fff' } }, k: 'pp' } }).run()
+    assert.deepEqual(result, { a: 0, b: { c: { d: { e: 'fff' } }, k: 'pp' }, c: { l: 'tt' } })
 
-    result = await r.expr({a: 1}).merge({date: r.now()}).run()
+    result = await r.expr({ a: 1 }).merge({ date: r.now() }).run()
     assert.equal(result.a, 1)
     assert(result.date instanceof Date)
 
-    result = await r.expr({a: 1}).merge({nested: r.row}, {b: 2}).run()
-    assert.deepEqual(result, {a: 1, nested: {a: 1}, b: 2})
+    result = await r.expr({ a: 1 }).merge({ nested: row => row }, { b: 2 }).run()
+    assert.deepEqual(result, { a: 1, nested: { a: 1 }, b: 2 })
   })
 
   it('`merge` should take an anonymous function', async function () {
-    let result = await r.expr({a: 0}).merge(function (doc) {
-      return {b: doc('a').add(1)}
+    let result = await r.expr({ a: 0 }).merge(function (doc) {
+      return { b: doc('a').add(1) }
     }).run()
-    assert.deepEqual(result, {a: 0, b: 1})
+    assert.deepEqual(result, { a: 0, b: 1 })
 
-    result = await r.expr({a: 0}).merge({
-      b: r.row('a').add(1)
+    result = await r.expr({ a: 0 }).merge({
+      b: row => row('a').add(1)
     }).run()
-    assert.deepEqual(result, {a: 0, b: 1})
+    assert.deepEqual(result, { a: 0, b: 1 })
   })
 
   it('`literal` should work', async function () {
-    const result = await r.expr({a: {b: 1}}).merge({a: r.literal({c: 2})}).run()
-    assert.deepEqual(result, {a: {c: 2}})
+    const result = await r.expr({ a: { b: 1 } }).merge({ a: r.literal({ c: 2 }) }).run()
+    assert.deepEqual(result, { a: { c: 2 } })
   })
 
   it('`literal` is not defined after a term', async function () {
@@ -141,7 +141,7 @@ describe('dates and times', () => {
   })
 
   it('`literal` should work with no argument', async function () {
-    const result = await r.expr({foo: 'bar'}).merge({foo: r.literal()}).run()
+    const result = await r.expr({ foo: 'bar' }).merge({ foo: r.literal() }).run()
     assert.deepEqual(result, {})
   })
 
@@ -247,13 +247,13 @@ describe('dates and times', () => {
   })
 
   it('`getField` should work', async function () {
-    let result = await r.expr({a: 0, b: 1})('a').run()
+    let result = await r.expr({ a: 0, b: 1 })('a').run()
     assert.equal(result, 0)
 
-    result = await r.expr({a: 0, b: 1}).getField('a').run()
+    result = await r.expr({ a: 0, b: 1 }).getField('a').run()
     assert.equal(result, 0)
 
-    result = await r.expr([{a: 0, b: 1}, {a: 1}])('a').run()
+    result = await r.expr([{ a: 0, b: 1 }, { a: 1 }])('a').run()
     assert.deepEqual(result, [0, 1])
   })
 
@@ -276,8 +276,8 @@ describe('dates and times', () => {
   })
 
   it('`hasFields` should work', async function () {
-    const result = await r.expr([{a: 0, b: 1, c: 2}, {a: 0, b: 10, c: 20}, {b: 1, c: 3}]).hasFields('a', 'c').run()
-    assert.deepEqual(result, [{a: 0, b: 1, c: 2}, {a: 0, b: 10, c: 20}])
+    const result = await r.expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }, { b: 1, c: 3 }]).hasFields('a', 'c').run()
+    assert.deepEqual(result, [{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }])
   })
 
   it('`hasFields` should throw if no argument has been passed', async function () {
@@ -361,13 +361,13 @@ describe('dates and times', () => {
   })
 
   it('`keys` should work', async function () {
-    const result = await r.expr({a: 0, b: 1, c: 2}).keys().orderBy(r.row).run()
+    const result = await r.expr({ a: 0, b: 1, c: 2 }).keys().orderBy(row => row).run()
     assert.deepEqual(result, ['a', 'b', 'c'])
   })
 
   it('`keys` throw on a string', async function () {
     try {
-      await r.expr('hello').keys().orderBy(r.row).run()
+      await r.expr('hello').keys().orderBy(row => row).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message.match(/^Cannot call `keys` on objects of type `STRING` in/))
@@ -375,12 +375,12 @@ describe('dates and times', () => {
   })
 
   it('`values` should work', async function () {
-    const result = await r.expr({a: 0, b: 1, c: 2}).values().orderBy(r.row).run()
+    const result = await r.expr({ a: 0, b: 1, c: 2 }).values().orderBy(row => row).run()
     assert.deepEqual(result, [0, 1, 2])
   })
 
   it('`object` should work', async function () {
     const result = await r.object('a', 1, r.expr('2'), 'foo').run()
-    assert.deepEqual(result, {'a': 1, '2': 'foo'})
+    assert.deepEqual(result, { 'a': 1, '2': 'foo' })
   })
 })

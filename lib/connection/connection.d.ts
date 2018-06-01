@@ -23,6 +23,7 @@ export declare class RebirthDBConnection extends EventEmitter implements Connect
         silent?: boolean;
         log?: (message: string) => undefined;
     });
+    eventNames(): string[];
     readonly open: boolean;
     readonly numOfQueries: number;
     close({noreplyWait}?: {

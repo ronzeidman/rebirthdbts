@@ -54,6 +54,10 @@ export class ServerConnectionPool extends EventEmitter
     this.connections = [];
   }
 
+  public eventNames() {
+    return ['draining', 'queueing', 'size', 'available-size', 'healthy', 'error'];
+  }
+
   public async initConnections(): Promise<void> {
     if (this.connections.length < this.buffer) {
       return this.createConnection().then(() => this.initConnections());

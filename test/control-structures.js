@@ -1,16 +1,16 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const util = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 const uuid = util.uuid
 
 
 describe('control structures', () => {
-  let r, result
+  let result
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async () => {
@@ -18,7 +18,7 @@ describe('control structures', () => {
   })
 
   it('`do` should work', async () => {
-    result = await r.expr({a: 1}).do(function (doc) { return doc('a') }).run()
+    result = await r.expr({ a: 1 }).do(function (doc) { return doc('a') }).run()
     assert.equal(result, 1)
   })
 
@@ -38,7 +38,7 @@ describe('control structures', () => {
     result = await r.do(1, 2).run()
     assert.deepEqual(result, 2)
 
-    result = await r.do(r.args([ r.expr(3), r.expr(4) ])).run()
+    result = await r.do(r.args([r.expr(3), r.expr(4)])).run()
     assert.deepEqual(result, 3)
   })
 
@@ -102,7 +102,7 @@ describe('control structures', () => {
     result = await r.db(dbName).tableCreate(tableName).run()
     assert.equal(result.tables_created, 1)
 
-    result = await r.expr([{foo: 'bar'}, {foo: 'foo'}]).forEach(function (doc) {
+    result = await r.expr([{ foo: 'bar' }, { foo: 'foo' }]).forEach(function (doc) {
       return r.db(dbName).table(tableName).insert(doc)
     }).run()
     assert.equal(result.inserted, 2)
@@ -110,7 +110,7 @@ describe('control structures', () => {
 
   it('`forEach` should throw if not given a function', async () => {
     try {
-      result = await r.expr([{foo: 'bar'}, {foo: 'foo'}]).forEach().run()
+      result = await r.expr([{ foo: 'bar' }, { foo: 'foo' }]).forEach().run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message.match(/^`forEach` takes 1 argument, 0 provided after/))
@@ -146,7 +146,7 @@ describe('control structures', () => {
   })
 
   it('`default` should work', async () => {
-    result = await r.expr({a: 1})('b').default('Hello').run()
+    result = await r.expr({ a: 1 })('b').default('Hello').run()
     assert.equal(result, 'Hello')
   })
   it('`default` should throw if no argument has been given', async () => {
@@ -206,8 +206,8 @@ describe('control structures', () => {
   })
 
   it('`json` should work', async () => {
-    result = await r.json(JSON.stringify({a: 1})).run()
-    assert.deepEqual(result, {a: 1})
+    result = await r.json(JSON.stringify({ a: 1 })).run()
+    assert.deepEqual(result, { a: 1 })
 
     result = await r.json('{}').run()
     assert.deepEqual(result, {})
@@ -231,19 +231,19 @@ describe('control structures', () => {
   })
 
   it('`toJSON` and `toJsonString` should work', async () => {
-    result = await r.expr({a: 1}).toJSON().run()
+    result = await r.expr({ a: 1 }).toJSON().run()
     assert.equal(result, '{"a":1}')
 
-    result = await r.expr({a: 1}).toJsonString().run()
+    result = await r.expr({ a: 1 }).toJsonString().run()
     assert.equal(result, '{"a":1}')
   })
 
   it('`toJSON` should throw if an argument is provided', async () => {
     try {
-      result = await r.expr({a: 1}).toJSON('foo').run()
+      result = await r.expr({ a: 1 }).toJSON('foo').run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message.match(/^`toJSON` takes 0 argument, 1 provided/) !== null)
+      assert(e.message.match(/^`toJSON` takes 0 arguments, 1 provided/) !== null)
     }
   })
 
@@ -251,16 +251,16 @@ describe('control structures', () => {
     result = await r.args([10, 20, 30]).run()
     assert.deepEqual(result, [10, 20, 30])
 
-    result = await r.expr({foo: 1, bar: 2, buzz: 3}).pluck(r.args(['foo', 'buzz'])).run()
-    assert.deepEqual(result, {foo: 1, buzz: 3})
+    result = await r.expr({ foo: 1, bar: 2, buzz: 3 }).pluck(r.args(['foo', 'buzz'])).run()
+    assert.deepEqual(result, { foo: 1, buzz: 3 })
   })
 
   it('`args` should throw if an implicit var is passed inside', async () => {
     try {
-      await r.table('foo').eqJoin(r.args([r.row, r.table('bar')])).run()
+      await r.table('foo').eqJoin(r.args([row => row, r.table('bar')])).run()
       assert.fail('should throw')
     } catch (e) {
-      assert(e.message === 'Implicit variable `r.row` cannot be used inside `r.args`.')
+      assert(e.message === 'Implicit variable `row => row` cannot be used inside `r.args`.')
     }
   })
 
@@ -270,13 +270,13 @@ describe('control structures', () => {
   })
 
   it('`http` should work with options', async () => {
-    result = await r.http('http://google.com', {timeout: 60}).run()
+    result = await r.http('http://google.com', { timeout: 60 }).run()
     assert.equal(typeof result, 'string')
   })
 
   it('`http` should throw with an unrecognized option', async () => {
     try {
-      result = await r.http('http://google.com', {foo: 60}).run()
+      result = await r.http('http://google.com', { foo: 60 }).run()
       assert.fail('should throw')
     } catch (e) {
       assert(e.message === 'Unrecognized option `foo` in `http`. Available options are attempts <number>, redirects <number>, verify <boolean>, resultFormat: <string>, method: <string>, auth: <object>, params: <object>, header: <string>, data: <string>, page: <string/function>, pageLimit: <number>.')

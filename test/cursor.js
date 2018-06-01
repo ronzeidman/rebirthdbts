@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const util = require(path.join(__dirname, '/util/common.js'))
 const uuid = util.uuid
 const assert = require('assert')
@@ -9,13 +9,13 @@ const iterall = require('iterall')
 
 
 describe('cursor', () => {
-  let r, connection, dbName, tableName, tableName2, cursor, result, feed
+  let connection, dbName, tableName, tableName2, cursor, result, feed
 
   const numDocs = 100 // Number of documents in the "big table" used to test the SUCCESS_PARTIAL
   const smallNumDocs = 5 // Number of documents in the "small table"
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
 
     dbName = uuid()
     tableName = uuid() // Big table to test partial sequence
@@ -40,46 +40,43 @@ describe('cursor', () => {
     result = await r.db(dbName).tableCreate(tableName).run()
     assert.equal(result.tables_created, 1)
 
+    result = await r.db(dbName).table(tableName).insert(r.expr(Array(numDocs).fill({}))).run()
+    assert.equal(result.inserted, numDocs)
+
     result = await r.db(dbName).tableCreate(tableName2).run()
     assert.equal(result.tables_created, 1)
+
+    result = await r.db(dbName).table(tableName2).insert(r.expr(Array(smallNumDocs).fill({}))).run()
+    assert.equal(result.inserted, smallNumDocs)
   })
 
   after(async () => {
     await r.getPoolMaster().drain()
   })
 
-  it('Inserting batch - table 1', async () => {
-    result = await r.db(dbName).table(tableName).insert(r.expr(Array(numDocs).fill({}))).run()
-    assert.equal(result.inserted, numDocs)
-  })
-
-  it('Inserting batch - table 2', async () => {
-    result = await r.db(dbName).table(tableName2).insert(r.expr(Array(smallNumDocs).fill({}))).run()
-    assert.equal(result.inserted, smallNumDocs)
-  })
-
   it('Updating batch', async () => {
     result = await r.db(dbName).table(tableName).update({
       date: r.now().sub(r.random().mul(1000000)),
       value: r.random()
-    }, {nonAtomic: true}).run()
+    }, { nonAtomic: true }).run()
     assert.equal(result.replaced, 100)
   })
 
   it('`table` should return a cursor', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
     assert.equal(cursor.toString(), '[object Cursor]')
   })
 
   it('`next` should return a document', async () => {
+    cursor = await r.db(dbName).table(tableName).run()
     result = await cursor.next()
     assert(result)
     assert(result.id)
   })
 
   it('`each` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -93,7 +90,7 @@ describe('cursor', () => {
   })
 
   it('`each` should work - onFinish - reach end', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -112,7 +109,7 @@ describe('cursor', () => {
   })
 
   it('`each` should work - onFinish - return false', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -128,7 +125,7 @@ describe('cursor', () => {
   })
 
   it('`eachAsync` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
 
     const history = []
@@ -163,7 +160,7 @@ describe('cursor', () => {
   })
 
   it('`eachAsync` should work - callback style', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     assert(cursor)
 
     let count = 0
@@ -180,44 +177,46 @@ describe('cursor', () => {
   })
 
   it('`toArray` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
     result = await cursor.toArray()
     assert.equal(result.length, numDocs)
   })
 
   it('`toArray` should work - 2', async () => {
-    cursor = await r.db(dbName).table(tableName2).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName2).run()
     result = await cursor.toArray()
     assert.equal(result.length, smallNumDocs)
   })
 
   it('`toArray` should work -- with a profile', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true, profile: true})
-    result = await cursor.result.toArray()
+    cursor = await r.db(dbName).table(tableName).run({ profile: true })
+    result = await cursor.toArray()
     assert(Array.isArray(result))
+    assert(cursor.profile)
     assert.equal(result.length, numDocs)
   })
 
   it('`toArray` should work with a datum', async () => {
-    cursor = await r.expr([1, 2, 3]).run({cursor: true})
+    cursor = await r.expr([1, 2, 3]).run({ immidiateReturn: true })
     result = await cursor.toArray()
     assert(Array.isArray(result))
     assert.deepEqual(result, [1, 2, 3])
   })
 
   it('`table` should return a cursor - 2', async () => {
-    cursor = await r.db(dbName).table(tableName2).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName2).run()
     assert(cursor)
   })
 
   it('`next` should return a document - 2', async () => {
+    cursor = await r.db(dbName).table(tableName2).run()
     result = await cursor.next()
     assert(result)
     assert(result.id)
   })
 
   it('`next` should work -- testing common pattern', async () => {
-    cursor = await r.db(dbName).table(tableName2).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName2).run()
     assert(cursor)
 
     let i = 0
@@ -234,7 +233,7 @@ describe('cursor', () => {
   })
 
   it('`cursor.close` should return a promise', async () => {
-    var cursor = await r.db(dbName).table(tableName2).run({cursor: true})
+    var cursor = await r.db(dbName).table(tableName2).run()
     await cursor.close()
   })
 
@@ -243,14 +242,14 @@ describe('cursor', () => {
     await cursor.close()
     result = cursor.close()
     try {
-      result.then(() => {}) // Promise's contract is to have a `then` method
+      result.then(() => { }) // Promise's contract is to have a `then` method
     } catch (e) {
       assert.fail(e)
     }
   })
 
   it('cursor should throw if the user try to serialize it in JSON', async () => {
-    cursor = await r.db(dbName).table(tableName).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName).run()
 
     try {
       cursor.toJSON()
@@ -260,31 +259,31 @@ describe('cursor', () => {
   })
 
   it('Remove the field `val` in some docs - 1', async () => {
-    result = await r.db(dbName).table(tableName).update({val: 1}).run()
+    result = await r.db(dbName).table(tableName).update({ val: 1 }).run()
     assert.equal(result.replaced, numDocs)
 
     result = await r.db(dbName).table(tableName)
-      .orderBy({index: r.desc('id')})
-      .sample(5).replace(r.row.without('val'))
+      .orderBy({ index: r.desc('id') })
+      .sample(5).replace(row => row.without('val'))
       .run()
     assert.equal(result.replaced, 5)
   })
 
   it('Remove the field `val` in some docs - 2', async () => {
-    result = await r.db(dbName).table(tableName).update({val: 1}).run()
+    result = await r.db(dbName).table(tableName).update({ val: 1 }).run()
 
     result = await r.db(dbName).table(tableName)
-      .orderBy({index: r.desc('id')})
-      .limit(5).replace(r.row.without('val'))
+      .orderBy({ index: r.desc('id') })
+      .limit(5).replace(row => row.without('val'))
       .run()
     assert.equal(result.replaced, 5)
   })
 
   it('`toArray` with multiple batches - testing empty SUCCESS_COMPLETE', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
-    cursor = await r.db(dbName).table(tableName).run(connection, {cursor: true, maxBatchRows: 1})
+    cursor = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
     assert(cursor)
 
     result = await cursor.toArray()
@@ -296,21 +295,21 @@ describe('cursor', () => {
   })
 
   it('Automatic coercion from cursor to table with multiple batches', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
-    result = await r.db(dbName).table(tableName).run(connection, {maxBatchRows: 1})
-    assert(result.length > 0)
+    result = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
+    assert((await result.toArray()).length > 0)
 
     await connection.close()
     assert(!connection.open)
   })
 
   it('`next` with multiple batches', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
-    cursor = await r.db(dbName).table(tableName).run(connection, {cursor: true, maxBatchRows: 1})
+    cursor = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
     assert(cursor)
 
     let i = 0
@@ -330,13 +329,13 @@ describe('cursor', () => {
   })
 
   it('`next` should error when hitting an error -- not on the first batch', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection)
 
     cursor = await r.db(dbName).table(tableName)
-      .orderBy({index: 'id'})
-      .map(r.row('val').add(1))
-      .run(connection, {cursor: true, maxBatchRows: 10})
+      .orderBy({ index: 'id' })
+      .map(row => row('val').add(1))
+      .run(connection, { maxBatchRows: 10 })
     assert(cursor)
 
     let i = 0
@@ -364,7 +363,7 @@ describe('cursor', () => {
   })
 
   it('`changes` should work with squash: true', async () => {
-    feed = await r.db(dbName).table(tableName).changes({squash: true}).run()
+    feed = await r.db(dbName).table(tableName).changes({ squash: true }).run()
     assert(feed)
     assert.equal(feed.toString(), '[object Feed]')
     await feed.close()
@@ -378,14 +377,14 @@ describe('cursor', () => {
   })
 
   it('`orderBy.limit.changes` should return a feed', async () => {
-    feed = await r.db(dbName).table(tableName).orderBy({index: 'id'}).limit(2).changes().run()
+    feed = await r.db(dbName).table(tableName).orderBy({ index: 'id' }).limit(2).changes().run()
     assert(feed)
     assert.equal(feed.toString(), '[object OrderByLimitFeed]')
     await feed.close()
   })
 
   it('`changes` with `includeOffsets` should work', async () => {
-    feed = await r.db(dbName).table(tableName).orderBy({index: 'id'}).limit(2).changes({
+    feed = await r.db(dbName).table(tableName).orderBy({ index: 'id' }).limit(2).changes({
       includeOffsets: true,
       includeInitial: true
     }).run()
@@ -399,18 +398,18 @@ describe('cursor', () => {
         if (counter >= 2) {
           assert(typeof change.old_offset === 'number')
 
-          feed.close().then(resolve).error(reject)
+          feed.close().then(resolve).catch(reject)
         }
         counter++
       })
     })
 
-    await r.db(dbName).table(tableName).insert({id: 0})
+    await r.db(dbName).table(tableName).insert({ id: 0 }).run()
     await promise
   })
 
   it('`changes` with `includeTypes` should work', async () => {
-    feed = await r.db(dbName).table(tableName).orderBy({index: 'id'}).limit(2).changes({
+    feed = await r.db(dbName).table(tableName).orderBy({ index: 'id' }).limit(2).changes({
       includeTypes: true,
       includeInitial: true
     }).run()
@@ -422,13 +421,13 @@ describe('cursor', () => {
         if (error) reject(error)
         assert(typeof change.type === 'string')
         if (counter > 0) {
-          feed.close().then(resolve).error(reject)
+          feed.close().then(resolve).catch(reject)
         }
         counter++
       })
     })
 
-    result = await r.db(dbName).table(tableName).insert({id: 0})
+    result = await r.db(dbName).table(tableName).insert({ id: 0 }).run()
     assert.equal(result.errors, 1) // Duplicate primary key (depends on previous test case)
     await promise
   })
@@ -443,30 +442,30 @@ describe('cursor', () => {
         feed.next().then(assert)
         i++
         if (i === smallNumDocs) {
-          return feed.close().then(resolve).error(reject)
+          return feed.close().then(resolve).catch(reject)
         }
       }
     })
 
-    await r.db(dbName).table(tableName2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).update({ foo: r.now() }).run()
     await promise
   })
 
   it('`next` should work on an atom feed', async () => {
     let idValue = uuid()
-    feed = await r.db(dbName).table(tableName2).get(idValue).changes({includeInitial: true}).run()
+    feed = await r.db(dbName).table(tableName2).get(idValue).changes({ includeInitial: true }).run()
     assert(feed)
 
     const promise = new Promise((resolve, reject) => {
       feed.next()
-        .then((result) => assert.deepEqual(result, {new_val: null}))
+        .then((result) => assert.deepEqual(result, { new_val: null }))
         .then(() => feed.next())
-        .then((result) => assert.deepEqual(result, {new_val: {id: idValue}, old_val: null}))
+        .then((result) => assert.deepEqual(result, { new_val: { id: idValue }, old_val: null }))
         .then(resolve)
         .catch(reject)
     })
 
-    await r.db(dbName).table(tableName2).insert({id: idValue}).run()
+    await r.db(dbName).table(tableName2).insert({ id: idValue }).run()
     await promise
     await feed.close()
   })
@@ -482,6 +481,7 @@ describe('cursor', () => {
     feed = await r.db(dbName).table(tableName2).changes().run()
 
     const promise = new Promise((resolve, reject) => {
+      feed.on('data', () => null)
       feed.on('error', reject)
       feed.on('end', resolve)
     })
@@ -499,33 +499,34 @@ describe('cursor', () => {
       feed.on('data', function () {
         i++
         if (i === smallNumDocs) {
-          feed.close().then(resolve).error(reject)
+          feed.close().then(resolve).catch(reject)
         }
       })
       feed.on('error', reject)
     })
 
-    await r.db(dbName).table(tableName2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).update({ foo: r.now() }).run()
     await promise
   })
 
   it('`on` should work on cursor - a `end` event shoul be eventually emitted on a cursor', async () => {
-    cursor = await r.db(dbName).table(tableName2).run({cursor: true})
+    cursor = await r.db(dbName).table(tableName2).run()
     assert(cursor)
 
     const promise = new Promise((resolve, reject) => {
+      feed.on('data', () => null)
       cursor.on('end', resolve)
       cursor.on('error', reject)
     })
 
-    await r.db(dbName).table(tableName2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).update({ foo: r.now() }).run()
     await promise
   })
 
   it('`next`, `each`, `toArray` should be deactivated if the EventEmitter interface is used', async () => {
     feed = await r.db(dbName).table(tableName2).changes().run()
 
-    feed.on('data', () => {})
+    feed.on('data', () => { })
     feed.on('error', assert.fail)
 
     try {
@@ -539,13 +540,13 @@ describe('cursor', () => {
 
   it('Import with cursor as default', async () => {
     await util.sleep(2000)
-    const r1 = rethinkdbdash({cursor: true, host: config.host, port: config.port, authKey: config.authKey, buffer: config.buffer, max: config.max, silent: true})
+    await r.connectPool({ host: config.host, port: config.port, authKey: config.authKey, buffer: config.buffer, max: config.max, silent: true })
 
-    cursor = await r1.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).run()
     assert.equal(cursor.toString(), '[object Cursor]')
 
     await cursor.close()
-    await r1.getPoolMaster().drain()
+    await r.getPoolMaster().drain()
   })
 
   it('`each` should not return an error if the feed is closed - 1', async () => {
@@ -561,13 +562,13 @@ describe('cursor', () => {
         }
         if (count === 1) {
           setTimeout(function () {
-            feed.close().then(resolve).error(reject)
+            feed.close().then(resolve).catch(reject)
           }, 100)
         }
       })
     })
 
-    await r.db(dbName).table(tableName2).limit(2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).limit(2).update({ foo: r.now() }).run()
     await promise
   })
 
@@ -584,12 +585,12 @@ describe('cursor', () => {
         }
         if (count === 2) {
           setTimeout(function () {
-            feed.close().then(resolve).error(reject)
+            feed.close().then(resolve).catch(reject)
           }, 100)
         }
       })
     })
-    await r.db(dbName).table(tableName2).limit(2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).limit(2).update({ foo: r.now() }).run()
     await promise
   })
 
@@ -601,11 +602,11 @@ describe('cursor', () => {
       feed.each(function (err, result) {
         if (err) reject(err)
         if ((result.new_val != null) && (result.new_val.id === 1)) {
-          feed.close().then(resolve).error(reject)
+          feed.close().then(resolve).catch(reject)
         }
       })
     })
-    await r.db(dbName).table(tableName2).insert({id: 1}).run()
+    await r.db(dbName).table(tableName2).insert({ id: 1 }).run()
     await promise
   })
 
@@ -621,17 +622,17 @@ describe('cursor', () => {
         }
         if (count === 1) {
           setTimeout(function () {
-            feed.close().then(resolve).error(reject)
+            feed.close().then(resolve).catch(reject)
           }, 100)
         }
       })
     })
-    await r.db(dbName).table(tableName2).limit(2).update({foo: r.now()}).run()
+    await r.db(dbName).table(tableName2).limit(2).update({ foo: r.now() }).run()
     await promise
   })
 
   it('`includeStates` should work', async () => {
-    feed = await r.db(dbName).table(tableName).orderBy({index: 'id'}).limit(10).changes({includeStates: true, includeInitial: true}).run()
+    feed = await r.db(dbName).table(tableName).orderBy({ index: 'id' }).limit(10).changes({ includeStates: true, includeInitial: true }).run()
     var i = 0
 
     await new Promise((resolve, reject) => {
@@ -639,14 +640,14 @@ describe('cursor', () => {
         if (err) reject(err)
         i++
         if (i === 10) {
-          feed.close().then(resolve).error(reject)
+          feed.close().then(resolve).catch(reject)
         }
       })
     })
   })
 
   it('`each` should return an error if the connection dies', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection)
 
     var feed = await r.db(dbName).table(tableName).changes().run(connection)
@@ -659,11 +660,11 @@ describe('cursor', () => {
   })
 
   it('`eachAsync` should return an error if the connection dies', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection)
 
     var feed = await r.db(dbName).table(tableName).changes().run(connection)
-    feed.eachAsync(function (change) {}).error(function (err) {
+    feed.eachAsync(function (change) { }).catch(function (err) {
       assert(err.message.match(/^The connection was closed before the query could be completed for/))
     })
     // Kill the TCP connection
@@ -671,7 +672,7 @@ describe('cursor', () => {
   })
 
   it('`asyncIterator` should return an async iterator', async () => {
-    connection = await r.connect({host: config.host, port: config.port, authKey: config.authKey})
+    connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
     const feed = await r.db(dbName).table(tableName).changes().run(connection)
@@ -695,7 +696,7 @@ describe('cursor', () => {
       iterator.next().then(resolve).catch(reject)
     })
 
-    await r.db(dbName).table(tableName2).update({foo: value}).run()
+    await r.db(dbName).table(tableName2).update({ foo: value }).run()
     result = await promise
     assert(result.value.new_val.foo === value)
   })

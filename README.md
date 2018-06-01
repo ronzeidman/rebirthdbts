@@ -55,7 +55,7 @@ const conn = await r.connect(options);
 * Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
 
 # MAYBE DOING:
-
+* Support `r.row`, use `row => row` instead for now
 * Pretty print backtraces
 * Support streams (Does anyone uses it?)
 

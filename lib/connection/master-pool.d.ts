@@ -19,6 +19,7 @@ export declare class MasterConnectionPool extends EventEmitter implements Master
     private connParam;
     private timers;
     constructor({db, user, password, discovery, servers, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RPoolConnectionOptions);
+    eventNames(): string[];
     initServers(serverNum?: number): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;

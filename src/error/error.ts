@@ -1,8 +1,10 @@
+import { RebirthDBErrorType } from '..';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, ResponseType } from '../proto/enums';
 import { backtraceTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
+  type?: RebirthDBErrorType;
   errorCode?: number;
   term?: TermJson;
   query?: QueryJson;
@@ -11,12 +13,14 @@ export interface RebirthDBErrorArgs {
   responseErrorType?: ErrorType;
 }
 
-export function isRebirthDBError(error: any) {
+export function isRebirthDBError(error: any): error is RebirthDBError {
   return error instanceof RebirthDBError;
 }
 
 export class RebirthDBError extends Error {
-  public errorCode?: number;
+  public get type() { return this._type; }
+  // tslint:disable-next-line:variable-name
+  private _type: RebirthDBErrorType = RebirthDBErrorType.UNKNOWN_ERROR;
   private term?: TermJson;
   private query?: QueryJson;
   private backtrace?: Array<number | string>;
@@ -24,6 +28,7 @@ export class RebirthDBError extends Error {
   constructor(
     public msg: string,
     {
+      type,
       term,
       query,
       errorCode,
@@ -36,9 +41,17 @@ export class RebirthDBError extends Error {
     this.name = 'RebirthDBError';
     this.msg = msg;
     this.term = query ? query[1] : term;
-    this.errorCode = errorCode;
     this.backtrace = backtrace;
+    this.setErrorType({ errorCode, type });
     Error.captureStackTrace(this, RebirthDBError);
+  }
+
+  private setErrorType({ errorCode, type }: { errorCode?: number, type?: RebirthDBErrorType }) {
+    if (errorCode && errorCode >= 10 && errorCode <= 20) {
+      this._type = RebirthDBErrorType.AUTH_ERROR;
+    } else if (type) {
+      this._type = type;
+    }
   }
 }
 

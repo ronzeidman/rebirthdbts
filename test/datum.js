@@ -1,13 +1,13 @@
 const path = require('path')
 const config = require('./config.js')
-const rethinkdbdash = require(path.join(__dirname, '/../lib'))
+const { r } = require('../lib')
 const assert = require('assert')
 
 describe('datum', function () {
   let r
 
   before(async () => {
-    r = await rethinkdbdash(config)
+    await r.connectPool(config)
   })
 
   after(async () => {

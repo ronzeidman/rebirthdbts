@@ -25,6 +25,7 @@ export declare class RebirthDBSocket extends EventEmitter {
         user?: string;
         password?: Buffer;
     });
+    eventNames(): string[];
     connect(): Promise<void>;
     sendQuery(query: QueryJson, token?: number): number;
     stopQuery(token: number): void;
