@@ -5,7 +5,7 @@ import { doTermFunc, getCursorQueryFunc, runQueryFunc, termBuilder } from './ter
 export const querySymbol = Symbol('RebirthDBQuery');
 
 export const isQuery = (query: any) =>
-  (typeof query === 'object' || typeof query === 'function') &&
+  (query !== null && typeof query === 'object' || typeof query === 'function') &&
   querySymbol in query;
 
 export function toQuery(term: TermJson) {
