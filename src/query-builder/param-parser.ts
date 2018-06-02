@@ -1,4 +1,4 @@
-import { isBuffer, isDate, isFunction } from 'util';
+import { isBuffer, isDate, isFunction, isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
@@ -10,7 +10,7 @@ export function parseParam(param: any): TermJson {
     return null;
   }
   if (isQuery(param)) {
-    if (typeof param.term === 'undefined') {
+    if (isUndefined(param.term)) {
       throw new RebirthDBError("'r' cannot be an argument");
     }
     return param.term;

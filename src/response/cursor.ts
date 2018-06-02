@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { inspect } from 'util';
+import { inspect, isUndefined } from 'util';
 import { RebirthDBSocket } from '../connection/socket';
 import { RebirthDBError, isRebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
@@ -201,7 +201,7 @@ export class Cursor extends Readable implements RCursor {
     const results = this.results && this.type === 'Atom' && Array.isArray(this.results[0])
       ? this.results[0]
       : this.results;
-    if (!this.results || typeof this.results[this.position] === 'undefined') {
+    if (!this.results || isUndefined(this.results[this.position])) {
       this.close();
       throw new RebirthDBError('No more rows in the cursor.', { type: RebirthDBErrorType.CURSOR_END });
     }

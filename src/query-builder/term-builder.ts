@@ -1,3 +1,4 @@
+import { isUndefined } from 'util';
 import { RebirthDBConnection } from '../connection/connection';
 import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
@@ -15,7 +16,7 @@ export function termBuilder(
 ) {
   return (...args: any[]) => {
     let optarg: any;
-    const params: TermJson[] = typeof currentTerm !== 'undefined' ? [currentTerm] : [];
+    const params: TermJson[] = !isUndefined(currentTerm) ? [currentTerm] : [];
     if (isQuery(args[0]) && args[0].term[0] === TermType.ARGS) {
       params.push(parseParam(args[0]));
       optarg = hasOptarg ? args[1] : undefined;
@@ -71,7 +72,7 @@ export function termBuilder(
           { term: currentTerm }
         );
       }
-      if (maybeOptarg && !optarg) {
+      if (!isUndefined(maybeOptarg) && isUndefined(optarg)) {
         args.push(maybeOptarg);
       }
       params.push(...args.map(parseParam));

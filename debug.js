@@ -19,8 +19,9 @@ const smallNumDocs = 5; // Number of documents in the "small table"
   // result = await r.db(dbName).table(tableName).insert(Array(100).fill({})).run()
   // assert.equal(result.inserted, 100)
   // assert.equal(result.generated_keys.length, 100)
-
-  const result = await r.time(r.args([1986, 11, 3, 12, 0, 0, 'Z'])).run()
-  assert.equal(result instanceof Date, true)
-
+  const res = await r.branch(
+    r.expr(5).eq(0),
+    r.expr(23).eq(r.now().inTimezone('-09:00').hours()),
+    r.expr(5).eq(r.now().inTimezone('-09:00').hours().add(1))
+  ).run().catch(console.error);
 })();

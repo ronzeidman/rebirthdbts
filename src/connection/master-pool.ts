@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { isIPv6 } from 'net';
+import { isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
@@ -247,9 +248,9 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   private setHealthy(healthy: boolean | undefined) {
-    if (typeof healthy === 'undefined') {
+    if (isUndefined(healthy)) {
       this.healthy = undefined;
-    } else if (healthy !== this.healthy && typeof healthy !== 'undefined') {
+    } else if (healthy !== this.healthy && !isUndefined(healthy)) {
       this.healthy = healthy;
       this.emit('healthy', healthy);
     }

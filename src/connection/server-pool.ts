@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
@@ -161,9 +162,9 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   private setHealthy(healthy: boolean | undefined) {
-    if (typeof healthy === 'undefined') {
+    if (isUndefined(healthy)) {
       this.healthy = undefined;
-    } else if (healthy !== this.healthy && typeof healthy !== 'undefined') {
+    } else if (healthy !== this.healthy && !isUndefined(healthy)) {
       this.healthy = healthy;
       this.emit('healthy', healthy);
     }
@@ -245,7 +246,7 @@ export class ServerConnectionPool extends EventEmitter
           this.closeConnection(conn);
           break;
         }
-        if (typeof this.healthy === 'undefined') {
+        if (isUndefined(this.healthy)) {
           this.setHealthy(false);
         }
         await new Promise(resolve =>

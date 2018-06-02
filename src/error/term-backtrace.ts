@@ -1,3 +1,4 @@
+import { isUndefined } from 'util';
 import { QueryJson, TermJson } from '../internal-types';
 import { QueryType, TermType } from '../proto/enums';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
@@ -18,7 +19,7 @@ export function backtraceTerm(
       forceHead || (!all && index === 0),
       nextBacktrace(index, backtrace)
     );
-  if (typeof term === 'undefined') {
+  if (isUndefined(term)) {
     return getMarked('');
   }
   if (!Array.isArray(term)) {
@@ -47,11 +48,11 @@ export function backtraceTerm(
       return getMarked(
         head
           ? combineMarks`r.expr([${args
-              .map(parseArg)
-              .reduce(joinMultiArray, ['', ''])}])`
+            .map(parseArg)
+            .reduce(joinMultiArray, ['', ''])}])`
           : combineMarks`[${args
-              .map(parseArg)
-              .reduce(joinMultiArray, ['', ''])}]`,
+            .map(parseArg)
+            .reduce(joinMultiArray, ['', ''])}]`,
         backtrace
       );
     }
@@ -124,12 +125,12 @@ export function backtraceTerm(
             optarg
               ? hasArgs
                 ? combineMarks`r.${
-                    rfunc[1]
+                  rfunc[1]
                   }(${rparsedParams}, ${backtraceObject(optarg, backtrace)})`
                 : combineMarks`r.${rfunc[1]}(${backtraceObject(
-                    optarg,
-                    backtrace
-                  )})`
+                  optarg,
+                  backtrace
+                )})`
               : combineMarks`r.${rfunc[1]}(${rparsedParams})`,
             backtrace
           );
@@ -155,7 +156,7 @@ export function backtraceTerm(
         parsedOptarg
           ? hasParams
             ? combineMarks`${parsedCaller}.${
-                func[1]
+              func[1]
               }(${parsedParams}, ${parsedOptarg})`
             : combineMarks`${parsedCaller}.${func[1]}(${parsedOptarg})`
           : combineMarks`${parsedCaller}.${func[1]}(${parsedParams})`,

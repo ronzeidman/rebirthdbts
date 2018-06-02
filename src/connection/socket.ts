@@ -6,6 +6,7 @@ import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
 import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake-utils';
+import { isUndefined } from 'util';
 
 export type RNConnOpts = RServerConnectionOptions & {
   host: string;
@@ -127,7 +128,7 @@ export class RebirthDBSocket extends EventEmitter {
       if (this.status === 'open' && !this.runningQueries.includes(token)) {
         reject(new RebirthDBError('Query is not running'));
       }
-      if (typeof this.data[token] !== 'undefined') {
+      if (!isUndefined(this.data[token])) {
         const data = this.data[token];
         if (typeof data !== 'function') {
           delete this.data[token];
