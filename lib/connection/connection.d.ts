@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
+import { Cursor } from '../response/cursor';
 import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
 export declare class RebirthDBConnection extends EventEmitter implements Connection {
     private connectionOptions;
@@ -35,7 +36,7 @@ export declare class RebirthDBConnection extends EventEmitter implements Connect
     use(db: string): void;
     noreplyWait(): Promise<void>;
     server(): Promise<ServerInfo>;
-    query(term: TermJson, globalArgs?: RunOptions): Promise<any>;
+    query(term: TermJson, globalArgs?: RunOptions): Promise<Cursor | undefined>;
     private findTableTermAndAddDb(term, db);
     private startPinging();
     private stopPinging();

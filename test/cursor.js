@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require('./config.js')
-const { r } = require('../lib')
+const { r } = require(path.join(__dirname, '/../lib'))
 const util = require(path.join(__dirname, '/util/common.js'))
 const uuid = util.uuid
 const assert = require('assert')
@@ -40,18 +40,22 @@ describe('cursor', () => {
     result = await r.db(dbName).tableCreate(tableName).run()
     assert.equal(result.tables_created, 1)
 
-    result = await r.db(dbName).table(tableName).insert(r.expr(Array(numDocs).fill({}))).run()
-    assert.equal(result.inserted, numDocs)
-
     result = await r.db(dbName).tableCreate(tableName2).run()
     assert.equal(result.tables_created, 1)
-
-    result = await r.db(dbName).table(tableName2).insert(r.expr(Array(smallNumDocs).fill({}))).run()
-    assert.equal(result.inserted, smallNumDocs)
   })
 
   after(async () => {
     await r.getPoolMaster().drain()
+  })
+
+  it('Inserting batch - table 1', async () => {
+    result = await r.db(dbName).table(tableName).insert(r.expr(Array(numDocs).fill({}))).run()
+    assert.equal(result.inserted, numDocs)
+  })
+
+  it('Inserting batch - table 2', async () => {
+    result = await r.db(dbName).table(tableName2).insert(r.expr(Array(smallNumDocs).fill({}))).run()
+    assert.equal(result.inserted, smallNumDocs)
   })
 
   it('Updating batch', async () => {
@@ -63,20 +67,19 @@ describe('cursor', () => {
   })
 
   it('`table` should return a cursor', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
     assert.equal(cursor.toString(), '[object Cursor]')
   })
 
   it('`next` should return a document', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
     result = await cursor.next()
     assert(result)
     assert(result.id)
   })
 
   it('`each` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -90,7 +93,7 @@ describe('cursor', () => {
   })
 
   it('`each` should work - onFinish - reach end', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -109,7 +112,7 @@ describe('cursor', () => {
   })
 
   it('`each` should work - onFinish - return false', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
 
     await new Promise((resolve, reject) => {
@@ -125,7 +128,7 @@ describe('cursor', () => {
   })
 
   it('`eachAsync` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
 
     const history = []
@@ -160,7 +163,7 @@ describe('cursor', () => {
   })
 
   it('`eachAsync` should work - callback style', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     assert(cursor)
 
     let count = 0
@@ -177,46 +180,44 @@ describe('cursor', () => {
   })
 
   it('`toArray` should work', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
     result = await cursor.toArray()
     assert.equal(result.length, numDocs)
   })
 
   it('`toArray` should work - 2', async () => {
-    cursor = await r.db(dbName).table(tableName2).run()
+    cursor = await r.db(dbName).table(tableName2).getCursor()
     result = await cursor.toArray()
     assert.equal(result.length, smallNumDocs)
   })
 
   it('`toArray` should work -- with a profile', async () => {
-    cursor = await r.db(dbName).table(tableName).run({ profile: true })
+    cursor = await r.db(dbName).table(tableName).getCursor({ profile: true })
     result = await cursor.toArray()
     assert(Array.isArray(result))
-    assert(cursor.profile)
     assert.equal(result.length, numDocs)
   })
 
   it('`toArray` should work with a datum', async () => {
-    cursor = await r.expr([1, 2, 3]).run({ immidiateReturn: true })
+    cursor = await r.expr([1, 2, 3]).getCursor()
     result = await cursor.toArray()
     assert(Array.isArray(result))
     assert.deepEqual(result, [1, 2, 3])
   })
 
   it('`table` should return a cursor - 2', async () => {
-    cursor = await r.db(dbName).table(tableName2).run()
+    cursor = await r.db(dbName).table(tableName2).getCursor()
     assert(cursor)
   })
 
   it('`next` should return a document - 2', async () => {
-    cursor = await r.db(dbName).table(tableName2).run()
     result = await cursor.next()
     assert(result)
     assert(result.id)
   })
 
   it('`next` should work -- testing common pattern', async () => {
-    cursor = await r.db(dbName).table(tableName2).run()
+    cursor = await r.db(dbName).table(tableName2).getCursor()
     assert(cursor)
 
     let i = 0
@@ -233,7 +234,7 @@ describe('cursor', () => {
   })
 
   it('`cursor.close` should return a promise', async () => {
-    var cursor = await r.db(dbName).table(tableName2).run()
+    var cursor = await r.db(dbName).table(tableName2).getCursor()
     await cursor.close()
   })
 
@@ -249,7 +250,7 @@ describe('cursor', () => {
   })
 
   it('cursor should throw if the user try to serialize it in JSON', async () => {
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r.db(dbName).table(tableName).getCursor()
 
     try {
       cursor.toJSON()
@@ -283,7 +284,7 @@ describe('cursor', () => {
     connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
-    cursor = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
+    cursor = await r.db(dbName).table(tableName).getCursor(connection, { maxBatchRows: 1 })
     assert(cursor)
 
     result = await cursor.toArray()
@@ -299,7 +300,7 @@ describe('cursor', () => {
     assert(connection.open)
 
     result = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
-    assert((await result.toArray()).length > 0)
+    assert(result.length > 0)
 
     await connection.close()
     assert(!connection.open)
@@ -309,7 +310,7 @@ describe('cursor', () => {
     connection = await r.connect({ host: config.host, port: config.port, authKey: config.authKey })
     assert(connection.open)
 
-    cursor = await r.db(dbName).table(tableName).run(connection, { maxBatchRows: 1 })
+    cursor = await r.db(dbName).table(tableName).getCursor(connection, { maxBatchRows: 1 })
     assert(cursor)
 
     let i = 0
@@ -335,7 +336,7 @@ describe('cursor', () => {
     cursor = await r.db(dbName).table(tableName)
       .orderBy({ index: 'id' })
       .map(row => row('val').add(1))
-      .run(connection, { maxBatchRows: 10 })
+      .getCursor(connection, { maxBatchRows: 10 })
     assert(cursor)
 
     let i = 0
@@ -481,9 +482,8 @@ describe('cursor', () => {
     feed = await r.db(dbName).table(tableName2).changes().run()
 
     const promise = new Promise((resolve, reject) => {
-      feed.on('data', () => null)
       feed.on('error', reject)
-      feed.on('end', resolve)
+      feed.on('data', () => null).on('end', resolve)
     })
 
     await feed.close()
@@ -510,12 +510,11 @@ describe('cursor', () => {
   })
 
   it('`on` should work on cursor - a `end` event shoul be eventually emitted on a cursor', async () => {
-    cursor = await r.db(dbName).table(tableName2).run()
+    cursor = await r.db(dbName).table(tableName2).getCursor()
     assert(cursor)
 
     const promise = new Promise((resolve, reject) => {
-      feed.on('data', () => null)
-      cursor.on('end', resolve)
+      cursor.on('data', () => null).on('end', resolve)
       cursor.on('error', reject)
     })
 
@@ -540,13 +539,13 @@ describe('cursor', () => {
 
   it('Import with cursor as default', async () => {
     await util.sleep(2000)
-    await r.connectPool({ host: config.host, port: config.port, authKey: config.authKey, buffer: config.buffer, max: config.max, silent: true })
+    const r1 = rethinkdbdash({ cursor: true, host: config.host, port: config.port, authKey: config.authKey, buffer: config.buffer, max: config.max, silent: true })
 
-    cursor = await r.db(dbName).table(tableName).run()
+    cursor = await r1.db(dbName).table(tableName).run()
     assert.equal(cursor.toString(), '[object Cursor]')
 
     await cursor.close()
-    await r.getPoolMaster().drain()
+    await r1.getPoolMaster().drain()
   })
 
   it('`each` should not return an error if the feed is closed - 1', async () => {

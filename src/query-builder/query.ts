@@ -1,6 +1,6 @@
 import { TermJson } from '../internal-types';
 import { bracket, termConfig } from './query-config';
-import { doTermFunc, runQueryFunc, termBuilder } from './term-builder';
+import { doTermFunc, getCursorQueryFunc, runQueryFunc, termBuilder } from './term-builder';
 
 export const querySymbol = Symbol('RebirthDBQuery');
 
@@ -33,6 +33,9 @@ const queryProxyHandler: ProxyHandler<any> = {
     const { term } = target;
     if (p === 'run') {
       return runQueryFunc(term);
+    }
+    if (p === 'getCursor') {
+      return getCursorQueryFunc(term);
     }
     if (p === 'do') {
       return doTermFunc(receiver);

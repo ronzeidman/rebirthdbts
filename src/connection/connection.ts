@@ -4,7 +4,7 @@ import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
+import { Connection, RServerConnectionOptions, RunOptions, ServerInfo, RCursor } from '../types';
 import { NULL_BUFFER } from './handshake-utils';
 import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
 
@@ -150,12 +150,11 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
     return result.r[0];
   }
-  public async query(term: TermJson, globalArgs: RunOptions = {}) {
+  public async query(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
     const {
       timeFormat,
       groupFormat,
       binaryFormat,
-      immidiateReturn,
       ...gargs
     } = globalArgs;
     gargs.db = gargs.db || this.db;
@@ -165,15 +164,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     if (globalArgs.noreply) {
       return;
     }
-    const cursor = new Cursor(this.socket, token, globalArgs, query);
-    if (globalArgs.immidiateReturn) {
-      return cursor;
-    }
-    const type = await cursor.resolve();
-    if (type === ResponseType.SUCCESS_ATOM) {
-      return await cursor.next();
-    }
-    return cursor;
+    return new Cursor(this.socket, token, globalArgs, query);
   }
 
   private findTableTermAndAddDb(term: TermJson | undefined, db: any) {

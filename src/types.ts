@@ -91,10 +91,9 @@ export interface IndexOptions {
 }
 
 export interface RunOptions {
-  timeFormat?: Format; // 'native' or 'raw', default 'native'
+  timeFormat?: Format | 'ISO8601'; // 'native' or 'raw', default 'native'
   groupFormat?: Format; // 'native' or 'raw', default 'native'
   binaryFormat?: Format; // 'native' or 'raw', default 'native'
-  immidiateReturn?: boolean;
   useOutdated?: boolean; // default false
   profile?: boolean; // default false
   durability?: Durability; // 'hard' or 'soft'
@@ -338,23 +337,21 @@ export interface RQuery<T = any> {
   }>;
 
   run(
-    connection: Connection,
-    options: RunOptions & { immidiateReturn: true }
-  ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
-  run(
-    options: RunOptions & { immidiateReturn: true }
-  ): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
-  run(
-    connection?: Connection | RunOptions & { immidiateReturn?: false },
-    options?: RunOptions & { immidiateReturn?: false }
+    connection?: Connection | RunOptions,
+    options?: RunOptions
   ): Promise<T>;
   run(
-    options: RunOptions & { noreply: true }
+    connection?: Connection | (RunOptions & { noreply: true }),
+    options?: RunOptions & { noreply: true }
   ): Promise<undefined>;
   run(
-    connection: Connection,
-    options: RunOptions & { noreply: true }
-  ): Promise<undefined>;
+    connection?: Connection | (RunOptions & { profile: true }),
+    options?: RunOptions & { profile: true }
+  ): Promise<{ profile: any, result: T }>;
+  getCursor(
+    connection?: Connection | RunOptions,
+    options?: RunOptions
+  ): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
@@ -416,7 +413,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     ): T extends any[] ? RES : never;
 
   withFields(
-    ...fields: Array<RValue<string>>
+    ...fields: FieldSelector[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
   filter<U = T extends Array<infer T1> ? T1 : never>(
     predicate: (doc: RDatum<U>) => RValue<boolean>,
@@ -603,11 +600,11 @@ export interface RDatum<T = any> extends RQuery<T> {
   values(): RDatum<Array<T[keyof T]>>;
 }
 
-export interface RStream<T = any> extends RQuery<RCursor<T>> {
+export interface RStream<T = any> extends RQuery<T[]> {
   forEach<U = any>(
     func: (res: RDatum<T>) => RDatum<WriteResult<U>>
   ): RDatum<WriteResult<U>>;
-  changes(options?: ChangesOptions): RStream<Changes<T>>;
+  changes(options?: ChangesOptions): RFeed<Changes<T>>;
 
   <U extends keyof T>(attribute: RValue<U>): RStream<T[U]>;
   (n: RValue<number>): RDatum<T>;
@@ -634,6 +631,9 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
   union<U = T>(
     ...other: Array<RStream<U> | RValue<U[]> | { interleave: boolean | string }>
   ): RStream<U>;
+  union<U = T>(
+    ...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }>
+  ): RFeed<U>;
   map<U = any>(
     ...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>
   ): RStream<U>;
@@ -642,30 +642,8 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
   ): RStream<U>;
 
   // WHERE
-
-  withFields<U extends keyof T>(field: RValue<U>): RStream<Pick<T, U>>;
-  withFields<U1 extends keyof T, U2 extends keyof T>(
-    field1: RValue<U1>,
-    field2: RValue<U2>
-  ): RStream<Pick<T, U1> & Pick<T, U2>>;
-  withFields<U1 extends keyof T, U2 extends keyof T, U3 extends keyof T>(
-    field1: RValue<U1>,
-    field2: RValue<U2>,
-    field3: RValue<U3>
-  ): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3>>;
-  withFields<
-    U1 extends keyof T,
-    U2 extends keyof T,
-    U3 extends keyof T,
-    U4 extends keyof T
-    >(
-      field1: RValue<U1>,
-      field2: RValue<U2>,
-      field3: RValue<U3>,
-      field4: RValue<U4>
-    ): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3> & Pick<T, U4>>;
-  withFields(...fields: Array<RValue<keyof T>>): RStream<Partial<T>>;
-  hasFields(...fields: Array<RValue<keyof T>>): RStream<T>;
+  withFields(...fields: FieldSelector[]): RStream<Partial<T>>;
+  hasFields(...fields: FieldSelector[]): RStream<T>;
   filter(
     predicate: (doc: RDatum<T>) => RValue<boolean>,
     options?: { default: boolean }
@@ -717,8 +695,8 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
   distinct(): RStream<T>;
   distinct<TIndex = any>(index: { index: string }): RStream<TIndex>;
 
-  pluck(...fields: FieldSelector[]): Partial<T>;
-  without(...fields: FieldSelector[]): Partial<T>;
+  pluck(...fields: FieldSelector[]): RStream<Partial<T>>;
+  without(...fields: FieldSelector[]): RStream<Partial<T>>;
 
   merge<U = any>(...objects: any[]): RStream<U>;
 
@@ -739,6 +717,45 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
   coerceTo<U = any>(type: 'object'): RDatum<U>;
 }
 
+export interface RFeed<T = any> extends RQuery<RCursor<T>> {
+  <U extends keyof T>(attribute: RValue<U>): RFeed<T[U]>;
+  getField<U extends keyof T>(fieldName: RValue<U>): RFeed<T[U]>;
+
+  union<U = T>(
+    ...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }>
+  ): RFeed<U>;
+  map<U = any>(
+    ...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>
+  ): RFeed<U>;
+  concatMap<U = any>(
+    ...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>
+  ): RFeed<U>;
+
+  // WHERE
+
+  withFields(...fields: FieldSelector[]): RFeed<Partial<T>>;
+  hasFields(...fields: FieldSelector[]): RFeed<T>;
+  filter(
+    predicate: (doc: RDatum<T>) => RValue<boolean>,
+    options?: { default: boolean }
+  ): this;
+  includes(geometry: RDatum): RFeed<T>;
+  intersects(geometry: RDatum): RFeed<T>;
+
+  fold<ACC = any, RES = any>(
+    base: any,
+    foldFunction: (acc: RDatum<ACC>, next: RDatum<T>) => any, // this any is ACC
+    options?: {
+      // tslint:disable-next-line:variable-name
+      emit?: (acc: RDatum<ACC>, next: RDatum<T>, new_acc: RDatum<ACC>) => any[]; // this any is RES
+      finalEmit?: (acc: RStream) => any[]; // this any is also RES
+    }
+  ): RFeed<RES>;
+
+  pluck(...fields: FieldSelector[]): RFeed<Partial<T>>;
+  without(...fields: FieldSelector[]): RFeed<Partial<T>>;
+}
+
 export interface RSingleSelection<T = any> extends RDatum<T> {
   update(
     obj: RValue<Partial<T>>,
@@ -746,7 +763,7 @@ export interface RSingleSelection<T = any> extends RDatum<T> {
   ): RDatum<WriteResult<T>>;
   replace(obj: RValue<T>, options?: UpdateOptions): RDatum<WriteResult<T>>;
   delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
-  changes(options?: ChangesOptions): RStream<Changes<T>>;
+  changes(options?: ChangesOptions): RFeed<Changes<T>>;
 }
 
 export interface RSelection<T = any> extends RStream<T> {
@@ -1017,7 +1034,7 @@ export interface R {
     ...branches: any[]
   ): T extends RStream ? RStream : RDatum;
   range(
-    startValue?: RValue<number>,
+    startValue: RValue<number>,
     endValue?: RValue<number>
   ): RStream<number>;
   error(message?: RValue<string>): any;

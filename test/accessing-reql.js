@@ -1,17 +1,18 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const { r } = require('../lib')
+const { r } = require(path.join(__dirname, '/../lib'))
 const util = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 const uuid = util.uuid
 const net = require('net')
+
 
 describe('accessing-reql', function () {
   let connection // global connection
   let dbName, tableName, result
 
   beforeEach(async () => {
-    connection = await r.connect({ ...config, silent: true });
+    connection = await r.connect(config)
     assert(connection.open)
   })
 
@@ -310,7 +311,9 @@ describe('accessing-reql', function () {
 
   it('If `servers` is specified, it cannot be empty', async () => {
     try {
-      await r.connectPool({ servers: [] });
+      await r.connectPool({
+        servers: []
+      })
       assert.fail('should throw an error')
     } catch (e) {
       assert.equal(e.message, 'If `servers` is an array, it must contain at least one server.')

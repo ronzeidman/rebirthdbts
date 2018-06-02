@@ -5,18 +5,18 @@
  * Do not use :)
  */
 var net = require('net');
-var protodef = require(__dirname + "/../../../lib/proto/enums.js");
-var Query = require(__dirname + "/query.js");
+var protodef = require(__dirname+"/../../../lib/protodef.js");
+var Query = require(__dirname+"/query.js");
 var util = require('util');
-var _util = require(__dirname + '/../common.js');
+var _util = require(__dirname+'/../common.js');
 
 // Create a new TCP server -- used for tests
 function Server(options) {
     var self = this;
 
     self.authKey = "";
-    self.version = protodef.Version.V0_4;
-    self.protocol = protodef.Protocol.JSON; // Support for JSON protocol only
+    self.version = protodef.VersionDummy.Version.V0_4;
+    self.protocol = protodef.VersionDummy.Protocol.JSON; // Support for JSON protocol only
     self.port = options['port'] || 28015;
     self.host = options['host'] || 'localhost';
 
@@ -28,7 +28,7 @@ function Server(options) {
     self.id = _util.uuid();
 
     var index = 0;
-    self.server = net.createServer(function (connection) { //'connection' listener
+    self.server = net.createServer(function(connection) { //'connection' listener
         self._connections[index] = new Connection(connection, self, {
             version: self.version,
             authKey: self.authKey,
@@ -37,69 +37,68 @@ function Server(options) {
         });
         index++
     });
-    self.server.listen(self.port, function () { //'listening' listener
+    self.server.listen(self.port, function() { //'listening' listener
     });
-    self.server.on('error', function (error) {
+    self.server.on('error', function(error) {
     });
 }
 
-Server.prototype.close = function () {
+Server.prototype.close = function() {
     var self = this;
     this.server.close();
-    for (var id in this._connections) {
+    for(var id in this._connections) {
         this._connections[id].connection.end();
     }
 }
-Server.prototype.destroy = function () {
+Server.prototype.destroy = function() {
     this.server.close();
-    for (var id in this._connections) {
+    for(var id in this._connections) {
         this._connections[id].connection.destroy();
     }
 }
 
-Server.prototype.mockServersStatus = function (servers) {
+Server.prototype.mockServersStatus = function(servers) {
     var response = [];
-    for (var i = 0; i < servers.length; i++) {
+    for(var i=0; i<servers.length; i++) {
         var server = servers[i];
         response.push({
             "connection": {
-                "time_connected": {
-                    "$reql_type$": "TIME",
-                    "epoch_time": 1425627107.941,
-                    "timezone": "+00:00"
+               "time_connected":{
+                    "$reql_type$":"TIME",
+                    "epoch_time":1425627107.941,
+                    "timezone":"+00:00"
                 },
-                "time_disconnected": null
+                "time_disconnected":null
             },
-            "id": server.id,
-            "name": 'name_' + server.id,
-            "network": {
+            "id":server.id,
+            "name":'name_'+server.id,
+            "network":{
                 "canonical_addresses": [
-                    { "host": server.host, "port": server.port + 1000 },
-                    { "host": "::1", "port": server.port + 1000 }
+                    {"host":server.host,"port":server.port+1000},
+                    {"host":"::1","port":server.port+1000}
                 ],
-                "cluster_port": server.port + 1000,
-                "hostname": "xone",
-                "http_admin_port": 8080,
-                "reql_port": server.port
-            },
-            "process": {
-                "argv": ["rethinkdb"],
-                "cache_size_mb": 2645.6015625,
-                "pid": 5065,
-                "time_started": {
-                    "$reql_type$": "TIME",
-                    "epoch_time": 1425627107.94,
-                    "timezone": "+00:00"
+                "cluster_port":server.port+1000,
+                "hostname":"xone",
+                "http_admin_port":8080,
+                "reql_port":server.port},
+                "process":{
+                    "argv": ["rethinkdb"],
+                    "cache_size_mb":2645.6015625,
+                    "pid":5065,
+                    "time_started": {
+                        "$reql_type$":"TIME",
+                        "epoch_time":1425627107.94,
+                        "timezone":"+00:00"
+                    },
+                    "version":"rethinkdb 1.16.2-1 (GCC 4.9.2)"
                 },
-                "version": "rethinkdb 1.16.2-1 (GCC 4.9.2)"
-            },
-            "status": "connected"
+                "status":"connected"
         })
     }
     this._mock.push(response);
 }
 
-Server.prototype.cleanMockServersStatus = function (servers) {
+Server.prototype.cleanMockServersStatus = function(servers) {
     this._mock = [];
 }
 
@@ -117,20 +116,20 @@ function Connection(connection, server, options) {
     self.auth;
     self.protocol;
 
-    self.connection.on('connect', function () {
+    self.connection.on('connect', function() {
         self.open = true;
         self.numConnections++;
     });
-    self.connection.on('data', function (data) {
+    self.connection.on('data', function(data) {
         self.buffer = Buffer.concat([self.buffer, data])
         self.read();
     });
-    self.connection.on("end", function () {
+    self.connection.on("end", function() {
         delete self.server._connections[self.id]
         self.numConnections--;
     });
 }
-Connection.prototype.read = function () {
+Connection.prototype.read = function() {
     var self = this;
 
     if (self.version === undefined) {
@@ -145,7 +144,7 @@ Connection.prototype.read = function () {
             else {
                 self.version = version;
             }
-
+            
             self.read();
         }
         // else, we need more data
@@ -153,7 +152,7 @@ Connection.prototype.read = function () {
     else if (self.auth === undefined) {
         if (self.buffer.length >= 4) {
             var authKeyLength = self.buffer.readUInt32LE(0)
-            if (self.buffer.length >= authKeyLength + 4) {
+            if (self.buffer.length >= authKeyLength+4) {
                 self.buffer = self.buffer.slice(4);
                 var authKey = self.buffer.slice(0, authKeyLength).toString();
 
@@ -185,19 +184,19 @@ Connection.prototype.read = function () {
         }
     }
     else {
-        if (self.buffer.length >= 8 + 4) { // 8 for the token, 4 for the query's length
+        if (self.buffer.length >= 8+4) { // 8 for the token, 4 for the query's length
             var token = self.buffer.readUInt32LE(0);
             var queryLength = self.buffer.readUInt32LE(8);
 
-            if (self.buffer.length >= queryLength + 8 + 4) {
-                self.buffer = self.buffer.slice(8 + 4);
+            if (self.buffer.length >= queryLength+8+4) {
+                self.buffer = self.buffer.slice(8+4);
                 var queryStr = self.buffer.slice(0, queryLength).toString();
                 self.buffer = self.buffer.slice(queryLength);
                 try {
                     if (queryStr === '[1,[15,[[14,["rethinkdb"]],"server_status"]],{"db":[14,["test"]]}]') {
                         var result = self.server._mock.shift();
                         var response = {
-                            t: protodef.ResponseType.SUCCESS_SEQUENCE,
+                            t: protodef.Response.ResponseType.SUCCESS_SEQUENCE,
                             r: result
                         }
                     }
@@ -216,7 +215,7 @@ Connection.prototype.read = function () {
                         try {
                             self.connection.write(Buffer.concat([tokenBuffer, responseLengthBuffer, responseBuffer]))
                         }
-                        catch (err) {
+                        catch(err) {
                             //console.log("Failed to send back the result.");
                             //console.log(err);
                         }
@@ -233,7 +232,7 @@ Connection.prototype.read = function () {
                         sendResult();
                     }
                 }
-                catch (err) {
+                catch(err) {
                     console.log("Fake server crashed.");
                     console.log(err);
                     console.log(err.stack);

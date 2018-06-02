@@ -82,10 +82,9 @@ export interface IndexOptions {
     geo?: boolean;
 }
 export interface RunOptions {
-    timeFormat?: Format;
+    timeFormat?: Format | 'ISO8601';
     groupFormat?: Format;
     binaryFormat?: Format;
-    immidiateReturn?: boolean;
     useOutdated?: boolean;
     profile?: boolean;
     durability?: Durability;
@@ -302,23 +301,21 @@ export interface RQuery<T = any> {
         primary_key?: string;
         type: string;
     }>;
-    run(connection: Connection, options: RunOptions & {
-        immidiateReturn: true;
-    }): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
-    run(options: RunOptions & {
-        immidiateReturn: true;
-    }): T extends RCursor<any> ? Promise<T> : Promise<RCursor<T>>;
-    run(connection?: Connection | RunOptions & {
-        immidiateReturn?: false;
-    }, options?: RunOptions & {
-        immidiateReturn?: false;
-    }): Promise<T>;
-    run(options: RunOptions & {
+    run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
+    run(connection?: Connection | (RunOptions & {
+        noreply: true;
+    }), options?: RunOptions & {
         noreply: true;
     }): Promise<undefined>;
-    run(connection: Connection, options: RunOptions & {
-        noreply: true;
-    }): Promise<undefined>;
+    run(connection?: Connection | (RunOptions & {
+        profile: true;
+    }), options?: RunOptions & {
+        profile: true;
+    }): Promise<{
+        profile: any;
+        result: T;
+    }>;
+    getCursor(connection?: Connection | RunOptions, options?: RunOptions): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
     do<U>(...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>): U extends RStream ? RStream : RDatum;
@@ -345,7 +342,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     map<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     concatMap<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never, RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<WriteResult<U>>>(func: (res: RDatum<ONE>) => RES): T extends any[] ? RES : never;
-    withFields(...fields: Array<RValue<string>>): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+    withFields(...fields: FieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
     filter<U = T extends Array<infer T1> ? T1 : never>(predicate: (doc: RDatum<U>) => RValue<boolean>, options?: {
         default: boolean;
     }): this;
@@ -436,9 +433,9 @@ export interface RDatum<T = any> extends RQuery<T> {
     keys(): RDatum<string[]>;
     values(): RDatum<Array<T[keyof T]>>;
 }
-export interface RStream<T = any> extends RQuery<RCursor<T>> {
+export interface RStream<T = any> extends RQuery<T[]> {
     forEach<U = any>(func: (res: RDatum<T>) => RDatum<WriteResult<U>>): RDatum<WriteResult<U>>;
-    changes(options?: ChangesOptions): RStream<Changes<T>>;
+    changes(options?: ChangesOptions): RFeed<Changes<T>>;
     <U extends keyof T>(attribute: RValue<U>): RStream<T[U]>;
     (n: RValue<number>): RDatum<T>;
     getField<U extends keyof T>(fieldName: RValue<U>): RStream<T[U]>;
@@ -451,14 +448,13 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
     union<U = T>(...other: Array<RStream<U> | RValue<U[]> | {
         interleave: boolean | string;
     }>): RStream<U>;
+    union<U = T>(...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | {
+        interleave: boolean | string;
+    }>): RFeed<U>;
     map<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RStream<U>;
     concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RStream<U>;
-    withFields<U extends keyof T>(field: RValue<U>): RStream<Pick<T, U>>;
-    withFields<U1 extends keyof T, U2 extends keyof T>(field1: RValue<U1>, field2: RValue<U2>): RStream<Pick<T, U1> & Pick<T, U2>>;
-    withFields<U1 extends keyof T, U2 extends keyof T, U3 extends keyof T>(field1: RValue<U1>, field2: RValue<U2>, field3: RValue<U3>): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3>>;
-    withFields<U1 extends keyof T, U2 extends keyof T, U3 extends keyof T, U4 extends keyof T>(field1: RValue<U1>, field2: RValue<U2>, field3: RValue<U3>, field4: RValue<U4>): RStream<Pick<T, U1> & Pick<T, U2> & Pick<T, U3> & Pick<T, U4>>;
-    withFields(...fields: Array<RValue<keyof T>>): RStream<Partial<T>>;
-    hasFields(...fields: Array<RValue<keyof T>>): RStream<T>;
+    withFields(...fields: FieldSelector[]): RStream<Partial<T>>;
+    hasFields(...fields: FieldSelector[]): RStream<T>;
     filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
         default: boolean;
     }): this;
@@ -490,8 +486,8 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
     distinct<TIndex = any>(index: {
         index: string;
     }): RStream<TIndex>;
-    pluck(...fields: FieldSelector[]): Partial<T>;
-    without(...fields: FieldSelector[]): Partial<T>;
+    pluck(...fields: FieldSelector[]): RStream<Partial<T>>;
+    without(...fields: FieldSelector[]): RStream<Partial<T>>;
     merge<U = any>(...objects: any[]): RStream<U>;
     skip(n: RValue<number>): RStream<T>;
     limit(n: RValue<number>): RStream<T>;
@@ -506,11 +502,33 @@ export interface RStream<T = any> extends RQuery<RCursor<T>> {
     coerceTo(type: 'array'): RDatum<T[]>;
     coerceTo<U = any>(type: 'object'): RDatum<U>;
 }
+export interface RFeed<T = any> extends RQuery<RCursor<T>> {
+    <U extends keyof T>(attribute: RValue<U>): RFeed<T[U]>;
+    getField<U extends keyof T>(fieldName: RValue<U>): RFeed<T[U]>;
+    union<U = T>(...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | {
+        interleave: boolean | string;
+    }>): RFeed<U>;
+    map<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RFeed<U>;
+    concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RFeed<U>;
+    withFields(...fields: FieldSelector[]): RFeed<Partial<T>>;
+    hasFields(...fields: FieldSelector[]): RFeed<T>;
+    filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
+        default: boolean;
+    }): this;
+    includes(geometry: RDatum): RFeed<T>;
+    intersects(geometry: RDatum): RFeed<T>;
+    fold<ACC = any, RES = any>(base: any, foldFunction: (acc: RDatum<ACC>, next: RDatum<T>) => any, options?: {
+        emit?: (acc: RDatum<ACC>, next: RDatum<T>, new_acc: RDatum<ACC>) => any[];
+        finalEmit?: (acc: RStream) => any[];
+    }): RFeed<RES>;
+    pluck(...fields: FieldSelector[]): RFeed<Partial<T>>;
+    without(...fields: FieldSelector[]): RFeed<Partial<T>>;
+}
 export interface RSingleSelection<T = any> extends RDatum<T> {
     update(obj: RValue<Partial<T>>, options?: UpdateOptions): RDatum<WriteResult<T>>;
     replace(obj: RValue<T>, options?: UpdateOptions): RDatum<WriteResult<T>>;
     delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
-    changes(options?: ChangesOptions): RStream<Changes<T>>;
+    changes(options?: ChangesOptions): RFeed<Changes<T>>;
 }
 export interface RSelection<T = any> extends RStream<T> {
     update(obj: RValue<Partial<T>>, options?: UpdateOptions): RDatum<WriteResult<T>>;
@@ -700,7 +718,7 @@ export interface R {
     args(arg: any): any;
     binary(data: any): RDatum<Buffer>;
     branch<T>(test: RValue<boolean>, trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends RStream ? RStream : RDatum;
-    range(startValue?: RValue<number>, endValue?: RValue<number>): RStream<number>;
+    range(startValue: RValue<number>, endValue?: RValue<number>): RStream<number>;
     error(message?: RValue<string>): any;
     expr<T>(val: T): RDatum<T>;
     <T>(val: T): RDatum<T>;

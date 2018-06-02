@@ -1,12 +1,12 @@
 const path = require('path')
 const config = require('./config.js')
-const { r } = require('../lib')
+const { r } = require(path.join(__dirname, '/../lib'))
 const { uuid } = require(path.join(__dirname, '/util/common.js'))
 const assert = require('assert')
 
 
 describe('manipulating databases', () => {
-  let r
+
 
   before(async function () {
     await r.connectPool(config)

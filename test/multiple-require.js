@@ -1,7 +1,7 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const { r } = require('../lib')
-const rethinkdb_ = require(path.join(__dirname, '/../lib'))
+const { r } = require(path.join(__dirname, '/../lib'))
+const { r } = require(path.join(__dirname, '/../lib'))
 const assert = require('assert')
 
 
@@ -9,7 +9,7 @@ describe('multiple require', () => {
   let r1, r2
 
   before(async () => {
-    r1 = await rethinkdbdash(config)
+    await r.connectPool(config)
     r2 = await rethinkdb_(config)
   })
 

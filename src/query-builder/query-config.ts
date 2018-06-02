@@ -9,8 +9,6 @@ export const bracket: TermConfig = [TermType.BRACKET, '', 1, 1, false];
 export const funcall: TermConfig = [TermType.FUNCALL, 'do', 1, -1, false];
 
 export const termConfig: TermConfig[] = [
-  [TermType.UUID, 'uuid', 1, 1, false],
-  [TermType.HTTP, 'http', 1, 1, true],
   [TermType.TABLE, 'table', 1, 1, true],
   [TermType.GET, 'get', 1, 1, false],
   [TermType.GET_ALL, 'getAll', 1, -1, true],
@@ -65,7 +63,6 @@ export const termConfig: TermConfig[] = [
   [TermType.OUTER_JOIN, 'outerJoin', 2, 2, false],
   [TermType.EQ_JOIN, 'eqJoin', 2, 2, true],
   [TermType.ZIP, 'zip', 0, 0, false],
-  [TermType.RANGE, 'range', 0, 2, false],
   [TermType.INSERT_AT, 'insertAt', 2, 2, false],
   [TermType.DELETE_AT, 'deleteAt', 2, 2, false],
   [TermType.CHANGE_AT, 'changeAt', 2, 2, false],
@@ -134,8 +131,8 @@ export const termConfig: TermConfig[] = [
   [TermType.FILL, 'fill', 0, 0, false],
   [TermType.GET_NEAREST, 'getNearest', 1, 1, true],
   [TermType.POLYGON_SUB, 'polygonSub', 1, 1, false],
-  [TermType.TO_JSON_STRING, 'toJSON', 1, 1, false],
-  [TermType.TO_JSON_STRING, 'toJsonString', 1, 1, false]
+  [TermType.TO_JSON_STRING, 'toJSON', 0, 0, false],
+  [TermType.TO_JSON_STRING, 'toJsonString', 0, 0, false]
   // not documented
   // [TermType.SET_WRITE_HOOK, 'setWriteHook', -1, -1, true],
   // [TermType.GET_WRITE_HOOK, 'getWriteHoot', -1, -1, true],
@@ -174,6 +171,9 @@ export const rConfig: TermConfig[] = [
   [TermType.LITERAL, 'literal', 0, 1, false],
   [TermType.OBJECT, 'object', 1, -1, false],
   [TermType.RANDOM, 'random', 0, 2, true],
+  [TermType.UUID, 'uuid', 0, 1, false],
+  [TermType.RANGE, 'range', 1, 2, false],
+  [TermType.HTTP, 'http', 1, 1, true],
 ];
 
 export const rConsts: Array<[TermType, string]> = [

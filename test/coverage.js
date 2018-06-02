@@ -1,7 +1,8 @@
 const path = require('path')
-const protodef = require(path.join(__dirname, '/../lib/proto/enums.js'))
+const protodef = require(path.join(__dirname, '/../lib/protodef.js'))
 const fs = require('fs')
-const keys = Object.keys(protodef.TermType)
+const keys = Object.keys(protodef.Term.TermType)
+
 const assert = require('assert')
 
 describe('coverage', () => {

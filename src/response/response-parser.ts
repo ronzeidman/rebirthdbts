@@ -21,6 +21,8 @@ export function getNativeTypes(
       case 'TIME':
         if (timeFormat === 'native') {
           return new Date(obj.epoch_time * 1000);
+        } else if (timeFormat === 'ISO8601') {
+          return new Date(obj.epoch_time * 1000).toISOString();
         }
         break;
       case 'BINARY':

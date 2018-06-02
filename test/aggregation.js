@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
-const { r } = require('../lib')
+const { r } = require(path.join(__dirname, '/../lib'))
 const assert = require('assert')
 const { uuid } = require(path.join(__dirname, './util/common.js'))
 

@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
+import { Cursor } from '../response/cursor';
 import { ConnectionPool, RConnectionOptions, RServerConnectionOptions, RunOptions } from '../types';
 import { RebirthDBConnection } from './connection';
 import { RNConnOpts } from './socket';
@@ -33,7 +34,7 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     getLength(): number;
     getAvailableLength(): number;
     getNumOfRunningQueries(): number;
-    queue(term: TermJson, globalArgs?: RunOptions): Promise<any>;
+    queue(term: TermJson, globalArgs?: RunOptions): Promise<Cursor | undefined>;
     private setHealthy(healthy);
     private createConnection();
     private subscribeToConnection(conn);

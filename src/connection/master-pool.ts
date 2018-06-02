@@ -3,6 +3,7 @@ import { isIPv6 } from 'net';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
+import { Cursor } from '../response/cursor';
 import { Changes, Connection, MasterPool, RCursor, RPoolConnectionOptions, RServer, RunOptions } from '../types';
 import { RebirthDBConnection } from './connection';
 import { ServerConnectionPool } from './server-pool';
@@ -124,7 +125,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     return this.getIdleConnections().length;
   }
 
-  public async queue(term: TermJson, globalArgs: RunOptions = {}) {
+  public async queue(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
     this.emit('queueing');
     const pool = this.getPoolWithMinQueries();
     return pool.queue(term, globalArgs);

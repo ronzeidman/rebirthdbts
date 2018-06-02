@@ -31,13 +31,16 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public _read() {
-    this.emitting = true;
-    this.each((_, row) => {
-      if (typeof row !== undefined) {
-        this.push(row);
+    if (this.closed) {
+      this.push(null);
+    }
+    this._next().then(row => this.push(row)).catch((err) => {
+      if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CURSOR_END) {
+        this.push(null);
+      } else {
+        this.emit('error', err);
       }
-      return this.emitting;
-    }, () => this.push(null));
+    });
   }
 
   public pause() {
@@ -69,30 +72,19 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public async next() {
+    if (this.emitting) {
+      throw new RebirthDBError('You cannot call `next` once you have bound listeners on the Feed.');
+    }
     if (this.closed) {
       throw new RebirthDBError(`You cannot call \`next\` on a closed ${this.type}`);
     }
-    if (!this.results) {
-      await this.resolve();
-    } else if (this.hasNextBatch && this.position >= this.results.length) {
-      this.conn.sendQuery([QueryType.CONTINUE], this.token);
-      await this.resolve();
-    }
-    if (this.profile && this.type === 'Atom') {
-      this.position = this.results ? this.results.length : 0;
-      return {
-        profile: this.profile,
-        result: this.results && this.results[0]
-      };
-    }
-    if (!this.results || !this.results[this.position]) {
-      this.close();
-      throw new RebirthDBError('No more rows in the cursor.', { type: RebirthDBErrorType.CURSOR_END });
-    }
-    return this.results[this.position++];
+    return await this._next();
   }
 
   public async toArray() {
+    if (this.emitting) {
+      throw new RebirthDBError('You cannot call `toArray` once you have bound listeners on the Feed.');
+    }
     const all: any[] = [];
     if (!this.results) {
       await this.resolve();
@@ -107,7 +99,13 @@ export class Cursor extends Readable implements RCursor {
     return this.eachAsync(async row => all.push(row)).then(() => all);
   }
 
-  public async each(callback: (err: RebirthDBError | undefined, row?: any) => boolean, onFinishedCallback?: () => any) {
+  public async each(
+    callback: (err: RebirthDBError | undefined, row?: any) => boolean,
+    onFinishedCallback?: () => any
+  ) {
+    if (this.emitting) {
+      throw new RebirthDBError('You cannot call `each` once you have bound listeners on the Feed.');
+    }
     if (this.closed) {
       callback(new RebirthDBError('You cannot retrieve data from a cursor that is closed', {}));
       if (onFinishedCallback) {
@@ -139,6 +137,9 @@ export class Cursor extends Readable implements RCursor {
     rowHandler: (row: any, rowFinished?: (error?: string) => any) => any,
     final?: (error: any) => any
   ) {
+    if (this.emitting) {
+      throw new RebirthDBError('You cannot call `eachAsync` once you have bound listeners on the Feed.');
+    }
     if (this.closed) {
       throw new RebirthDBError('You cannot retrieve data from a cursor that is closed', {});
     }
@@ -187,7 +188,24 @@ export class Cursor extends Readable implements RCursor {
     this.results = getNativeTypes(results, this.runOptions);
     this.handleResponseNotes(type, notes);
     this.handleErrors(response);
-    return type;
+    return this.results;
+  }
+
+  private async _next() {
+    if (!this.results) {
+      await this.resolve();
+    } else if (this.hasNextBatch && this.position >= this.results.length) {
+      this.conn.sendQuery([QueryType.CONTINUE], this.token);
+      await this.resolve();
+    }
+    const results = this.results && this.type === 'Atom' && Array.isArray(this.results[0])
+      ? this.results[0]
+      : this.results;
+    if (!this.results || typeof this.results[this.position] === 'undefined') {
+      this.close();
+      throw new RebirthDBError('No more rows in the cursor.', { type: RebirthDBErrorType.CURSOR_END });
+    }
+    return results[this.position++];
   }
 
   private handleErrors(response: ResponseJson) {

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
+import { Cursor } from '../response/cursor';
 import { ConnectionPool, RConnectionOptions, RServerConnectionOptions, RunOptions } from '../types';
 import { RebirthDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
@@ -136,7 +137,7 @@ export class ServerConnectionPool extends EventEmitter
     );
   }
 
-  public async queue(term: TermJson, globalArgs: RunOptions = {}) {
+  public async queue(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
     this.emit('queueing');
     const idleConnections = this.getIdleConnections();
     if (!idleConnections.length) {

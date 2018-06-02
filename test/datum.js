@@ -1,10 +1,12 @@
 const path = require('path')
 const config = require('./config.js')
-const { r } = require('../lib')
+const { r } = require(path.join(__dirname, '/../lib'))
 const assert = require('assert')
 
+
+
 describe('datum', function () {
-  let r
+
 
   before(async () => {
     await r.connectPool(config)

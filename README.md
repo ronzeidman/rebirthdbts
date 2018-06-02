@@ -31,36 +31,30 @@ const conn = await r.connect(options);
 * Rebuilt from scrach using the latest ES/TS features for readability and maintainability
 * Drop-in replacement for rethinkdbdash with only some minor changes
 
-# NEW FEATURES:
+# CHANGES FROM RETHINKDBDASH
 
-* No dependencies
-* Closing a cursor works and throws on a cursor that's waiting in `await cursor.next()`
-* `isHealthy` on pools and `isConnected` on a connection
-* API of getting the actual underlying connections from a pool
-* Can restart a drained master pool
-* Better connection handling and rebalancing
-* Reusing open connections that already run queries instead of making them wait for a connection
+* Importing property instead of entire library: `const {r} = require('rebirthdbts')` or `import {r} from 'rebirthdbts'` instead of `const r = require('rethinkdbdash')(options)`
+* No top level initialization, initializing a pool is done by `await r.connectPool()`
+* No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
+    * `.run()` with coerce streams to array by default feeds will return a cursor like rethinkdbdash
+* Uses native promises instead of `bluebird`
+* A cursor is already a readable stream, no need for `toStream()`
+* A readable stream is already an async iterator in node 10 no need for `.asyncIterator()`
+* In connction pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded.
 * Integrated fully encompasing type definitions
-* `immidiateReturn` will always return a Cursor, and will do it immidiately. In the official and rethinkdbdash you need to wait for the first results to arrive after sending the query. This makes it impossible to cancel (unless you close the underlying connection)
 
-# NOT DOING:
+# DROPPING SUPPORT:
 
 * Support node < 8
 * Support callbacks.
 * Support using `.then()` directly on a query (optionalRun), doesn't feel right to me.
-* Arrays by default.
-  * use the provided `isCursor` to handle any type of result
-* Top level init function like in rethinkdbdash:
-  * use `await r.connectPool()` instead - it can initialize the pool and restart it if needed.
 * Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
-
-# MAYBE DOING:
-* Support `r.row`, use `row => row` instead for now
-* Pretty print backtraces
-* Support streams (Does anyone uses it?)
+* support for `r.row` you can use `row => row` instead. (may add support in the future)
+* Support write streams (Does anyone uses it? will add it if its a popular demand)
 
 # TODO:
 
+* Pretty print backtraces
 * Make an exception enum and utility functions for filtering and handling the right exceptions
 * Translate the fixed tests to TS and run all the tests
 * Fork this to RebirthDB org, add build step & publish
