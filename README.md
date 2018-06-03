@@ -47,7 +47,10 @@ const conn = await r.connect(options);
 
 * Support node < 8
 * Support callbacks.
-* Support using `.then()` directly on a query (optionalRun), doesn't feel right to me.
+* Support using `.then()` directly on a query (optionalRun), it can confuse users that queries are promises leading to false assumptions:
+    * Queries are not promises since they are not eagerly evaluated and therefore they can:
+        * `.run()` as many times as you want (promises run only once and return the same value without running other times)
+        * be stored for future evaluation (promises run as you create them)
 * Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
 * support for `r.row` you can use `row => row` instead. (may add support in the future)
 * Support write streams (Does anyone uses it? will add it if its a popular demand)
