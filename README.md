@@ -51,8 +51,18 @@ const conn = await r.connect(options);
 * Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
 * support for `r.row` you can use `row => row` instead. (may add support in the future)
 * Support write streams (Does anyone uses it? will add it if its a popular demand)
+* Multiple connection pools (if someone has a good usecase I'll support it)
 
 # TESTS ERROR STATUS:
+
+## Remaining tests to run:
+* pool_legacy
+* selecting-data
+* stable
+* stream (only readable stream part)
+* string-manupulation
+* transformations
+* writing-data
 
 ## Priority - critical
 * Support labda returning objects (test: '`merge` should take an anonymous function')
@@ -65,7 +75,6 @@ const conn = await r.connect(options);
 * Support Global ArrayLimit
 * Support `toString()`
 * Throw on `undefined` anonymous function
-
 
 ## Priority - medium
 * Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
