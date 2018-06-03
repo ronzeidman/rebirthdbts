@@ -64,9 +64,6 @@ const conn = await r.connect(options);
 * transformations
 * writing-data
 
-## Priority - critical
-* Support labda returning objects (test: '`merge` should take an anonymous function')
-
 ## Priority - high
 * Support 'ISO8601' time format
 * Support constant time terms

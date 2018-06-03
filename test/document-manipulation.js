@@ -178,7 +178,7 @@ describe('dates and times', () => {
 
     result = await r
       .expr({ a: 1 })
-      .merge(row => ({ nested: row }, { b: 2 }))
+      .merge(row => ({ nested: row }), { b: 2 })
       .run();
     assert.deepEqual(result, { a: 1, nested: { a: 1 }, b: 2 });
   });
