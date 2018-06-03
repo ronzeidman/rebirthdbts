@@ -42,9 +42,7 @@ export type RPoolConnectionOptions = RBaseConnectionOptions & {
 };
 
 export type RConnectionOptions = RBaseConnectionOptions &
-  (
-    | { server: RServerConnectionOptions }
-    | { host?: string; port?: number });
+  ({ server: RServerConnectionOptions } | { host?: string; port?: number });
 
 export interface TableCreateOptions {
   primaryKey?: string; // default: "id"
@@ -76,10 +74,10 @@ export interface DeleteOptions {
 
 export interface InsertOptions extends DeleteOptions {
   conflict?:
-  | 'error'
-  | 'replace'
-  | 'update'
-  | ((id: RDatum, oldDoc: RDatum, newDoc: RDatum) => RDatum | object);
+    | 'error'
+    | 'replace'
+    | 'update'
+    | ((id: RDatum, oldDoc: RDatum, newDoc: RDatum) => RDatum | object);
 }
 
 export interface UpdateOptions extends DeleteOptions {
@@ -127,19 +125,19 @@ export interface HttpRequestOptions {
 export interface HTTPStreamRequestOptions extends HttpRequestOptions {
   // Pagination
   page:
-  | 'link-next'
-  | ((
-    param: RDatum<{ params: any; header: any; body: any }>
-  ) => RValue<string>);
+    | 'link-next'
+    | ((
+        param: RDatum<{ params: any; header: any; body: any }>
+      ) => RValue<string>);
   pageLimit: number; // -1 = no limit.
 }
 
 export interface WaitOptions {
   waitFor?:
-  | 'ready_for_outdated_reads'
-  | 'ready_for_reads'
-  | 'ready_for_writes'
-  | 'all_replicas_ready';
+    | 'ready_for_outdated_reads'
+    | 'ready_for_reads'
+    | 'ready_for_writes'
+    | 'all_replicas_ready';
   timeout?: number;
 }
 
@@ -297,7 +295,13 @@ export interface RServer {
   port: number;
 }
 
-export type RCursorType = 'Atom' | 'Cursor' | 'Feed' | 'AtomFeed' | 'OrderByLimitFeed' | 'UnionedFeed';
+export type RCursorType =
+  | 'Atom'
+  | 'Cursor'
+  | 'Feed'
+  | 'AtomFeed'
+  | 'OrderByLimitFeed'
+  | 'UnionedFeed';
 export interface RCursor<T = any> extends NodeJS.ReadableStream {
   readonly profile: any;
   getType(): RCursorType;
@@ -321,7 +325,7 @@ export interface RebirthDBError extends Error {
 export enum RebirthDBErrorType {
   UNKNOWN_ERROR,
   AUTH_ERROR,
-  CURSOR_END,
+  CURSOR_END
 }
 
 export interface RQuery<T = any> {
@@ -337,10 +341,7 @@ export interface RQuery<T = any> {
     type: string;
   }>;
 
-  run(
-    connection?: Connection | RunOptions,
-    options?: RunOptions
-  ): Promise<T>;
+  run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
   run(
     connection?: Connection | (RunOptions & { noreply: true }),
     options?: RunOptions & { noreply: true }
@@ -348,11 +349,13 @@ export interface RQuery<T = any> {
   run(
     connection?: Connection | (RunOptions & { profile: true }),
     options?: RunOptions & { profile: true }
-  ): Promise<{ profile: any, result: T }>;
+  ): Promise<{ profile: any; result: T }>;
   getCursor(
     connection?: Connection | RunOptions,
     options?: RunOptions
-  ): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
+  ): T extends Array<infer T1>
+    ? Promise<RCursor<T1>>
+    : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
@@ -407,11 +410,11 @@ export interface RDatum<T = any> extends RQuery<T> {
     U = any,
     ONE = T extends Array<infer T1> ? T1 : never,
     RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<
-    WriteResult<U>
+      WriteResult<U>
     >
-    >(
-      func: (res: RDatum<ONE>) => RES
-    ): T extends any[] ? RES : never;
+  >(
+    func: (res: RDatum<ONE>) => RES
+  ): T extends any[] ? RES : never;
 
   withFields(
     ...fields: FieldSelector[]
@@ -438,9 +441,9 @@ export interface RDatum<T = any> extends RQuery<T> {
   group<
     F extends T extends Array<infer T1> ? keyof T1 : never,
     D extends T extends Array<infer T2> ? T2 : never
-    >(
-      ...fieldOrFunc: Array<F | Func<D>>
-    ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
+  >(
+    ...fieldOrFunc: Array<F | Func<D>>
+  ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
 
   ungroup(): RDatum<Array<GroupResults<any, any>>>;
 
@@ -633,7 +636,9 @@ export interface RStream<T = any> extends RQuery<T[]> {
     ...other: Array<RStream<U> | RValue<U[]> | { interleave: boolean | string }>
   ): RStream<U>;
   union<U = T>(
-    ...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }>
+    ...other: Array<
+      RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }
+    >
   ): RFeed<U>;
   map<U = any>(
     ...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>
@@ -667,7 +672,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
   group<U extends keyof T>(
     ...fieldOrFunc: Array<
       U | ((row: RDatum<T>) => any) | { index?: string; multi?: boolean }
-      >
+    >
   ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
 
   // SELECT FUNCTIONS
@@ -723,7 +728,9 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
   getField<U extends keyof T>(fieldName: RValue<U>): RFeed<T[U]>;
 
   union<U = T>(
-    ...other: Array<RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }>
+    ...other: Array<
+      RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }
+    >
   ): RFeed<U>;
   map<U = any>(
     ...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>
@@ -787,12 +794,12 @@ export interface RTable<T = any> extends RSelection<T> {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-    ValueChange<{
-      read: boolean;
-      write: boolean;
-      connect: boolean;
-      config: boolean;
-    }>
+      ValueChange<{
+        read: boolean;
+        write: boolean;
+        connect: boolean;
+        config: boolean;
+      }>
     >;
   }>;
   indexCreate(
@@ -874,12 +881,12 @@ export interface RDatabase {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-    ValueChange<{
-      read: boolean;
-      write: boolean;
-      connect: boolean;
-      config: boolean;
-    }>
+      ValueChange<{
+        read: boolean;
+        write: boolean;
+        connect: boolean;
+        config: boolean;
+      }>
     >;
   }>;
   tableCreate(
@@ -932,12 +939,12 @@ export interface R {
   ): RDatum<{
     granted: number;
     permissions_changes: Array<
-    ValueChange<{
-      read: boolean;
-      write: boolean;
-      connect: boolean;
-      config: boolean;
-    }>
+      ValueChange<{
+        read: boolean;
+        write: boolean;
+        connect: boolean;
+        config: boolean;
+      }>
     >;
   }>;
 
@@ -1034,10 +1041,7 @@ export interface R {
     falseBranchOrTest: any,
     ...branches: any[]
   ): T extends RStream ? RStream : RDatum;
-  range(
-    startValue: RValue<number>,
-    endValue?: RValue<number>
-  ): RStream<number>;
+  range(startValue: RValue<number>, endValue?: RValue<number>): RStream<number>;
   error(message?: RValue<string>): any;
   expr<T>(val: T): RDatum<T>;
   <T>(val: T): RDatum<T>;
@@ -1103,6 +1107,8 @@ export interface R {
   connect(options: RConnectionOptions): Promise<Connection>;
   connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
   getPoolMaster(): MasterPool | undefined;
+  setNestingLevel(level: number): void;
+  setArrayLimit(limit: number): void;
 }
 
 //#endregion operations

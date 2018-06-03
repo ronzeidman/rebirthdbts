@@ -61,7 +61,11 @@ const smallNumDocs = 5; // Number of documents in the "small table"
   //   await feed.close();
   // }
   try {
-    console.log(await r.expr(NaN).run());
+    // result = await r.expr([r.monday, r.tuesday, r.wednesday, r.thursday, r.friday, r.saturday, r.sunday, r.january, r.february, r.march, r.april, r.may, r.june, r.july, r.august, r.september, r.october, r.november, r.december]).run()
+    const result = await r.binary(Buffer.from([1, 2, 3, 4, 5, 6])).run();
+    assert(result instanceof Buffer);
+    assert.deepEqual(result.toJSON().data, [1, 2, 3, 4, 5, 6]);
+    // console.log(await r.expr(NaN).run());
   } catch (err) {
     console.error(err);
   }

@@ -5,6 +5,7 @@ import { RebirthDBError } from '../error/error';
 import { ComplexTermJson, TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
 import { RCursor, RunOptions } from '../types';
+import { globals } from './globals';
 import { parseOptarg, parseParam } from './param-parser';
 import { isQuery, toQuery } from './query';
 import { TermConfig, funcall, termConfig } from './query-config';
@@ -22,13 +23,14 @@ export function termBuilder(
       optarg = hasOptarg ? args[1] : undefined;
     } else {
       const argsLength = args.length;
-      const maxArgsPlusOptarg = hasOptarg && maxArgs >= 0 ? maxArgs + 1 : maxArgs;
+      const maxArgsPlusOptarg =
+        hasOptarg && maxArgs >= 0 ? maxArgs + 1 : maxArgs;
       if (minArgs === maxArgsPlusOptarg && argsLength !== minArgs) {
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+            minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -37,9 +39,9 @@ export function termBuilder(
         const termConf = termConfig.find(c => c[0] === termType);
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes at least ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+            minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -47,9 +49,9 @@ export function termBuilder(
       if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes at most ${maxArgsPlusOptarg} argument${
-          maxArgsPlusOptarg === 1 ? '' : 's'
+            maxArgsPlusOptarg === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -57,11 +59,11 @@ export function termBuilder(
       const maybeOptarg = args.length ? args.pop() : undefined;
       optarg =
         hasOptarg &&
-          (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
-            argsLength > minArgs) &&
-            (!Array.isArray(maybeOptarg) &&
-              typeof maybeOptarg === 'object' &&
-              !isQuery(maybeOptarg)))
+        (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
+          argsLength > minArgs) &&
+          (!Array.isArray(maybeOptarg) &&
+            typeof maybeOptarg === 'object' &&
+            !isQuery(maybeOptarg)))
           ? maybeOptarg
           : undefined;
       if (hasOptarg && argsLength === maxArgsPlusOptarg && !optarg) {
@@ -75,7 +77,7 @@ export function termBuilder(
       if (!isUndefined(maybeOptarg) && isUndefined(optarg)) {
         args.push(maybeOptarg);
       }
-      params.push(...args.map(parseParam));
+      params.push(...args.map(x => parseParam(x)));
     }
     const term: ComplexTermJson = [termType];
     if (params.length > 0) {
@@ -150,11 +152,11 @@ export const getCursorQueryFunc = (term: TermJson) => {
   };
 };
 
-export const expr = (arg: any) => {
+export const expr = (arg: any, nestingLevel: number = globals.nestingLevel) => {
   if (isQuery(arg)) {
     return arg;
   }
-  return toQuery(parseParam(arg));
+  return toQuery(parseParam(arg, nestingLevel));
 };
 
 const numToStringArr = ['', 'First', 'Second', 'Third', 'Fourth', 'Fifth'];

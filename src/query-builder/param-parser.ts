@@ -2,10 +2,18 @@ import { isBuffer, isDate, isFunction, isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
+import { globals } from './globals';
 import { isQuery, toQuery } from './query';
-import { r } from './r';
 
-export function parseParam(param: any): TermJson {
+export function parseParam(
+  param: any,
+  nestingLevel = globals.nestingLevel
+): TermJson {
+  if (nestingLevel === 0) {
+    throw new RebirthDBError(
+      'Nesting depth limit exceeded.\nYou probably have a circular reference somewhere.'
+    );
+  }
   if (param === null) {
     return null;
   }
@@ -16,7 +24,10 @@ export function parseParam(param: any): TermJson {
     return param.term;
   }
   if (Array.isArray(param)) {
-    return [TermType.MAKE_ARRAY, param.map(p => parseParam(p))];
+    return [
+      TermType.MAKE_ARRAY,
+      param.map(p => parseParam(p, nestingLevel - 1))
+    ];
   }
   if (isDate(param)) {
     return {
@@ -32,8 +43,8 @@ export function parseParam(param: any): TermJson {
     };
   }
   if (isFunction(param)) {
-    const { nextVarId } = r as any;
-    (r as any).nextVarId = nextVarId + param.length;
+    const { nextVarId } = globals;
+    globals.nextVarId = nextVarId + param.length;
     const term = [
       TermType.FUNC,
       [
@@ -52,14 +63,20 @@ export function parseParam(param: any): TermJson {
         )
       ]
     ];
-    (r as any).nextVarId = nextVarId;
+    globals.nextVarId = nextVarId;
     return term;
   }
   if (typeof param === 'object') {
     return Object.entries(param).reduce(
-      (acc, [key, value]) => ({ ...acc, [key]: parseParam(value) }),
+      (acc, [key, value]) => ({
+        ...acc,
+        [key]: parseParam(value, nestingLevel - 1)
+      }),
       {}
     );
+  }
+  if (typeof param === 'number' && (isNaN(param) || !isFinite(param))) {
+    throw new RebirthDBError(`Cannot convert \`${param}\` to JSON`);
   }
   return param;
 }

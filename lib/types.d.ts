@@ -761,4 +761,6 @@ export interface R {
     connect(options: RConnectionOptions): Promise<Connection>;
     connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
     getPoolMaster(): MasterPool | undefined;
+    setNestingLevel(level: number): void;
+    setArrayLimit(limit: number): void;
 }

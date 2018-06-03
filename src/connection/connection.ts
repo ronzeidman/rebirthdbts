@@ -1,10 +1,17 @@
 import { EventEmitter } from 'events';
+import { isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
+import { globals } from '../query-builder/globals';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
+import {
+  Connection,
+  RServerConnectionOptions,
+  RunOptions,
+  ServerInfo
+} from '../types';
 import { NULL_BUFFER } from './handshake-utils';
 import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
 
@@ -115,7 +122,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.close();
       throw new RebirthDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
-        this.connectionOptions.port
+          this.connectionOptions.port
         } in less than ${this.timeout}s.`
       );
     }
@@ -150,15 +157,16 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     }
     return result.r[0];
   }
-  public async query(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
-    const {
-      timeFormat,
-      groupFormat,
-      binaryFormat,
-      ...gargs
-    } = globalArgs;
+  public async query(
+    term: TermJson,
+    globalArgs: RunOptions = {}
+  ): Promise<Cursor | undefined> {
+    const { timeFormat, groupFormat, binaryFormat, ...gargs } = globalArgs;
     gargs.db = gargs.db || this.db;
     this.findTableTermAndAddDb(term, gargs.db);
+    if (!isUndefined(globals.arrayLimit) && isUndefined(gargs.arrayLimit)) {
+      gargs.arrayLimit = globals.arrayLimit;
+    }
     const query: QueryJson = [QueryType.START, term, parseOptarg(gargs)];
     const token = this.socket.sendQuery(query);
     if (globalArgs.noreply) {
