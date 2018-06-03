@@ -33,10 +33,13 @@ export class Cursor extends Readable implements RCursor {
   public _read() {
     if (this.closed) {
       this.push(null);
+      this.emitting = false;
     }
+    this.emitting = true;
     this._next().then(row => this.push(row)).catch((err) => {
       if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CURSOR_END) {
         this.push(null);
+        this.emitting = false;
       } else {
         this.emit('error', err);
       }

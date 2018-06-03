@@ -4,7 +4,7 @@ import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import { Connection, RServerConnectionOptions, RunOptions, ServerInfo, RCursor } from '../types';
+import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
 import { NULL_BUFFER } from './handshake-utils';
 import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
 
@@ -18,8 +18,8 @@ const tableQueries = [
 export class RebirthDBConnection extends EventEmitter implements Connection {
   public clientPort: number;
   public clientAddress: string;
+  public readonly socket: RebirthDBSocket;
   private options: RNConnOpts;
-  private socket: RebirthDBSocket;
   private timeout: number;
   private pingInterval: number;
   private silent: boolean;

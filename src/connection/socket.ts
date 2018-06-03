@@ -1,12 +1,12 @@
 import { EventEmitter } from 'events';
 import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
 import { connect as tlsConnect } from 'tls';
+import { isUndefined } from 'util';
 import { RServerConnectionOptions } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
 import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake-utils';
-import { isUndefined } from 'util';
 
 export type RNConnOpts = RServerConnectionOptions & {
   host: string;

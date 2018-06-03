@@ -3,12 +3,13 @@ import { EventEmitter } from 'events';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
 import { Connection, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
+import { RebirthDBSocket } from './socket';
 export declare class RebirthDBConnection extends EventEmitter implements Connection {
     private connectionOptions;
     clientPort: number;
     clientAddress: string;
+    readonly socket: RebirthDBSocket;
     private options;
-    private socket;
     private timeout;
     private pingInterval;
     private silent;

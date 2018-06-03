@@ -65,3 +65,34 @@ replace
 
 remove
 let r$
+
+remove
+nodeify.js
+
+remove
+.asyncIterator()
+
+remove
+it('Import with cursor as default', async () => {
+
+replace
+connection.connection.end()
+connection.socket.close()
+
+replace
+   feed.next();
+   await feed.next();
+
+reimplement
+coverage.js
+
+remove
+dequeue.js
+
+replace
+\{(.*)(row => )row(.*)\}
+row => ({$1row$3})
+
+fix
+'`merge` should take an anonymous function'
+`indexCreate` should work with options

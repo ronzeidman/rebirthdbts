@@ -52,9 +52,46 @@ const conn = await r.connect(options);
 * support for `r.row` you can use `row => row` instead. (may add support in the future)
 * Support write streams (Does anyone uses it? will add it if its a popular demand)
 
-# TODO:
+# TESTS ERROR STATUS:
 
-* Pretty print backtraces
-* Make an exception enum and utility functions for filtering and handling the right exceptions
-* Translate the fixed tests to TS and run all the tests
-* Fork this to RebirthDB org, add build step & publish
+## Priority - critical
+* Support labda returning objects (test: '`merge` should take an anonymous function')
+
+## Priority - high
+* Support 'ISO8601' time format
+* Support constant time terms
+* Support max nesting level
+* Throw on NaN and Infinity
+* Support Global ArrayLimit
+* Support `toString()`
+* Throw on `undefined` anonymous function
+
+
+## Priority - medium
+* Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
+    * Need documentation
+* Error names (ResourceError, LogicError)...
+* Failing some geo arity tests
+
+## Priority - low
+* Supporting implicit var (`r.row`)
+    * Use a lambda expression instead (row => row)
+
+## Priority - none
+* Function suggestions fails ("`noReplyWait` should throw")
+    * Typescript can help users better understand the right function names
+* Suggesting optional arguments available options fails ("`run` should throw on an unrecognized argument")
+    * still showing wrong argument exception + backtrace
+    * Typescript can help users better understand the right params
+* Not supporting certain top-level functions ("`r.wait` should throw")
+    * Every not top level function can be translated to top level function by adding the query-term as the first arg: `r.table('test').reconfigure({...})` -> `r.reconfigure(r.table('test'), { ... })`
+    * This support will help make use of the future `|>` functional operator:
+        * this.table('test') |> r.reconfigure(#, {})
+* Throw special error if a top-level function is not defined on a term ("`js` is not defined after a term")
+    * Throwing the standard `TypeError: xxx is not a function`
+* Supporting `.asyncIterator()`
+    * Cursor is a stream reader which is an async iterator by default in node 10
+* Special r.time arity check (the current check is enogh)
+* Error message mismatch
+* `r.and()` `r.or()` with no arguments
+

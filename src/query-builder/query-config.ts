@@ -5,7 +5,7 @@ import { TermType } from '../proto/enums';
 
 export type TermConfig = [TermType, string, number, number, boolean];
 
-export const bracket: TermConfig = [TermType.BRACKET, '', 1, 1, false];
+export const bracket: TermConfig = [TermType.BRACKET, '(...)', 1, 1, false];
 export const funcall: TermConfig = [TermType.FUNCALL, 'do', 1, -1, false];
 
 export const termConfig: TermConfig[] = [
@@ -23,12 +23,12 @@ export const termConfig: TermConfig[] = [
   [TermType.SUB, 'sub', 1, -1, false],
   [TermType.MUL, 'mul', 1, -1, false],
   [TermType.DIV, 'div', 1, -1, false],
-  [TermType.MOD, 'mod', 1, -1, false],
+  [TermType.MOD, 'mod', 1, 1, false],
   [TermType.FLOOR, 'floor', 0, 0, false],
   [TermType.CEIL, 'ceil', 0, 0, false],
   [TermType.ROUND, 'round', 0, -1, false],
-  [TermType.APPEND, 'append', 0, 1, false],
-  [TermType.PREPEND, 'prepend', 0, 1, false],
+  [TermType.APPEND, 'append', 1, 1, false],
+  [TermType.PREPEND, 'prepend', 1, 1, false],
   [TermType.DIFFERENCE, 'difference', 1, 1, false],
   [TermType.SET_INSERT, 'setInsert', 1, 1, false],
   [TermType.SET_INTERSECTION, 'setIntersection', 1, 1, false],
@@ -64,7 +64,7 @@ export const termConfig: TermConfig[] = [
   [TermType.EQ_JOIN, 'eqJoin', 2, 2, true],
   [TermType.ZIP, 'zip', 0, 0, false],
   [TermType.INSERT_AT, 'insertAt', 2, 2, false],
-  [TermType.DELETE_AT, 'deleteAt', 2, 2, false],
+  [TermType.DELETE_AT, 'deleteAt', 1, 2, false],
   [TermType.CHANGE_AT, 'changeAt', 2, 2, false],
   [TermType.SPLICE_AT, 'spliceAt', 2, 2, false],
   [TermType.COERCE_TO, 'coerceTo', 1, 1, false],
@@ -86,12 +86,12 @@ export const termConfig: TermConfig[] = [
   [TermType.INDEX_CREATE, 'indexCreate', 1, 2, true],
   [TermType.INDEX_DROP, 'indexDrop', 1, 1, false],
   [TermType.INDEX_LIST, 'indexList', 0, 0, false],
-  [TermType.INDEX_STATUS, 'indexStatus', 1, -1, false],
-  [TermType.INDEX_WAIT, 'indexWait', 1, -1, false],
+  [TermType.INDEX_STATUS, 'indexStatus', 0, -1, false],
+  [TermType.INDEX_WAIT, 'indexWait', 0, -1, false],
   [TermType.INDEX_RENAME, 'indexRename', 2, 2, true],
   [TermType.BRANCH, 'branch', 2, -1, false],
-  [TermType.OR, 'or', 1, -1, false],
-  [TermType.AND, 'and', 1, -1, false],
+  [TermType.OR, 'or', 0, -1, false],
+  [TermType.AND, 'and', 0, -1, false],
   [TermType.FOR_EACH, 'forEach', 1, 1, false],
   [TermType.INFO, 'info', 0, 0, false],
   [TermType.MATCH, 'match', 0, 0, false],
@@ -122,10 +122,9 @@ export const termConfig: TermConfig[] = [
   [TermType.SPLIT, 'split', 1, 2, false],
   [TermType.UNGROUP, 'ungroup', 0, 0, false],
   [TermType.CHANGES, 'changes', 0, 0, true],
-  [TermType.GEOJSON, 'geojson', 1, 1, false],
   [TermType.TO_GEOJSON, 'toGeojson', 0, 0, false],
-  [TermType.DISTANCE, 'distance', 2, 2, true],
-  [TermType.INTERSECTS, 'intersects', 2, 2, false],
+  [TermType.DISTANCE, 'distance', 1, 1, true],
+  [TermType.INTERSECTS, 'intersects', 1, 1, false],
   [TermType.INCLUDES, 'includes', 1, 1, false],
   [TermType.GET_INTERSECTING, 'getIntersecting', 1, 1, true],
   [TermType.FILL, 'fill', 0, 0, false],
@@ -166,7 +165,7 @@ export const rConfig: TermConfig[] = [
   [TermType.JSON, 'json', 1, 1, false],
   [TermType.POINT, 'point', 2, 2, false],
   [TermType.LINE, 'line', 2, -1, false],
-  [TermType.POLYGON, 'polygon', 2, -1, false],
+  [TermType.POLYGON, 'polygon', 1, -1, false],
   [TermType.CIRCLE, 'circle', 2, 2, true],
   [TermType.LITERAL, 'literal', 0, 1, false],
   [TermType.OBJECT, 'object', 1, -1, false],
@@ -174,6 +173,7 @@ export const rConfig: TermConfig[] = [
   [TermType.UUID, 'uuid', 0, 1, false],
   [TermType.RANGE, 'range', 1, 2, false],
   [TermType.HTTP, 'http', 1, 1, true],
+  [TermType.GEOJSON, 'geojson', 1, 1, false],
 ];
 
 export const rConsts: Array<[TermType, string]> = [

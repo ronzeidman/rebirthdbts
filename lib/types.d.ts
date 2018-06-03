@@ -2,6 +2,7 @@
 import { EventEmitter } from 'events';
 import { TcpNetConnectOpts } from 'net';
 import { ConnectionOptions } from 'tls';
+export declare type Primitives = null | string | boolean | number;
 export declare type Format = 'native' | 'raw';
 export declare type Durability = 'hard' | 'soft';
 export declare type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
@@ -715,7 +716,7 @@ export interface R {
     ISO8601(time: RValue<string>, options?: {
         defaultTimezone: string;
     }): RDatum<Date>;
-    args(arg: any): any;
+    args(arg: Array<RValue<Primitives | object | any[]>>): any;
     binary(data: any): RDatum<Buffer>;
     branch<T>(test: RValue<boolean>, trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends RStream ? RStream : RDatum;
     range(startValue: RValue<number>, endValue?: RValue<number>): RStream<number>;

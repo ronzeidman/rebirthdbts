@@ -3,6 +3,7 @@ import { TcpNetConnectOpts } from 'net';
 import { ConnectionOptions } from 'tls';
 
 //#region optargs
+export type Primitives = null | string | boolean | number;
 export type Format = 'native' | 'raw';
 export type Durability = 'hard' | 'soft';
 export type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
@@ -1025,7 +1026,7 @@ export interface R {
     time: RValue<string>,
     options?: { defaultTimezone: string }
   ): RDatum<Date>;
-  args(arg: any): any;
+  args(arg: Array<RValue<Primitives | object | any[]>>): any;
   binary(data: any): RDatum<Buffer>;
   branch<T>(
     test: RValue<boolean>,
