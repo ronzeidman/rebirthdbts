@@ -1,3 +1,4 @@
+import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { bracket, termConfig } from './query-config';
 import { doTermFunc, getCursorQueryFunc, runQueryFunc, termBuilder } from './term-builder';
@@ -31,6 +32,9 @@ const queryProxyHandler: ProxyHandler<any> = {
   get(target, p, receiver) {
     // tslint:disable-next-line:no-shadowed-variable
     const { term } = target;
+    if (p === 'then') {
+      throw new RebirthDBError('Cannot `await` a query, did you forget `run` or `getCursor`?');
+    }
     if (p === 'run') {
       return runQueryFunc(term);
     }
