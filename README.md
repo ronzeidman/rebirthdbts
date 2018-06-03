@@ -36,7 +36,7 @@ const conn = await r.connect(options);
 * Importing property instead of entire library: `const {r} = require('rebirthdbts')` or `import {r} from 'rebirthdbts'` instead of `const r = require('rethinkdbdash')(options)`
 * No top level initialization, initializing a pool is done by `await r.connectPool()`
 * No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
-    * `.run()` with coerce streams to array by default feeds will return a cursor like rethinkdbdash
+    * `.run()` will coerce streams to array by default feeds will return a cursor like rethinkdbdash
 * Uses native promises instead of `bluebird`
 * A cursor is already a readable stream, no need for `toStream()`
 * A readable stream is already an async iterator in node 10 no need for `.asyncIterator()`
