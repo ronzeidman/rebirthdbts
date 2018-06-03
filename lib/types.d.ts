@@ -758,11 +758,7 @@ export interface R {
     do<T>(arg1: RDatum, arg2: RDatum, func: (arg1: RDatum, arg2: RDatum) => T): T extends RStream ? T : RDatum;
     do<T>(arg1: RDatum, arg2: RDatum, arg3: RDatum, func: (arg1: RDatum, arg2: RDatum, arg3: RDatum) => T): T extends RStream ? T : RDatum;
     do<T>(arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum, func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T): T extends RStream ? T : RDatum;
-    connect(options: RConnectionOptions & {
-        pool: false;
-    }): Promise<Connection>;
-    connect(options?: RConnectionOptions & {
-        pool?: true;
-    }): Promise<MasterPool>;
+    connect(options: RConnectionOptions): Promise<Connection>;
+    connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
     getPoolMaster(): MasterPool | undefined;
 }
