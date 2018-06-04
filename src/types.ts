@@ -322,9 +322,19 @@ export interface RebirthDBError extends Error {
 }
 
 export enum RebirthDBErrorType {
-  UNKNOWN_ERROR,
-  AUTH_ERROR,
-  CURSOR_END
+  UNKNOWN,
+  CURSOR_END,
+  // connection error
+  AUTH,
+  // reql response errors
+  INTERNAL,
+  RESOURCE_LIMIT,
+  QUERY_LOGIC,
+  NON_EXISTENCE,
+  OP_FAILED,
+  OP_INDETERMINATE,
+  USER,
+  PERMISSION_ERROR
 }
 
 export interface RQuery<T = any> {

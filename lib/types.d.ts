@@ -282,9 +282,17 @@ export interface RebirthDBError extends Error {
     readonly type: RebirthDBErrorType;
 }
 export declare enum RebirthDBErrorType {
-    UNKNOWN_ERROR = 0,
-    AUTH_ERROR = 1,
-    CURSOR_END = 2,
+    UNKNOWN = 0,
+    CURSOR_END = 1,
+    AUTH = 2,
+    INTERNAL = 3,
+    RESOURCE_LIMIT = 4,
+    QUERY_LOGIC = 5,
+    NON_EXISTENCE = 6,
+    OP_FAILED = 7,
+    OP_INDETERMINATE = 8,
+    USER = 9,
+    PERMISSION_ERROR = 10,
 }
 export interface RQuery<T = any> {
     typeOf(): RDatum<string>;
