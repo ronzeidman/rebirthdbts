@@ -1,3 +1,5 @@
+// 15 passing (16s)
+// 2 failing
 const path = require('path');
 const config = require('./config.js');
 const { r } = require(path.join(__dirname, '/../lib'));
@@ -7,18 +9,18 @@ const assert = require('assert');
 describe('manipulating tables', () => {
   let dbName;
 
-  before(async function() {
+  before(async function () {
     await r.connectPool(config);
     dbName = uuid(); // export to the global scope
     const result = await r.dbCreate(dbName).run();
     assert.equal(result.dbs_created, 1);
   });
 
-  after(async function() {
+  after(async function () {
     await r.getPoolMaster().drain();
   });
 
-  it('`tableList` should return a cursor', async function() {
+  it('`tableList` should return a cursor', async function () {
     const result = await r
       .db(dbName)
       .tableList()
@@ -26,7 +28,7 @@ describe('manipulating tables', () => {
     assert(Array.isArray(result));
   });
 
-  it('`tableList` should show the table we created', async function() {
+  it('`tableList` should show the table we created', async function () {
     const tableName = uuid(); // export to the global scope
 
     let result = await r
@@ -43,7 +45,7 @@ describe('manipulating tables', () => {
     assert.equal(tableName, result.find(name => name === tableName));
   });
 
-  it('`tableCreate` should create a table', async function() {
+  it('`tableCreate` should create a table', async function () {
     const tableName = uuid(); // export to the global scope
 
     const result = await r
@@ -53,7 +55,7 @@ describe('manipulating tables', () => {
     assert.equal(result.tables_created, 1);
   });
 
-  it('`tableCreate` should create a table -- primaryKey', async function() {
+  it('`tableCreate` should create a table -- primaryKey', async function () {
     const tableName = uuid();
 
     let result = await r
@@ -70,7 +72,7 @@ describe('manipulating tables', () => {
     assert(result.primary_key, 'foo');
   });
 
-  it('`tableCreate` should create a table -- all args', async function() {
+  it('`tableCreate` should create a table -- all args', async function () {
     const tableName = uuid();
 
     let result = await r
@@ -87,7 +89,7 @@ describe('manipulating tables', () => {
     assert(result.primary_key, 'foo');
   });
 
-  it('`tableCreate` should throw -- non valid args', async function() {
+  it('`tableCreate` should throw -- non valid args', async function () {
     try {
       const tableName = uuid();
 
@@ -103,7 +105,7 @@ describe('manipulating tables', () => {
     }
   });
 
-  it('`tableCreate` should throw if no argument is given', async function() {
+  it('`tableCreate` should throw if no argument is given', async function () {
     try {
       await r
         .db(dbName)
@@ -114,13 +116,13 @@ describe('manipulating tables', () => {
       assert.equal(
         e.message,
         '`tableCreate` takes at least 1 argument, 0 provided after:\nr.db("' +
-          dbName +
-          '")'
+        dbName +
+        '")'
       );
     }
   });
 
-  it('`tableCreate` should throw is the name contains special char', async function() {
+  it('`tableCreate` should throw is the name contains special char', async function () {
     try {
       await r
         .db(dbName)
@@ -133,7 +135,7 @@ describe('manipulating tables', () => {
     }
   });
 
-  it('`tableDrop` should drop a table', async function() {
+  it('`tableDrop` should drop a table', async function () {
     const tableName = uuid();
 
     let result = await r
@@ -162,7 +164,7 @@ describe('manipulating tables', () => {
     assert(result.find(name => name === tableName) === undefined);
   });
 
-  it('`tableDrop` should throw if no argument is given', async function() {
+  it('`tableDrop` should throw if no argument is given', async function () {
     try {
       await r
         .db(dbName)
@@ -173,13 +175,13 @@ describe('manipulating tables', () => {
       assert.equal(
         e.message,
         '`tableDrop` takes 1 argument, 0 provided after:\nr.db("' +
-          dbName +
-          '")'
+        dbName +
+        '")'
       );
     }
   });
 
-  describe('indices', function() {
+  describe('indices', function () {
     const dbName = uuid();
     const tableName = uuid();
 
@@ -194,7 +196,7 @@ describe('manipulating tables', () => {
       assert.equal(result.tables_created, 1);
     });
 
-    it('index operations', async function() {
+    it('index operations', async function () {
       let result = await r
         .db(dbName)
         .table(tableName)
@@ -234,7 +236,7 @@ describe('manipulating tables', () => {
       result = await r
         .db(dbName)
         .table(tableName)
-        .indexCreate('field1', function(doc) {
+        .indexCreate('field1', function (doc) {
           return doc('field1');
         })
         .run();
@@ -263,7 +265,7 @@ describe('manipulating tables', () => {
       assert.deepEqual(result, { dropped: 1 });
     });
 
-    it('`indexCreate` should work with options', async function() {
+    it('`indexCreate` should work with options', async function () {
       let result = await r
         .db(dbName)
         .table(tableName)
@@ -283,7 +285,7 @@ describe('manipulating tables', () => {
         .table(tableName)
         .indexCreate(
           'foo2',
-          function(doc) {
+          function (doc) {
             return doc('foo');
           },
           { multi: true }
@@ -401,7 +403,7 @@ describe('manipulating tables', () => {
       assert.equal(result, 1);
     });
 
-    it('`indexCreate` should throw if no argument is passed', async function() {
+    it('`indexCreate` should throw if no argument is passed', async function () {
       try {
         await r
           .db(dbName)
@@ -413,15 +415,15 @@ describe('manipulating tables', () => {
         assert.equal(
           e.message,
           '`indexCreate` takes at least 1 argument, 0 provided after:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")'
         );
       }
     });
 
-    it('`indexDrop` should throw if no argument is passed', async function() {
+    it('`indexDrop` should throw if no argument is passed', async function () {
       try {
         await r
           .db(dbName)
@@ -433,15 +435,15 @@ describe('manipulating tables', () => {
         assert.equal(
           e.message,
           '`indexDrop` takes 1 argument, 0 provided after:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")'
         );
       }
     });
 
-    it('`indexRename` should work', async function() {
+    it('`indexRename` should work', async function () {
       const toRename = uuid();
       const renamed = uuid();
       const existing = uuid();
@@ -475,7 +477,7 @@ describe('manipulating tables', () => {
       assert.deepEqual(result, { renamed: 1 });
     });
 
-    it('`indexRename` should not overwrite an index if not specified', async function() {
+    it('`indexRename` should not overwrite an index if not specified', async function () {
       try {
         const name = uuid();
         const otherName = uuid();
@@ -505,7 +507,7 @@ describe('manipulating tables', () => {
       }
     });
 
-    it('`indexRename` should throw -- non valid args', async function() {
+    it('`indexRename` should throw -- non valid args', async function () {
       try {
         await r
           .db(dbName)

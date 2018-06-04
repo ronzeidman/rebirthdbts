@@ -1,3 +1,5 @@
+// 19 passing (21s)
+// 2 failing
 const path = require('path');
 const config = require(path.join(__dirname, '/config.js'));
 const { r } = require(path.join(__dirname, '/../lib'));
@@ -6,7 +8,7 @@ const assert = require('assert');
 const uuid = util.uuid;
 const net = require('net');
 
-describe('accessing-reql', function() {
+describe('accessing-reql', function () {
   let connection; // global connection
   let dbName, tableName, result;
 
@@ -128,7 +130,7 @@ describe('accessing-reql', function() {
     assert.deepEqual(result, [tableName]);
   });
 
-  it('`use` should work', async function() {
+  it('`use` should work', async function () {
     dbName = uuid();
     tableName = uuid();
 
@@ -147,7 +149,7 @@ describe('accessing-reql', function() {
     assert.deepEqual(result, [tableName]);
   });
 
-  it('`reconnect` should work', async function() {
+  it('`reconnect` should work', async function () {
     await connection.close();
     assert(!connection.open);
 
@@ -155,7 +157,7 @@ describe('accessing-reql', function() {
     assert(connection.open);
   });
 
-  it('`reconnect` should work with options', async function() {
+  it('`reconnect` should work with options', async function () {
     assert(connection.open);
     connection = await connection.reconnect({ noreplyWait: true });
     assert(connection.open);
@@ -176,7 +178,7 @@ describe('accessing-reql', function() {
     assert.equal(result, 1);
   });
 
-  it('`noReplyWait` should throw', async function() {
+  it('`noReplyWait` should throw', async function () {
     try {
       await connection.noReplyWait();
       assert.fail('should throw an error');
@@ -188,7 +190,7 @@ describe('accessing-reql', function() {
     }
   });
 
-  it('`noreplyWait` should work', async function() {
+  it('`noreplyWait` should work', async function () {
     dbName = uuid();
     tableName = uuid();
     const largeishObject = Array(10000)
@@ -226,7 +228,7 @@ describe('accessing-reql', function() {
     assert.equal(result, 10000);
   });
 
-  it('`run` should take an argument', async function() {
+  it('`run` should take an argument', async function () {
     result = await r.expr(1).run(connection, { readMode: 'primary' });
     assert.equal(result, 1);
 
@@ -247,7 +249,7 @@ describe('accessing-reql', function() {
     assert.equal(result, 1);
   });
 
-  it('`run` should throw on an unrecognized argument', async function() {
+  it('`run` should throw on an unrecognized argument', async function () {
     try {
       result = await r.expr(1).run(connection, { foo: 'bar' });
       assert.fail('should throw an error');
@@ -259,12 +261,12 @@ describe('accessing-reql', function() {
     }
   });
 
-  it('`r()` should be a shortcut for r.expr()', async function() {
+  it('`r()` should be a shortcut for r.expr()', async function () {
     result = await r(1).run(connection);
     assert.deepEqual(result, 1);
   });
 
-  it('`timeFormat` should work', async function() {
+  it('`timeFormat` should work', async function () {
     result = await r.now().run(connection);
     assert(result instanceof Date);
 
@@ -275,14 +277,14 @@ describe('accessing-reql', function() {
     assert.equal(result.$reql_type$, 'TIME');
   });
 
-  it('`binaryFormat` should work', async function() {
+  it('`binaryFormat` should work', async function () {
     result = await r
       .binary(Buffer.from([1, 2, 3]))
       .run(connection, { binaryFormat: 'raw' });
     assert.equal(result.$reql_type$, 'BINARY');
   });
 
-  it('`groupFormat` should work', async function() {
+  it('`groupFormat` should work', async function () {
     result = await r
       .expr([
         { name: 'Michel', grownUp: true },
@@ -313,7 +315,7 @@ describe('accessing-reql', function() {
     });
   });
 
-  it('`profile` should work', async function() {
+  it('`profile` should work', async function () {
     result = await r.expr(true).run(connection, { profile: false });
     assert(result);
 
@@ -325,7 +327,7 @@ describe('accessing-reql', function() {
     assert.equal(result, true);
   });
 
-  it('`timeout` option should work', async function() {
+  it('`timeout` option should work', async function () {
     let server, port;
     try {
       port = Math.floor(Math.random() * (65535 - 1025) + 1025);
@@ -347,13 +349,13 @@ describe('accessing-reql', function() {
     }
   });
 
-  it('`server` should work', async function() {
+  it('`server` should work', async function () {
     var response = await connection.server();
     assert(typeof response.name === 'string');
     assert(typeof response.id === 'string');
   });
 
-  it('`grant` should work', async function() {
+  it('`grant` should work', async function () {
     const restrictedDbName = uuid();
     const restrictedTableName = uuid();
 
@@ -415,7 +417,7 @@ describe('accessing-reql', function() {
     }
   });
 
-  it('should not throw an error (since 1.13, the token is now stored outside the query): `connection` should extend events.Emitter and emit an error if the server failed to parse the protobuf message', async function() {
+  it('should not throw an error (since 1.13, the token is now stored outside the query): `connection` should extend events.Emitter and emit an error if the server failed to parse the protobuf message', async function () {
     connection.addListener('error', () => assert.fail('should not throw'));
     result = await Array(687)
       .fill(1)

@@ -13,7 +13,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/test/aggregation.js"
+        "${workspaceFolder}/test/pool_legacy.js"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
@@ -36,7 +36,9 @@
       "name": "Current JS File",
       "type": "node",
       "request": "launch",
-      "args": ["${relativeFile}"],
+      "args": [
+        "${relativeFile}"
+      ],
       "cwd": "${workspaceRoot}",
       "protocol": "inspector",
       "internalConsoleOptions": "openOnSessionStart"
@@ -45,8 +47,13 @@
       "name": "Current TS File",
       "type": "node",
       "request": "launch",
-      "args": ["${relativeFile}"],
-      "runtimeArgs": ["-r", "ts-node/register"],
+      "args": [
+        "${relativeFile}"
+      ],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
       "cwd": "${workspaceRoot}",
       "protocol": "inspector",
       "internalConsoleOptions": "openOnSessionStart"

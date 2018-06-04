@@ -1,3 +1,4 @@
+// 30 passing (2s)
 const path = require('path')
 const config = require(path.join(__dirname, '/config.js'))
 const { r } = require(path.join(__dirname, '/../lib'))

@@ -1,3 +1,4 @@
+// 13 passing (2m)
 const path = require('path');
 const config = require('./config.js');
 const { r } = require(path.join(__dirname, '/../lib'));
@@ -23,7 +24,7 @@ describe('pool legacy', () => {
     silent: true
   };
 
-  it('`createPool` should create a PoolMaster and `getPoolMaster` should return it', async function() {
+  it('`createPool` should create a PoolMaster and `getPoolMaster` should return it', async function () {
     await r.connectPool(options);
     assert.ok(r.getPoolMaster(), 'expected an instance of pool master');
     assert.equal(
@@ -33,17 +34,17 @@ describe('pool legacy', () => {
     );
   });
 
-  it('The pool should create a buffer', async function() {
+  it('The pool should create a buffer', async function () {
     const result = await new Promise((resolve, reject) => {
       setTimeout(() => {
         const numConnections = r.getPoolMaster().getAvailableLength();
         numConnections >= options.buffer
           ? resolve(numConnections)
           : reject(
-              new Error(
-                'expected number of connections to equal option.buffer within 250 msecs'
-              )
-            );
+            new Error(
+              'expected number of connections to equal option.buffer within 250 msecs'
+            )
+          );
       }, 50);
     });
     assert.equal(
@@ -53,7 +54,7 @@ describe('pool legacy', () => {
     );
   });
 
-  it('`run` should work without a connection if a pool exists and the pool should keep a buffer', async function() {
+  it('`run` should work without a connection if a pool exists and the pool should keep a buffer', async function () {
     const numExpr = 5;
 
     let result = await Promise.all(
@@ -70,7 +71,7 @@ describe('pool legacy', () => {
     );
   });
 
-  it('A noreply query should release the connection', async function() {
+  it('A noreply query should release the connection', async function () {
     const numConnections = r.getPoolMaster().getLength();
     await r.expr(1).run({ noreply: true });
     assert.equal(
@@ -80,7 +81,7 @@ describe('pool legacy', () => {
     );
   });
 
-  it('The pool should not have more than `options.max` connections', async function() {
+  it('The pool should not have more than `options.max` connections', async function () {
     let result = [];
     for (let i = 0; i <= options.max; i++) {
       result.push(r.expr(1).run());
@@ -100,7 +101,7 @@ describe('pool legacy', () => {
     );
   });
 
-  it('The pool should shrink if a connection is not used for some time', async function() {
+  it('The pool should shrink if a connection is not used for some time', async function () {
     r.getPoolMaster().setOptions({ timeoutGb: 100 });
 
     const result = await Promise.all(
@@ -111,7 +112,7 @@ describe('pool legacy', () => {
     assert.deepEqual(result, Array(9).fill(1));
 
     const { availableLength, length } = await new Promise((resolve, reject) => {
-      setTimeout(function() {
+      setTimeout(function () {
         resolve({
           availableLength: r.getPoolMaster().getAvailableLength(),
           length: r.getPoolMaster().getLength()
@@ -130,14 +131,14 @@ describe('pool legacy', () => {
     );
   });
 
-  it('`poolMaster.drain` should eventually remove all the connections', async function() {
+  it('`poolMaster.drain` should eventually remove all the connections', async function () {
     await r.getPoolMaster().drain();
 
     assert.equal(r.getPoolMaster().getAvailableLength(), 0);
     assert.equal(r.getPoolMaster().getLength(), 0);
   });
 
-  it('If the pool cannot create a connection, it should reject queries', async function() {
+  it('If the pool cannot create a connection, it should reject queries', async function () {
     await r
       .connectPool({
         servers: [{ host: 'notarealhost' }],
@@ -158,7 +159,7 @@ describe('pool legacy', () => {
     await r.getPoolMaster().drain();
   });
 
-  it('If the driver cannot create a connection, it should reject queries - timeout', async function() {
+  it('If the driver cannot create a connection, it should reject queries - timeout', async function () {
     await r
       .connectPool({
         servers: [{ host: 'notarealhost' }],
@@ -167,7 +168,7 @@ describe('pool legacy', () => {
         silent: true
       })
       .catch(() => undefined);
-    await new Promise(function(resolve, reject) {
+    await new Promise(function (resolve, reject) {
       setTimeout(resolve, 1000);
     });
     try {
@@ -183,8 +184,8 @@ describe('pool legacy', () => {
     }
   });
 
-  it('If the pool is drained, it should reject queries', async function() {
-    await new Promise(function(resolve, reject) {
+  it('If the pool is drained, it should reject queries', async function () {
+    await new Promise(function (resolve, reject) {
       setTimeout(resolve, 2000);
     });
     await r
@@ -210,8 +211,8 @@ describe('pool legacy', () => {
     }
   });
 
-  it('If the pool is draining, it should reject queries', async function() {
-    await new Promise(function(resolve, reject) {
+  it('If the pool is draining, it should reject queries', async function () {
+    await new Promise(function (resolve, reject) {
       setTimeout(resolve, 2000);
     });
     await r.connectPool({ buffer: 1, max: 2, silent: true });
@@ -247,8 +248,8 @@ describe('pool legacy', () => {
   //   pool.options.silent = false;
   // });
 
-  it('The pool should remove a connection if it errored', async function() {
-    await new Promise(function(resolve, reject) {
+  it('The pool should remove a connection if it errored', async function () {
+    await new Promise(function (resolve, reject) {
       setTimeout(resolve, 2000);
     });
     await r.connectPool({ buffer: 1, max: 2, silent: true });
@@ -271,7 +272,7 @@ describe('pool legacy', () => {
 
       // We expect the connection that errored to get closed in the next second
       await new Promise((resolve, reject) => {
-        setTimeout(function() {
+        setTimeout(function () {
           assert.equal(r.getPoolMaster().getAvailableLength(), options.max - 1);
           assert.equal(r.getPoolMaster().getLength(), options.max - 1);
           resolve();
@@ -282,11 +283,11 @@ describe('pool legacy', () => {
     }
   });
 
-  describe('cursor', function() {
+  describe('cursor', function () {
     let dbName, tableName;
 
-    before(async function() {
-      await new Promise(function(resolve, reject) {
+    before(async function () {
+      await new Promise(function (resolve, reject) {
         setTimeout(resolve, 2000);
       });
       await r.connectPool(options);
@@ -328,14 +329,14 @@ describe('pool legacy', () => {
         .run();
     });
 
-    after(async function() {
+    after(async function () {
       let result = await r.dbDrop(dbName).run();
       assert.equal(result.dbs_dropped, 1);
 
       await r.getPoolMaster().drain();
     });
 
-    it('The pool should release a connection only when the cursor has fetch everything or get closed', async function() {
+    it('The pool should release a connection only when the cursor has fetch everything or get closed', async function () {
       const result = [];
       for (let i = 0; i < options.max; i++) {
         result.push(

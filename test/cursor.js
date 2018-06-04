@@ -1,3 +1,5 @@
+// 45 passing (10s)
+// 3 failing
 const path = require('path');
 const config = require('./config.js');
 const { r } = require(path.join(__dirname, '/../lib'));
@@ -110,7 +112,7 @@ describe('cursor', () => {
 
     await new Promise((resolve, reject) => {
       let count = 0;
-      cursor.each(function(err, result) {
+      cursor.each(function (err, result) {
         if (err) reject(err);
         count++;
         if (count === numDocs) resolve();
@@ -128,7 +130,7 @@ describe('cursor', () => {
     await new Promise((resolve, reject) => {
       let count = 0;
       cursor.each(
-        function(err, result) {
+        function (err, result) {
           if (err) reject(err);
           count++;
         },
@@ -155,12 +157,12 @@ describe('cursor', () => {
     await new Promise((resolve, reject) => {
       let count = 0;
       cursor.each(
-        function(err, result) {
+        function (err, result) {
           if (err) reject(err);
           count++;
           return false;
         },
-        function() {
+        function () {
           count === 1
             ? resolve()
             : reject(new Error('expected count to not equal 1'));
@@ -184,8 +186,8 @@ describe('cursor', () => {
     await cursor.eachAsync(async result => {
       history.push(count);
       count++;
-      await new Promise(function(resolve, reject) {
-        setTimeout(function() {
+      await new Promise(function (resolve, reject) {
+        setTimeout(function () {
           history.push(promisesWait);
           promisesWait--;
 
@@ -218,7 +220,7 @@ describe('cursor', () => {
     const now = Date.now();
     const timeout = 10;
 
-    await cursor.eachAsync(function(result, onRowFinished) {
+    await cursor.eachAsync(function (result, onRowFinished) {
       count++;
       setTimeout(onRowFinished, timeout);
     });
@@ -313,7 +315,7 @@ describe('cursor', () => {
     await cursor.close();
     result = cursor.close();
     try {
-      result.then(() => {}); // Promise's contract is to have a `then` method
+      result.then(() => { }); // Promise's contract is to have a `then` method
     } catch (e) {
       assert.fail(e);
     }
@@ -535,7 +537,7 @@ describe('cursor', () => {
     let counter = 0;
 
     const promise = new Promise((resolve, reject) => {
-      feed.each(function(error, change) {
+      feed.each(function (error, change) {
         if (error) reject(error);
         assert(typeof change.new_offset === 'number');
         if (counter >= 2) {
@@ -573,7 +575,7 @@ describe('cursor', () => {
     let counter = 0;
 
     const promise = new Promise((resolve, reject) => {
-      feed.each(function(error, change) {
+      feed.each(function (error, change) {
         if (error) reject(error);
         assert(typeof change.type === 'string');
         if (counter > 0) {
@@ -693,7 +695,7 @@ describe('cursor', () => {
 
     const promise = new Promise((resolve, reject) => {
       let i = 0;
-      feed.on('data', function() {
+      feed.on('data', function () {
         i++;
         if (i === smallNumDocs) {
           feed
@@ -740,7 +742,7 @@ describe('cursor', () => {
       .changes()
       .run();
 
-    feed.on('data', () => {});
+    feed.on('data', () => { });
     feed.on('error', assert.fail);
 
     try {
@@ -749,7 +751,7 @@ describe('cursor', () => {
     } catch (e) {
       assert(
         e.message ===
-          'You cannot call `next` once you have bound listeners on the Feed.'
+        'You cannot call `next` once you have bound listeners on the Feed.'
       );
       await feed.close();
     }
@@ -765,13 +767,13 @@ describe('cursor', () => {
 
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      feed.each(function(err, result) {
+      feed.each(function (err, result) {
         if (err) reject(err);
         if (result.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 1) {
-          setTimeout(function() {
+          setTimeout(function () {
             feed
               .close()
               .then(resolve)
@@ -800,13 +802,13 @@ describe('cursor', () => {
 
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      feed.each(function(err, result) {
+      feed.each(function (err, result) {
         if (err) reject(err);
         if (result.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 2) {
-          setTimeout(function() {
+          setTimeout(function () {
             feed
               .close()
               .then(resolve)
@@ -834,7 +836,7 @@ describe('cursor', () => {
     assert(feed);
 
     const promise = new Promise((resolve, reject) => {
-      feed.each(function(err, result) {
+      feed.each(function (err, result) {
         if (err) reject(err);
         if (result.new_val != null && result.new_val.id === 1) {
           feed
@@ -862,12 +864,12 @@ describe('cursor', () => {
 
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      feed.on('data', function(result) {
+      feed.on('data', function (result) {
         if (result.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 1) {
-          setTimeout(function() {
+          setTimeout(function () {
             feed
               .close()
               .then(resolve)
@@ -896,7 +898,7 @@ describe('cursor', () => {
     var i = 0;
 
     await new Promise((resolve, reject) => {
-      feed.each(function(err, change) {
+      feed.each(function (err, change) {
         if (err) reject(err);
         i++;
         if (i === 10) {
@@ -923,7 +925,7 @@ describe('cursor', () => {
       .changes()
       .run(connection);
 
-    feed.each(function(err, change) {
+    feed.each(function (err, change) {
       assert(
         err.message.match(
           /^The connection was closed before the query could be completed for/
@@ -947,7 +949,7 @@ describe('cursor', () => {
       .table(tableName)
       .changes()
       .run(connection);
-    feed.eachAsync(function(change) {}).catch(function(err) {
+    feed.eachAsync(function (change) { }).catch(function (err) {
       assert(
         err.message.match(
           /^The connection was closed before the query could be completed for/

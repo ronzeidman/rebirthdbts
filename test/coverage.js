@@ -1,3 +1,5 @@
+// 0 passing (10ms)
+// 1 failing
 const path = require('path');
 const { TermType } = require(path.join(__dirname, '/../lib/proto/enums.js'));
 const fs = require('fs');

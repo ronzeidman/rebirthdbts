@@ -1,3 +1,5 @@
+// 50 passing (71ms)
+// 2 failing
 const path = require('path')
 const config = require('./config.js')
 const { r } = require(path.join(__dirname, '/../lib'))
