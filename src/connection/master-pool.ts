@@ -5,26 +5,27 @@ import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
 import { Cursor } from '../response/cursor';
-import { Changes, Connection, MasterPool, RCursor, RPoolConnectionOptions, RServer, RunOptions } from '../types';
+import {
+  Changes,
+  Connection,
+  MasterPool,
+  RCursor,
+  RPoolConnectionOptions,
+  RServer,
+  RunOptions
+} from '../types';
 import { RebirthDBConnection } from './connection';
 import { ServerConnectionPool } from './server-pool';
 import { setConnectionDefaults } from './socket';
 
 export class MasterConnectionPool extends EventEmitter implements MasterPool {
   private healthy: boolean | undefined = undefined;
-  private buffer: number;
-  private max: number;
-  private timeoutError: number;
-  private timeoutGb: number;
-  private maxExponent: number;
-  private silent: boolean;
   private discovery: boolean;
   private discoveryCursor?: RCursor<Changes<ServerStatus>>;
-  private log: (message: string) => any;
   private servers: RServer[];
   private serverPools: ServerConnectionPool[];
 
-  private connParam: any;
+  private connParam: RPoolConnectionOptions;
 
   private timers = new Map<ServerConnectionPool, NodeJS.Timer>();
 
@@ -46,21 +47,65 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }: RPoolConnectionOptions = {}) {
     super();
     // min one per server but wont redistribute conn from failed servers
-    this.buffer = Math.max(buffer, 1);
-    this.max = Math.max(max, buffer);
-    this.timeoutError = timeoutError;
-    this.timeoutGb = timeoutGb;
-    this.maxExponent = maxExponent;
-    this.silent = silent;
-    this.log = log;
     this.discovery = discovery;
-    this.connParam = { db, user, password, timeout, pingInterval, silent, log };
+    this.connParam = {
+      db,
+      user,
+      password,
+      buffer: Math.max(buffer, 1),
+      max: Math.max(max, buffer),
+      timeout,
+      pingInterval,
+      timeoutError,
+      timeoutGb,
+      maxExponent,
+      silent,
+      log
+    };
     this.servers = servers.map(setConnectionDefaults);
     this.serverPools = [];
   }
 
+  public setOptions({
+    discovery = this.discovery,
+    buffer = this.connParam.buffer,
+    max = this.connParam.max,
+    timeoutError = this.connParam.timeoutError,
+    timeoutGb = this.connParam.timeoutGb,
+    maxExponent = this.connParam.maxExponent,
+    silent = this.connParam.silent,
+    log = this.connParam.log
+  }) {
+    if (this.discovery !== discovery) {
+      this.discovery = discovery;
+      if (discovery) {
+        this.discover();
+      } else if (this.discoveryCursor) {
+        this.discoveryCursor.close();
+      }
+    }
+    this.connParam = {
+      ...this.connParam,
+      buffer,
+      max,
+      timeoutError,
+      timeoutGb,
+      maxExponent,
+      silent,
+      log
+    };
+    this.setServerPoolsOptions(this.connParam);
+  }
+
   public eventNames() {
-    return ['draining', 'queueing', 'size', 'available-size', 'healthy', 'error'];
+    return [
+      'draining',
+      'queueing',
+      'size',
+      'available-size',
+      'healthy',
+      'error'
+    ];
   }
 
   public async initServers(serverNum = 0): Promise<void> {
@@ -69,7 +114,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
         this.initServers(serverNum + 1)
       );
     } else {
-      this.rebalanceServerPools();
+      this.setServerPoolsOptions(this.connParam);
     }
   }
 
@@ -93,21 +138,14 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     });
   }
 
-  public updateBufferMax({ buffer, max }: { buffer: number; max: number }) {
-    this.buffer = buffer;
-    this.max = max;
-    this.rebalanceServerPools();
-  }
-
   public async drain({ noreplyWait = false } = {}) {
     this.emit('draining');
     this.discovery = false;
-    await Promise.all(
-      this.serverPools.map(pool => {
-        pool.removeAllListeners();
-        return pool.drain({ noreplyWait });
-      })
-    );
+    if (this.discoveryCursor) {
+      this.discoveryCursor.close();
+    }
+    this.setHealthy(undefined);
+    await Promise.all(this.serverPools.map(pool => this.closeServerPool(pool)));
   }
 
   public getPools() {
@@ -126,7 +164,15 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     return this.getIdleConnections().length;
   }
 
-  public async queue(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
+  public async queue(
+    term: TermJson,
+    globalArgs: RunOptions = {}
+  ): Promise<Cursor | undefined> {
+    if (!this.isHealthy) {
+      throw new RebirthDBError(
+        'None of the pools have an opened connection and failed to open a new one.'
+      );
+    }
     this.emit('queueing');
     const pool = this.getPoolWithMinQueries();
     return pool.queue(term, globalArgs);
@@ -139,22 +185,31 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
       max: 1
     });
     this.serverPools = [...this.serverPools, pool];
-    pool.initConnections();
     this.subscribeToPool(pool);
+    pool.initConnections().catch(() => undefined);
     return pool.waitForHealthy();
   }
 
-  private rebalanceServerPools() {
-    this.getHealthyServerPools().forEach((pool, i, all) =>
-      pool.updateBufferMax({
-        buffer:
-          Math.floor(this.buffer / all.length) +
-          (i === this.buffer % all.length ? 1 : 0),
-        max:
-          Math.floor(this.max / all.length) +
-          (i === this.max % all.length ? 1 : 0)
-      })
-    );
+  private setServerPoolsOptions(params: RPoolConnectionOptions) {
+    const { buffer = 1, max = 1, ...otherParams } = params;
+    const pools = this.getPools();
+    const healthyLength = pools.filter(pool => pool.isHealthy).length;
+    for (let i = 0; i < pools.length; i++) {
+      const pool = pools[i];
+      pool.setOptions(
+        pool.isHealthy
+          ? {
+              ...otherParams,
+              buffer:
+                Math.floor(buffer / healthyLength) +
+                (i === buffer % healthyLength - 1 ? 1 : 0),
+              max:
+                Math.floor(max / healthyLength) +
+                (i === max % healthyLength - 1 ? 1 : 0)
+            }
+          : otherParams
+      );
+    }
   }
 
   private async discover(): Promise<void> {
@@ -184,7 +239,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
             if (!this.servers.includes(server)) {
               this.servers.push(server);
               this.createServerPool(server).then(() =>
-                this.rebalanceServerPools()
+                this.setServerPoolsOptions(this.connParam)
               );
             }
           } else if (row.old_val) {
@@ -223,7 +278,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     );
     if (pool) {
       await this.closeServerPool(pool);
-      this.rebalanceServerPools();
+      this.setServerPoolsOptions(this.connParam);
     }
   }
 
@@ -241,7 +296,11 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
       .on('available-size', () =>
         this.emit('available-size', this.getAvailableLength())
       )
-      .on('error', error => this.emit('error', error))
+      .on('error', error => {
+        if (this.listenerCount('error') > 0) {
+          this.emit('error', error);
+        }
+      })
       .on('healthy', healthy =>
         this.setHealthy(!!this.getHealthyServerPools().length)
       );
@@ -257,9 +316,11 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   private closeServerPool(pool: ServerConnectionPool) {
-    pool.removeAllListeners();
-    this.serverPools = this.serverPools.filter(sp => sp !== pool);
-    return pool.drain();
+    if (pool) {
+      pool.removeAllListeners();
+      this.serverPools = this.serverPools.filter(sp => sp !== pool);
+      return pool.drain();
+    }
   }
 
   private getHealthyServerPools() {
@@ -280,7 +341,9 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   private getIdleConnections() {
-    return this.getConnections().filter(conn => !(conn as RebirthDBConnection).numOfQueries);
+    return this.getOpenConnections().filter(
+      conn => !(conn as RebirthDBConnection).numOfQueries
+    );
   }
 }
 

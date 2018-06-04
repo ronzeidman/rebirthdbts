@@ -1,4 +1,5 @@
 import { RebirthDBError } from '../error/error';
+import { backtraceTerm } from '../error/term-backtrace';
 import { TermJson } from '../internal-types';
 import { bracket, termConfig } from './query-config';
 import { doTermFunc, getCursorQueryFunc, runQueryFunc, termBuilder } from './term-builder';
@@ -34,6 +35,9 @@ const queryProxyHandler: ProxyHandler<any> = {
     const { term } = target;
     if (p === 'then') {
       throw new RebirthDBError('Cannot `await` a query, did you forget `run` or `getCursor`?');
+    }
+    if (p === 'toString') {
+      return () => backtraceTerm(term)[0];
     }
     if (p === 'run') {
       return runQueryFunc(term);

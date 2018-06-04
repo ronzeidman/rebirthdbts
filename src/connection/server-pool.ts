@@ -3,7 +3,12 @@ import { isUndefined } from 'util';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
-import { ConnectionPool, RConnectionOptions, RServerConnectionOptions, RunOptions } from '../types';
+import {
+  ConnectionPool,
+  RConnectionOptions,
+  RServerConnectionOptions,
+  RunOptions
+} from '../types';
 import { RebirthDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
 
@@ -57,7 +62,14 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   public eventNames() {
-    return ['draining', 'queueing', 'size', 'available-size', 'healthy', 'error'];
+    return [
+      'draining',
+      'queueing',
+      'size',
+      'available-size',
+      'healthy',
+      'error'
+    ];
   }
 
   public async initConnections(): Promise<void> {
@@ -86,8 +98,21 @@ export class ServerConnectionPool extends EventEmitter
     });
   }
 
-  public updateBufferMax({ buffer, max }: { buffer: number; max: number }) {
-    if (this.buffer > buffer && this.connections.length < buffer) {
+  public setOptions({
+    buffer = this.buffer,
+    max = this.max,
+    silent = this.silent,
+    log = this.log,
+    timeoutError = this.timeoutError,
+    timeoutGb = this.timeoutGb,
+    maxExponent = this.maxExponent
+  }: RConnectionOptions) {
+    this.silent = silent;
+    this.log = log;
+    this.timeoutError = timeoutError;
+    this.timeoutGb = timeoutGb;
+    this.maxExponent = maxExponent;
+    if (this.buffer < buffer && this.connections.length < buffer) {
       this.buffer = buffer;
       this.initConnections();
     } else {
@@ -111,12 +136,7 @@ export class ServerConnectionPool extends EventEmitter
       this.emit('draining');
       this.setHealthy(undefined);
     }
-    await Promise.all(
-      this.connections.map(conn => {
-        conn.removeAllListeners();
-        return conn.close({ noreplyWait });
-      })
-    );
+    await Promise.all(this.connections.map(conn => this.closeConnection(conn)));
   }
 
   public getConnections() {
@@ -138,27 +158,25 @@ export class ServerConnectionPool extends EventEmitter
     );
   }
 
-  public async queue(term: TermJson, globalArgs: RunOptions = {}): Promise<Cursor | undefined> {
+  public async queue(
+    term: TermJson,
+    globalArgs: RunOptions = {}
+  ): Promise<Cursor | undefined> {
     this.emit('queueing');
-    const idleConnections = this.getIdleConnections();
-    if (!idleConnections.length) {
-      if (
-        this.connections.length < this.max &&
-        this.connections.length > this.buffer
-      ) {
-        const conn = await this.createConnection();
-        if (conn) {
-          // if couldnt go above buffer try using an open connection instead of waiting for timeout and reconnect
-          return conn.query(term, globalArgs);
-        }
-      }
-      const openConnections = this.getOpenConnections();
-      if (!openConnections.length) {
-        throw this.reportError(new RebirthDBError('No connections available'));
-      }
-      return openConnections.reduce(minQueriesRunning).query(term, globalArgs);
+    const openConnections = this.getOpenConnections();
+    if (!openConnections) {
+      throw this.reportError(
+        new RebirthDBError('No connections available'),
+        true
+      );
     }
-    return idleConnections[0].query(term, globalArgs);
+    const minQueriesRunningConnection = openConnections.reduce(
+      minQueriesRunning
+    );
+    if (this.connections.length < this.max) {
+      this.createConnection();
+    }
+    return minQueriesRunningConnection.query(term, globalArgs);
   }
 
   private setHealthy(healthy: boolean | undefined) {
@@ -264,11 +282,15 @@ export class ServerConnectionPool extends EventEmitter
     return conn;
   }
 
-  private reportError(err: Error) {
-    this.emit('error', err);
-    this.log(err.toString());
-    if (!this.silent) {
-      console.error(err.toString());
+  private reportError(err: Error, log = false) {
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err);
+    }
+    if (log) {
+      this.log(err.toString());
+      if (!this.silent) {
+        console.error(err.toString());
+      }
     }
     return err;
   }

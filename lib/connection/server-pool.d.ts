@@ -23,10 +23,7 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     initConnections(): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;
-    updateBufferMax({buffer, max}: {
-        buffer: number;
-        max: number;
-    }): void;
+    setOptions({buffer, max, silent, log, timeoutError, timeoutGb, maxExponent}: RConnectionOptions): void;
     drain({noreplyWait}?: {
         noreplyWait?: boolean;
     }, emit?: boolean): Promise<void>;
@@ -42,7 +39,7 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     private checkIdle(conn);
     private removeIdleTimer(conn);
     private persistConnection(conn);
-    private reportError(err);
+    private reportError(err, log?);
     private getOpenConnections();
     private getIdleConnections();
 }

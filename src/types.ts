@@ -37,13 +37,12 @@ export interface RBaseConnectionOptions {
   [other: string]: any;
 }
 
-export type RPoolConnectionOptions = RBaseConnectionOptions & {
-  servers?: RServerConnectionOptions[];
-};
-
 export type RConnectionOptions = RBaseConnectionOptions &
   ({ server: RServerConnectionOptions } | { host?: string; port?: number });
 
+export type RPoolConnectionOptions = RConnectionOptions & {
+  servers?: RServerConnectionOptions[];
+};
 export interface TableCreateOptions {
   primaryKey?: string; // default: "id"
   shards?: number; // 1-32
@@ -1063,8 +1062,18 @@ export interface R {
   line(...points: Array<[string, string]>): RDatum;
   line(...points: RDatum[]): RDatum;
   point(longitude: string, latitude: string): RDatum;
-  polygon(...points: RDatum[]): RDatum;
-  polygon(...longitudeLatitudes: Array<[string, string]>): RDatum;
+  polygon(
+    point1: RDatum,
+    point2: RDatum,
+    point3: RDatum,
+    ...points: RDatum[]
+  ): RDatum;
+  polygon(
+    ll1: [string, string],
+    ll2: [string, string],
+    ll3: [string, string],
+    ...longitudeLatitudes: Array<[string, string]>
+  ): RDatum;
   add(...args: Array<RValue<string>>): RValue<string>;
   add(...args: Array<RValue<number>>): RValue<number>;
   add(...args: Array<RValue<any[]>>): RValue<any[]>;

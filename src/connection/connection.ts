@@ -106,10 +106,21 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           this.emit('release');
         }
       });
-    await Promise.race([
-      new Promise(resolve => setTimeout(resolve, this.timeout * 1000)),
-      this.socket.connect()
-    ]);
+    try {
+      let timer: any;
+      await Promise.race([
+        new Promise(resolve => (timer = setTimeout(resolve, this.timeout))),
+        this.socket.connect()
+      ]);
+      if (timer) {
+        clearTimeout(timer);
+      }
+    } catch (error) {
+      this.reportError(error);
+      this.emit('close');
+      this.close();
+      throw error;
+    }
     if (this.socket.status === 'errored') {
       this.reportError(this.socket.lastError as any);
       this.emit('close');
@@ -227,7 +238,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
   }
 
   private reportError(err: Error) {
-    this.emit('error', err);
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err);
+    }
     this.log(err.toString());
     if (!this.silent) {
       console.error(err.toString());

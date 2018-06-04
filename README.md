@@ -60,7 +60,6 @@ const conn = await r.connect(options);
 
 ## Remaining tests to run:
 
-* pool_legacy
 * selecting-data
 * stable
 * stream (only readable stream part)
@@ -68,17 +67,12 @@ const conn = await r.connect(options);
 * transformations
 * writing-data
 
-## Priority - high
-
-* Support `toString()`
-* Throw on `undefined` anonymous function
-
 ## Priority - medium
 
 * Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
   * Need documentation
 * Error names (ResourceError, LogicError)...
-* Failing some geo arity tests
+* Should wait 2 seconds before restarting a drained pool
 
 ## Priority - low
 
@@ -88,6 +82,7 @@ const conn = await r.connect(options);
 ## Priority - none
 
 * Don't throw on `r.expr(NaN)` (only on `r.expr(NaN).run()`). Why? (test: `r.expr` should not NaN if not run)
+* Client backtraces - because of the above NaN values throw in the right callstack (line + col) so backtraces are not nessesary
 * Function suggestions fails ("`noReplyWait` should throw")
   * Typescript can help users better understand the right function names
 * Suggesting optional arguments available options fails ("`run` should throw on an unrecognized argument")

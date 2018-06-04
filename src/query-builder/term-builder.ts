@@ -23,9 +23,7 @@ export function termBuilder(
       optarg = hasOptarg ? args[1] : undefined;
     } else {
       const argsLength = args.length;
-      const maxArgsPlusOptarg =
-        hasOptarg && maxArgs >= 0 ? maxArgs + 1 : maxArgs;
-      if (minArgs === maxArgsPlusOptarg && argsLength !== minArgs) {
+      if (minArgs === maxArgs && argsLength !== minArgs) {
         throw new RebirthDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
@@ -46,12 +44,12 @@ export function termBuilder(
           { term: currentTerm }
         );
       }
-      if (maxArgs !== -1 && argsLength > maxArgsPlusOptarg) {
+      if (maxArgs !== -1 && argsLength > maxArgs) {
         throw new RebirthDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
-          }\` takes at most ${maxArgsPlusOptarg} argument${
-            maxArgsPlusOptarg === 1 ? '' : 's'
+          }\` takes at most ${maxArgs} argument${
+            maxArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -59,14 +57,18 @@ export function termBuilder(
       const maybeOptarg = args.length ? args.pop() : undefined;
       optarg =
         hasOptarg &&
-        (((maxArgsPlusOptarg > 0 && argsLength >= maxArgsPlusOptarg) ||
-          argsLength > minArgs) &&
+        (((maxArgs > 0 && argsLength >= maxArgs) || argsLength > minArgs) &&
           (!Array.isArray(maybeOptarg) &&
             typeof maybeOptarg === 'object' &&
             !isQuery(maybeOptarg)))
           ? maybeOptarg
           : undefined;
-      if (hasOptarg && argsLength === maxArgsPlusOptarg && !optarg) {
+      if (
+        hasOptarg &&
+        argsLength === maxArgs &&
+        !optarg &&
+        hasOptarg !== 'optional'
+      ) {
         throw new RebirthDBError(
           `${numToString(
             argsLength

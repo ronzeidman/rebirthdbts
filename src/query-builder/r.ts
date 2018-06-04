@@ -9,22 +9,43 @@ import { expr, termBuilder } from './term-builder';
 
 export const r: R = expr as any;
 (r as any).connectPool = async (options: RPoolConnectionOptions = {}) => {
-  const { servers = [{}], ...opts } = options;
+  const {
+    host,
+    port,
+    server = { host, port },
+    servers = [server],
+    ...optsWithoutHostPort
+  } = options;
+  if (host || port) {
+    if ((options as any).server) {
+      throw new RebirthDBError(
+        'If `host` or `port` are defined `server` must not be.'
+      );
+    } else if ((options as any).servers) {
+      throw new RebirthDBError(
+        'If `host` or `port` are defined `servers` must not be.'
+      );
+    }
+  }
+  if ((options as any).server && (options as any).servers) {
+    throw new RebirthDBError('If `server` is defined `servers` must not be.');
+  }
   if (!servers.length) {
     throw new RebirthDBError(
       'If `servers` is an array, it must contain at least one server.'
     );
   }
   if ((r as any).pool) {
+    ((r as any).pool as MasterConnectionPool).removeAllListeners();
     ((r as any).pool as MasterConnectionPool).drain();
   }
   const cpool = new MasterConnectionPool({
     ...options,
     servers
   } as any);
-  cpool.initServers();
-  await cpool.waitForHealthy();
   (r as any).pool = cpool;
+  cpool.initServers().catch(() => undefined);
+  await cpool.waitForHealthy();
 };
 
 (r as any).connect = async (options: RConnectionOptions = {}) => {

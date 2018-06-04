@@ -62,7 +62,7 @@ describe('pool legacy', () => {
         .map(expr => expr.run())
     );
     assert.deepEqual(result, Array(numExpr).fill(1));
-
+    await new Promise(resolve => setTimeout(resolve, 200));
     const numConnections = r.getPoolMaster().getAvailableLength();
     assert.ok(
       numConnections >= options.buffer + numExpr,
@@ -81,11 +81,12 @@ describe('pool legacy', () => {
   });
 
   it('The pool should not have more than `options.max` connections', async function() {
-    const result = await Promise.all(
-      Array(options.max + 1)
-        .fill(r.expr(1))
-        .map(expr => expr.run())
-    );
+    let result = [];
+    for (let i = 0; i <= options.max; i++) {
+      result.push(r.expr(1).run());
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    result = await Promise.all(result);
     assert.deepEqual(result, Array(options.max + 1).fill(1));
     assert.equal(r.getPoolMaster().getLength(), options.max);
     assert.ok(
@@ -136,11 +137,159 @@ describe('pool legacy', () => {
     assert.equal(r.getPoolMaster().getLength(), 0);
   });
 
+  it('If the pool cannot create a connection, it should reject queries', async function() {
+    await r
+      .connectPool({
+        servers: [{ host: 'notarealhost' }],
+        buffer: 1,
+        max: 2,
+        silent: true
+      })
+      .catch(() => undefined);
+    try {
+      await r.expr(1).run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert.equal(
+        e.message,
+        'None of the pools have an opened connection and failed to open a new one.'
+      );
+    }
+    await r.getPoolMaster().drain();
+  });
+
+  it('If the driver cannot create a connection, it should reject queries - timeout', async function() {
+    await r
+      .connectPool({
+        servers: [{ host: 'notarealhost' }],
+        buffer: 1,
+        max: 2,
+        silent: true
+      })
+      .catch(() => undefined);
+    await new Promise(function(resolve, reject) {
+      setTimeout(resolve, 1000);
+    });
+    try {
+      await r.expr(1).run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert.equal(
+        e.message,
+        'None of the pools have an opened connection and failed to open a new one.'
+      );
+    } finally {
+      await r.getPoolMaster().drain();
+    }
+  });
+
+  it('If the pool is drained, it should reject queries', async function() {
+    await new Promise(function(resolve, reject) {
+      setTimeout(resolve, 2000);
+    });
+    await r
+      .connectPool({
+        buffer: 1,
+        max: 2,
+        log: message => {
+          console.log(message);
+        }
+      })
+      .catch(() => undefined);
+    await r.getPoolMaster().drain();
+    try {
+      await r.expr(1).run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert.equal(
+        e.message,
+        'None of the pools have an opened connection and failed to open a new one.'
+      );
+    } finally {
+      await r.getPoolMaster().drain();
+    }
+  });
+
+  it('If the pool is draining, it should reject queries', async function() {
+    await new Promise(function(resolve, reject) {
+      setTimeout(resolve, 2000);
+    });
+    await r.connectPool({ buffer: 1, max: 2, silent: true });
+    r.getPoolMaster().drain();
+    try {
+      await r.expr(1).run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert.equal(
+        e.message,
+        'None of the pools have an opened connection and failed to open a new one.'
+      );
+    } finally {
+      await r.getPoolMaster().drain();
+    }
+  });
+
+  // it('`drain` should work in case of failures', async function () {
+  //   await r.connectPool({ buffer: 1, max: 2, silent: true });
+  //   r.createPools({
+  //     port: 80, // non valid port
+  //     silent: true,
+  //     timeoutError: 100
+  //   });
+  //   const pool = r.getPoolMaster();
+  //   await new Promise(function (resolve, reject) {
+  //     setTimeout(resolve, 150);
+  //   });
+  //   pool.drain();
+
+  //   // timeoutReconnect should have been canceled
+  //   assert.equal(pool.timeoutReconnect, null);
+  //   pool.options.silent = false;
+  // });
+
+  it('The pool should remove a connection if it errored', async function() {
+    await new Promise(function(resolve, reject) {
+      setTimeout(resolve, 2000);
+    });
+    await r.connectPool({ buffer: 1, max: 2, silent: true });
+    r.getPoolMaster().setOptions({ timeoutGb: 60 * 60 * 1000 });
+
+    try {
+      let result = await Promise.all(
+        Array(options.max)
+          .fill(r.expr(1))
+          .map(expr => expr.run())
+      );
+      assert.deepEqual(result, Array(options.max).fill(1));
+    } catch (e) {
+      assert.ifError(e); // This should not error anymore because since the JSON protocol was introduced.
+
+      assert.equal(
+        e.message,
+        'Client is buggy (failed to deserialize protobuf)'
+      );
+
+      // We expect the connection that errored to get closed in the next second
+      await new Promise((resolve, reject) => {
+        setTimeout(function() {
+          assert.equal(r.getPoolMaster().getAvailableLength(), options.max - 1);
+          assert.equal(r.getPoolMaster().getLength(), options.max - 1);
+          resolve();
+        }, 1000);
+      });
+    } finally {
+      await r.getPoolMaster().drain();
+    }
+  });
+
   describe('cursor', function() {
-    let r, dbName, tableName;
+    let dbName, tableName;
 
     before(async function() {
-      r = rethinkdbdash(options);
+      await new Promise(function(resolve, reject) {
+        setTimeout(resolve, 2000);
+      });
+      await r.connectPool(options);
       dbName = uuid();
       tableName = uuid();
 
@@ -187,11 +336,16 @@ describe('pool legacy', () => {
     });
 
     it('The pool should release a connection only when the cursor has fetch everything or get closed', async function() {
-      const result = await Promise.all(
-        Array(options.max)
-          .fill(r.db(dbName).table(tableName))
-          .map(expr => expr.run({ cursor: true }))
-      );
+      const result = [];
+      for (let i = 0; i < options.max; i++) {
+        result.push(
+          await r
+            .db(dbName)
+            .table(tableName)
+            .getCursor()
+        );
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       assert.equal(
         result.length,
         options.max,
@@ -232,129 +386,5 @@ describe('pool legacy', () => {
         'expected available connections to equal option.max'
       );
     });
-  });
-
-  it('If the pool cannot create a connection, it should reject queries', async function() {
-    const r = rethinkdbdash({
-      host: 'notarealhost',
-      buffer: 1,
-      max: 2,
-      silent: true
-    });
-    try {
-      await r.expr(1).run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
-      );
-    }
-    await r.getPoolMaster().drain();
-  });
-
-  it('If the driver cannot create a connection, it should reject queries - timeout', async function() {
-    const r = rethinkdbdash({
-      host: 'notarealhost',
-      buffer: 1,
-      max: 2,
-      silent: true
-    });
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 1000);
-    });
-    try {
-      await r.expr(1).run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
-      );
-    } finally {
-      await r.getPoolMaster().drain();
-    }
-  });
-
-  it('If the pool is drained, it should reject queries', async function() {
-    const r = rethinkdbdash({ buffer: 1, max: 2, silent: true });
-    await r.getPoolMaster().drain();
-    try {
-      await r.expr(1).run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
-      );
-    } finally {
-      await r.getPoolMaster().drain();
-    }
-  });
-
-  it('If the pool is draining, it should reject queries', async function() {
-    const r = rethinkdbdash({ buffer: 1, max: 2, silent: true });
-    r.getPoolMaster().drain();
-    try {
-      await r.expr(1).run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
-      );
-    } finally {
-      await r.getPoolMaster().drain();
-    }
-  });
-
-  it('`drain` should work in case of failures', async function() {
-    const r = rethinkdbdash({ buffer: 1, max: 2, pool: false, silent: true });
-    r.createPools({
-      port: 80, // non valid port
-      silent: true,
-      timeoutError: 100
-    });
-    const pool = r.getPoolMaster();
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 150);
-    });
-    pool.drain();
-
-    // timeoutReconnect should have been canceled
-    assert.equal(pool.timeoutReconnect, null);
-    pool.options.silent = false;
-  });
-
-  it('The pool should remove a connection if it errored', async function() {
-    const r = rethinkdbdash({ buffer: 1, max: 2, silent: true });
-    r.getPoolMaster().setOptions({ timeoutGb: 60 * 60 * 1000 });
-
-    try {
-      let result = await Promise.all(
-        Array(options.max)
-          .fill(r.expr(1))
-          .map(expr => expr.run())
-      );
-      assert.deepEqual(result, Array(options.max).fill(1));
-    } catch (e) {
-      assert.ifError(e); // This should not error anymore because since the JSON protocol was introduced.
-
-      assert.equal(
-        e.message,
-        'Client is buggy (failed to deserialize protobuf)'
-      );
-
-      // We expect the connection that errored to get closed in the next second
-      await new Promise((resolve, reject) => {
-        setTimeout(function() {
-          assert.equal(r.getPoolMaster().getAvailableLength(), options.max - 1);
-          assert.equal(r.getPoolMaster().getLength(), options.max - 1);
-          resolve();
-        }, 1000);
-      });
-    } finally {
-      await r.getPoolMaster().drain();
-    }
   });
 });

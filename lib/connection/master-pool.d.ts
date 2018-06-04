@@ -6,28 +6,27 @@ import { Connection, MasterPool, RPoolConnectionOptions, RunOptions } from '../t
 import { ServerConnectionPool } from './server-pool';
 export declare class MasterConnectionPool extends EventEmitter implements MasterPool {
     private healthy;
-    private buffer;
-    private max;
-    private timeoutError;
-    private timeoutGb;
-    private maxExponent;
-    private silent;
     private discovery;
     private discoveryCursor?;
-    private log;
     private servers;
     private serverPools;
     private connParam;
     private timers;
     constructor({db, user, password, discovery, servers, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RPoolConnectionOptions);
+    setOptions({discovery, buffer, max, timeoutError, timeoutGb, maxExponent, silent, log}: {
+        discovery?: boolean;
+        buffer?: number | undefined;
+        max?: number | undefined;
+        timeoutError?: number | undefined;
+        timeoutGb?: number | undefined;
+        maxExponent?: number | undefined;
+        silent?: boolean | undefined;
+        log?: ((message: string) => any) | undefined;
+    }): void;
     eventNames(): string[];
     initServers(serverNum?: number): Promise<void>;
     readonly isHealthy: boolean;
     waitForHealthy(): Promise<{}>;
-    updateBufferMax({buffer, max}: {
-        buffer: number;
-        max: number;
-    }): void;
     drain({noreplyWait}?: {
         noreplyWait?: boolean;
     }): Promise<void>;
@@ -37,7 +36,7 @@ export declare class MasterConnectionPool extends EventEmitter implements Master
     getAvailableLength(): number;
     queue(term: TermJson, globalArgs?: RunOptions): Promise<Cursor | undefined>;
     private createServerPool(server);
-    private rebalanceServerPools();
+    private setServerPoolsOptions(params);
     private discover();
     private getServerFromStatus(status);
     private removeServer(server);

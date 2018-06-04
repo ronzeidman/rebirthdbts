@@ -45,26 +45,33 @@ export function parseParam(
   if (isFunction(param)) {
     const { nextVarId } = globals;
     globals.nextVarId = nextVarId + param.length;
-    const term = [
-      TermType.FUNC,
-      [
+    try {
+      const funcResult = param(
+        ...Array(param.length)
+          .fill(0)
+          .map((_, i) => toQuery([TermType.VAR, [i + nextVarId]]))
+      );
+      if (isUndefined(funcResult)) {
+        throw new RebirthDBError(
+          `Anonymous function returned \`undefined\`. Did you forget a \`return\`? in:\n${param.toString()}`
+        );
+      }
+      const term = [
+        TermType.FUNC,
         [
-          TermType.MAKE_ARRAY,
-          Array(param.length)
-            .fill(0)
-            .map((_, i) => i + nextVarId)
-        ],
-        parseParam(
-          param(
-            ...Array(param.length)
+          [
+            TermType.MAKE_ARRAY,
+            Array(param.length)
               .fill(0)
-              .map((_, i) => toQuery([TermType.VAR, [i + 1]]))
-          )
-        )
-      ]
-    ];
-    globals.nextVarId = nextVarId;
-    return term;
+              .map((_, i) => i + nextVarId)
+          ],
+          parseParam(funcResult)
+        ]
+      ];
+      return term;
+    } finally {
+      globals.nextVarId = nextVarId;
+    }
   }
   if (typeof param === 'object') {
     return Object.entries(param).reduce(

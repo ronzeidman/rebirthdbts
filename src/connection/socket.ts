@@ -6,7 +6,13 @@ import { RServerConnectionOptions } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
-import { NULL_BUFFER, buildAuthBuffer, compareDigest, computeSaltedPassword, validateVersion } from './handshake-utils';
+import {
+  NULL_BUFFER,
+  buildAuthBuffer,
+  compareDigest,
+  computeSaltedPassword,
+  validateVersion
+} from './handshake-utils';
 
 export type RNConnOpts = RServerConnectionOptions & {
   host: string;
@@ -42,10 +48,10 @@ export class RebirthDBSocket extends EventEmitter {
     user = 'admin',
     password = NULL_BUFFER
   }: {
-      connectionOptions: RNConnOpts;
-      user?: string;
-      password?: Buffer;
-    }) {
+    connectionOptions: RNConnOpts;
+    user?: string;
+    password?: Buffer;
+  }) {
     super();
     this.connectionOptions = setConnectionDefaults(connectionOptions);
     this.user = user;
@@ -61,11 +67,21 @@ export class RebirthDBSocket extends EventEmitter {
       throw new RebirthDBError('Socket already connected');
     }
     const { tls = false, ...options } = this.connectionOptions;
-    const socket = await new Promise<Socket>(resolve => {
-      const s: Socket = tls
-        ? tlsConnect(options, () => resolve(s))
-        : netConnect(options as TcpNetConnectOpts, () => resolve(s));
-    });
+    let socket: Socket = (undefined as any) as Socket;
+    try {
+      await new Promise((resolve, reject) => {
+        socket = tls
+          ? tlsConnect(options)
+              .once('connect', resolve)
+              .once('error', reject)
+          : netConnect(options as TcpNetConnectOpts)
+              .once('connect', resolve)
+              .once('error', reject);
+      });
+    } catch (err) {
+      this.handleError(err);
+    }
+    socket.removeAllListeners();
     socket
       .on('close', () => this.close())
       .on('error', error => this.handleError(error))
@@ -86,6 +102,19 @@ export class RebirthDBSocket extends EventEmitter {
       });
     socket.setKeepAlive(true);
     this.socket = socket;
+    await new Promise((resolve, reject) => {
+      socket.once('connect', resolve);
+      socket.once('error', reject);
+      if (socket.destroyed) {
+        socket.removeListener('connect', resolve);
+        socket.removeListener('error', reject);
+        reject(this.lastError);
+      } else if (!socket.connecting) {
+        socket.removeListener('connect', resolve);
+        socket.removeListener('error', reject);
+        resolve();
+      }
+    });
     this.isOpen = true;
     await this.performHandshake();
     this.emit('connect');
@@ -278,7 +307,9 @@ export class RebirthDBSocket extends EventEmitter {
   private handleError(err: Error) {
     this.close();
     this.lastError = err;
-    this.emit('error', err);
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err);
+    }
   }
 }
 
