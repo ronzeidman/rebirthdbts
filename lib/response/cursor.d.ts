@@ -32,6 +32,7 @@ export declare class Cursor extends Readable implements RCursor {
     eachAsync(rowHandler: (row: any, rowFinished?: (error?: string) => any) => any, final?: (error: any) => any): Promise<void>;
     resolve(): Promise<any[] | undefined>;
     private _next();
+    private getResults();
     private handleErrors(response);
     private handleResponseNotes(rType, notes?);
 }

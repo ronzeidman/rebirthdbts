@@ -8,7 +8,9 @@ import { RCursor, RCursorType, RebirthDBErrorType, RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
 
 export class Cursor extends Readable implements RCursor {
-  public get profile() { return this._profile; }
+  public get profile() {
+    return this._profile;
+  }
   // tslint:disable-next-line:variable-name
   private _profile: any;
   private position = 0;
@@ -22,32 +24,38 @@ export class Cursor extends Readable implements RCursor {
     private runOptions: Pick<
       RunOptions,
       'binaryFormat' | 'groupFormat' | 'timeFormat'
-      >,
+    >,
     private query: QueryJson,
     private results?: any[],
     private hasNextBatch?: boolean
   ) {
     super({ objectMode: true });
   }
-
   public _read() {
     if (this.closed) {
       this.push(null);
       this.emitting = false;
     }
     this.emitting = true;
-    this._next().then(row => {
-      if (!this.closed) {
-        this.push(row);
-      }
-    }).catch((err) => {
-      if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CURSOR_END) {
-        this.push(null);
-        this.emitting = false;
-      } else {
-        this.emit('error', err);
-      }
-    });
+    const push = (row: any): any =>
+      row === null
+        ? this._next().then(push)
+        : this.closed
+          ? null
+          : this.push(row);
+    this._next()
+      .then(push)
+      .catch(err => {
+        if (
+          isRebirthDBError(err) &&
+          err.type === RebirthDBErrorType.CURSOR_END
+        ) {
+          this.push(null);
+          this.emitting = false;
+        } else {
+          this.emit('error', err);
+        }
+      });
   }
 
   public pause() {
@@ -80,17 +88,23 @@ export class Cursor extends Readable implements RCursor {
 
   public async next() {
     if (this.emitting) {
-      throw new RebirthDBError('You cannot call `next` once you have bound listeners on the Feed.');
+      throw new RebirthDBError(
+        'You cannot call `next` once you have bound listeners on the Feed.'
+      );
     }
     if (this.closed) {
-      throw new RebirthDBError(`You cannot call \`next\` on a closed ${this.type}`);
+      throw new RebirthDBError(
+        `You cannot call \`next\` on a closed ${this.type}`
+      );
     }
     return await this._next();
   }
 
   public async toArray() {
     if (this.emitting) {
-      throw new RebirthDBError('You cannot call `toArray` once you have bound listeners on the Feed.');
+      throw new RebirthDBError(
+        'You cannot call `toArray` once you have bound listeners on the Feed.'
+      );
     }
     const all: any[] = [];
     if (!this.results) {
@@ -111,10 +125,17 @@ export class Cursor extends Readable implements RCursor {
     onFinishedCallback?: () => any
   ) {
     if (this.emitting) {
-      throw new RebirthDBError('You cannot call `each` once you have bound listeners on the Feed.');
+      throw new RebirthDBError(
+        'You cannot call `each` once you have bound listeners on the Feed.'
+      );
     }
     if (this.closed) {
-      callback(new RebirthDBError('You cannot retrieve data from a cursor that is closed', {}));
+      callback(
+        new RebirthDBError(
+          'You cannot retrieve data from a cursor that is closed',
+          {}
+        )
+      );
       if (onFinishedCallback) {
         onFinishedCallback();
       }
@@ -145,10 +166,15 @@ export class Cursor extends Readable implements RCursor {
     final?: (error: any) => any
   ) {
     if (this.emitting) {
-      throw new RebirthDBError('You cannot call `eachAsync` once you have bound listeners on the Feed.');
+      throw new RebirthDBError(
+        'You cannot call `eachAsync` once you have bound listeners on the Feed.'
+      );
     }
     if (this.closed) {
-      throw new RebirthDBError('You cannot retrieve data from a cursor that is closed', {});
+      throw new RebirthDBError(
+        'You cannot retrieve data from a cursor that is closed',
+        {}
+      );
     }
     let nextRow: any;
     try {
@@ -156,7 +182,10 @@ export class Cursor extends Readable implements RCursor {
         nextRow = await this.next();
         if (rowHandler.length > 1) {
           await new Promise((resolve, reject) => {
-            rowHandler(nextRow, (err) => err ? reject(new RebirthDBError(err)) : resolve());
+            rowHandler(
+              nextRow,
+              err => (err ? reject(new RebirthDBError(err)) : resolve())
+            );
           });
         } else {
           const result = rowHandler(nextRow);
@@ -175,7 +204,10 @@ export class Cursor extends Readable implements RCursor {
           error = err;
         }
       }
-      if (!isRebirthDBError(error) || error.type !== RebirthDBErrorType.CURSOR_END) {
+      if (
+        !isRebirthDBError(error) ||
+        error.type !== RebirthDBErrorType.CURSOR_END
+      ) {
         throw error;
       }
     }
@@ -183,36 +215,44 @@ export class Cursor extends Readable implements RCursor {
 
   public async resolve() {
     const response = await this.conn.readNext(this.token);
-    const {
-      n: notes,
-      t: type,
-      r: results,
-      p: profile,
-    } = response;
+    const { n: notes, t: type, r: results, p: profile } = response;
     this._profile = profile;
-    this.hasNextBatch = type === ResponseType.SUCCESS_PARTIAL;
     this.position = 0;
     this.results = getNativeTypes(results, this.runOptions);
     this.handleResponseNotes(type, notes);
     this.handleErrors(response);
+    this.hasNextBatch =
+      this.type.endsWith('Feed') || type === ResponseType.SUCCESS_PARTIAL;
     return this.results;
   }
 
   private async _next() {
-    if (!this.results) {
+    let results = this.getResults();
+    while (
+      isUndefined(results) ||
+      (this.hasNextBatch && isUndefined(results[this.position]))
+    ) {
+      if (results) {
+        this.conn.sendQuery([QueryType.CONTINUE], this.token);
+      }
       await this.resolve();
-    } else if (this.hasNextBatch && this.position >= this.results.length) {
-      this.conn.sendQuery([QueryType.CONTINUE], this.token);
-      await this.resolve();
+      results = this.getResults();
     }
-    const results = this.results && this.type === 'Atom' && Array.isArray(this.results[0])
-      ? this.results[0]
-      : this.results;
-    if (!this.results || isUndefined(results[this.position])) {
+    if (isUndefined(results) || isUndefined(results[this.position])) {
       this.close();
-      throw new RebirthDBError('No more rows in the cursor.', { type: RebirthDBErrorType.CURSOR_END });
+      throw new RebirthDBError('No more rows in the cursor.', {
+        type: RebirthDBErrorType.CURSOR_END
+      });
     }
     return results[this.position++];
+  }
+
+  private getResults() {
+    return this.results &&
+      this.type === 'Atom' &&
+      Array.isArray(this.results[0])
+      ? this.results[0]
+      : this.results;
   }
 
   private handleErrors(response: ResponseJson) {
@@ -244,25 +284,28 @@ export class Cursor extends Readable implements RCursor {
       this.type = 'Atom';
       return;
     }
-    const { type, includeStates } = notes.reduce((acc, next) => {
-      switch (next) {
-        case ResponseNote.SEQUENCE_FEED:
-          acc.type = 'Feed';
-          break;
-        case ResponseNote.ATOM_FEED:
-          acc.type = 'AtomFeed';
-          break;
-        case ResponseNote.ORDER_BY_LIMIT_FEED:
-          acc.type = 'OrderByLimitFeed';
-          break;
-        case ResponseNote.UNIONED_FEED:
-          acc.type = 'UnionedFeed';
-          break;
-        case ResponseNote.INCLUDES_STATES:
-          acc.includeStates = true;
-      }
-      return acc;
-    }, { type: 'Cursor' as RCursorType, includeStates: true });
+    const { type, includeStates } = notes.reduce(
+      (acc, next) => {
+        switch (next) {
+          case ResponseNote.SEQUENCE_FEED:
+            acc.type = 'Feed';
+            break;
+          case ResponseNote.ATOM_FEED:
+            acc.type = 'AtomFeed';
+            break;
+          case ResponseNote.ORDER_BY_LIMIT_FEED:
+            acc.type = 'OrderByLimitFeed';
+            break;
+          case ResponseNote.UNIONED_FEED:
+            acc.type = 'UnionedFeed';
+            break;
+          case ResponseNote.INCLUDES_STATES:
+            acc.includeStates = true;
+        }
+        return acc;
+      },
+      { type: 'Cursor' as RCursorType, includeStates: true }
+    );
     this.type = type;
     this.includeStates = includeStates;
   }
@@ -272,5 +315,7 @@ export function isCursor<T = any>(cursor: any): cursor is RCursor<T> {
   return cursor instanceof Cursor;
 }
 function isPromise(obj: any): obj is Promise<any> {
-  return obj !== null && typeof obj === 'object' && typeof obj.then === 'function';
+  return (
+    obj !== null && typeof obj === 'object' && typeof obj.then === 'function'
+  );
 }
