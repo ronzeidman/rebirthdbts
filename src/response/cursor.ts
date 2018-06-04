@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { inspect, isUndefined } from 'util';
+import { isUndefined } from 'util';
 import { RebirthDBSocket } from '../connection/socket';
 import { RebirthDBError, isRebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
@@ -86,24 +86,27 @@ export class Cursor extends Readable implements RCursor {
     this.closed = true;
   }
 
-  public async next() {
+  public async next(timeout = -1) {
     if (this.emitting) {
       throw new RebirthDBError(
-        'You cannot call `next` once you have bound listeners on the Feed.'
+        'You cannot call `next` once you have bound listeners on the Feed.',
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
       throw new RebirthDBError(
-        `You cannot call \`next\` on a closed ${this.type}`
+        `You cannot call \`next\` on a closed ${this.type}`,
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
-    return await this._next();
+    return await this._next(timeout);
   }
 
   public async toArray() {
     if (this.emitting) {
       throw new RebirthDBError(
-        'You cannot call `toArray` once you have bound listeners on the Feed.'
+        'You cannot call `toArray` once you have bound listeners on the Feed.',
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
     const all: any[] = [];
@@ -126,14 +129,15 @@ export class Cursor extends Readable implements RCursor {
   ) {
     if (this.emitting) {
       throw new RebirthDBError(
-        'You cannot call `each` once you have bound listeners on the Feed.'
+        'You cannot call `each` once you have bound listeners on the Feed.',
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
       callback(
         new RebirthDBError(
           'You cannot retrieve data from a cursor that is closed',
-          {}
+          { type: RebirthDBErrorType.CURSOR }
         )
       );
       if (onFinishedCallback) {
@@ -167,13 +171,14 @@ export class Cursor extends Readable implements RCursor {
   ) {
     if (this.emitting) {
       throw new RebirthDBError(
-        'You cannot call `eachAsync` once you have bound listeners on the Feed.'
+        'You cannot call `eachAsync` once you have bound listeners on the Feed.',
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
       throw new RebirthDBError(
         'You cannot retrieve data from a cursor that is closed',
-        {}
+        { type: RebirthDBErrorType.CURSOR }
       );
     }
     let nextRow: any;
@@ -184,7 +189,12 @@ export class Cursor extends Readable implements RCursor {
           await new Promise((resolve, reject) => {
             rowHandler(
               nextRow,
-              err => (err ? reject(new RebirthDBError(err)) : resolve())
+              err =>
+                err
+                  ? reject(
+                      new RebirthDBError(err, { type: RebirthDBErrorType.USER })
+                    )
+                  : resolve()
             );
           });
         } else {
@@ -213,8 +223,8 @@ export class Cursor extends Readable implements RCursor {
     }
   }
 
-  public async resolve() {
-    const response = await this.conn.readNext(this.token);
+  public async resolve(timeout = -1) {
+    const response = await this.conn.readNext(this.token, timeout);
     const { n: notes, t: type, r: results, p: profile } = response;
     this._profile = profile;
     this.position = 0;
@@ -226,7 +236,7 @@ export class Cursor extends Readable implements RCursor {
     return this.results;
   }
 
-  private async _next() {
+  private async _next(timeout = -1) {
     let results = this.getResults();
     while (
       isUndefined(results) ||
@@ -235,7 +245,7 @@ export class Cursor extends Readable implements RCursor {
       if (results) {
         this.conn.sendQuery([QueryType.CONTINUE], this.token);
       }
-      await this.resolve();
+      await this.resolve(timeout);
       results = this.getResults();
     }
     if (isUndefined(results) || isUndefined(results[this.position])) {
@@ -261,8 +271,6 @@ export class Cursor extends Readable implements RCursor {
       case ResponseType.CLIENT_ERROR:
       case ResponseType.COMPILE_ERROR:
       case ResponseType.RUNTIME_ERROR:
-        // TODO: Better error handling
-        console.error(inspect(response));
         throw new RebirthDBError(results[0], {
           responseErrorType: error,
           responseType: type,

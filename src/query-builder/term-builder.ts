@@ -4,7 +4,7 @@ import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
 import { ComplexTermJson, TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
-import { RCursor, RunOptions } from '../types';
+import { RCursor, RebirthDBErrorType, RunOptions } from '../types';
 import { globals } from './globals';
 import { parseOptarg, parseParam } from './param-parser';
 import { isQuery, toQuery } from './query';
@@ -26,53 +26,51 @@ export function termBuilder(
       if (minArgs === maxArgs && argsLength !== minArgs) {
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+            minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm }
+          { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
       if (argsLength < minArgs) {
         const termConf = termConfig.find(c => c[0] === termType);
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes at least ${minArgs} argument${
-          minArgs === 1 ? '' : 's'
+            minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm }
+          { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
       if (maxArgs !== -1 && argsLength > maxArgs) {
         throw new RebirthDBError(
           `\`${
-          !currentTerm ? `r.${termName}` : termName
+            !currentTerm ? `r.${termName}` : termName
           }\` takes at most ${maxArgs} argument${
-          maxArgs === 1 ? '' : 's'
+            maxArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm }
+          { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
       const maybeOptarg = args.length ? args.pop() : undefined;
       optarg =
         hasOptarg &&
-          (((maxArgs > 0 && argsLength >= maxArgs) || argsLength > minArgs || hasOptarg === 'only-object') &&
-            (!Array.isArray(maybeOptarg) &&
-              typeof maybeOptarg === 'object' &&
-              !isQuery(maybeOptarg)))
+        (((maxArgs > 0 && argsLength >= maxArgs) ||
+          argsLength > minArgs ||
+          hasOptarg === 'only-object') &&
+          (!Array.isArray(maybeOptarg) &&
+            typeof maybeOptarg === 'object' &&
+            !isQuery(maybeOptarg)))
           ? maybeOptarg
           : undefined;
-      if (
-        hasOptarg &&
-        argsLength === maxArgs &&
-        !optarg
-      ) {
+      if (hasOptarg && argsLength === maxArgs && !optarg) {
         throw new RebirthDBError(
           `${numToString(
             argsLength
           )} argument of \`${termName}\` must be an object.`,
-          { term: currentTerm }
+          { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
       if (!isUndefined(maybeOptarg) && isUndefined(optarg)) {
@@ -110,7 +108,7 @@ export const runQueryFunc = (term: TermJson) => {
     if (!c && !cpool) {
       throw new RebirthDBError(
         '`run` was called without a connection and no pool has been created after:',
-        { term }
+        { term, type: RebirthDBErrorType.API_FAIL }
       );
     }
     const noreply = opt && opt.noreply;
@@ -146,7 +144,7 @@ export const getCursorQueryFunc = (term: TermJson) => {
     if (!c && !cpool) {
       throw new RebirthDBError(
         '`getCursor` was called without a connection and no pool has been created after:',
-        { term }
+        { term, type: RebirthDBErrorType.API_FAIL }
       );
     }
     return c ? await c.query(term, opt) : await cpool.queue(term, opt);

@@ -272,7 +272,7 @@ export declare type RCursorType = 'Atom' | 'Cursor' | 'Feed' | 'AtomFeed' | 'Ord
 export interface RCursor<T = any> extends NodeJS.ReadableStream {
     readonly profile: any;
     getType(): RCursorType;
-    next(): Promise<T>;
+    next(timeout?: number): Promise<T>;
     toArray(): Promise<T[]>;
     close(): Promise<void>;
     each(callback: (err: RebirthDBError | undefined, row: any) => any, onFinishedCallback?: () => any): Promise<any>;
@@ -283,16 +283,25 @@ export interface RebirthDBError extends Error {
 }
 export declare enum RebirthDBErrorType {
     UNKNOWN = 0,
-    CURSOR_END = 1,
-    AUTH = 2,
-    INTERNAL = 3,
-    RESOURCE_LIMIT = 4,
-    QUERY_LOGIC = 5,
-    NON_EXISTENCE = 6,
-    OP_FAILED = 7,
-    OP_INDETERMINATE = 8,
-    USER = 9,
-    PERMISSION_ERROR = 10,
+    API_FAIL = 1,
+    CONNECTION = 2,
+    POOL_FAIL = 3,
+    CURSOR_END = 4,
+    TIMEOUT = 5,
+    CANCEL = 6,
+    PARSE = 7,
+    ARITY = 8,
+    CURSOR = 9,
+    AUTH = 10,
+    UNSUPPORTED_PROTOCOL = 11,
+    INTERNAL = 12,
+    RESOURCE_LIMIT = 13,
+    QUERY_LOGIC = 14,
+    NON_EXISTENCE = 15,
+    OP_FAILED = 16,
+    OP_INDETERMINATE = 17,
+    USER = 18,
+    PERMISSION_ERROR = 19,
 }
 export interface RQuery<T = any> {
     typeOf(): RDatum<string>;

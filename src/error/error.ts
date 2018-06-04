@@ -40,7 +40,7 @@ export class RebirthDBError extends Error {
     }: RebirthDBErrorArgs = {}
   ) {
     super(buildMessage(msg, query, term, backtrace));
-    this.name = 'ReqlError';
+    this.name = 'ReqlDriverError';
     this.msg = msg;
     this.term = query ? query[1] : term;
     this.backtrace = backtrace;
@@ -101,6 +101,8 @@ export class RebirthDBError extends Error {
           this._type = RebirthDBErrorType.USER;
           break;
       }
+    } else {
+      this.name = 'ReqlUnknownError';
     }
   }
 }

@@ -26,12 +26,12 @@ export declare class Cursor extends Readable implements RCursor {
     toString(): string;
     getType(): RCursorType;
     close(): Promise<void>;
-    next(): Promise<any>;
+    next(timeout?: number): Promise<any>;
     toArray(): Promise<any[]>;
     each(callback: (err: RebirthDBError | undefined, row?: any) => boolean, onFinishedCallback?: () => any): Promise<void>;
     eachAsync(rowHandler: (row: any, rowFinished?: (error?: string) => any) => any, final?: (error: any) => any): Promise<void>;
-    resolve(): Promise<any[] | undefined>;
-    private _next();
+    resolve(timeout?: number): Promise<any[] | undefined>;
+    private _next(timeout?);
     private getResults();
     private handleErrors(response);
     private handleResponseNotes(rType, notes?);

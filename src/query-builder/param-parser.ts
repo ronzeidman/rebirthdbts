@@ -1,4 +1,5 @@
 import { isBuffer, isDate, isFunction, isUndefined } from 'util';
+import { RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
@@ -11,7 +12,8 @@ export function parseParam(
 ): TermJson {
   if (nestingLevel === 0) {
     throw new RebirthDBError(
-      'Nesting depth limit exceeded.\nYou probably have a circular reference somewhere.'
+      'Nesting depth limit exceeded.\nYou probably have a circular reference somewhere.',
+      { type: RebirthDBErrorType.PARSE }
     );
   }
   if (param === null) {
@@ -19,7 +21,9 @@ export function parseParam(
   }
   if (isQuery(param)) {
     if (isUndefined(param.term)) {
-      throw new RebirthDBError("'r' cannot be an argument");
+      throw new RebirthDBError("'r' cannot be an argument", {
+        type: RebirthDBErrorType.PARSE
+      });
     }
     return param.term;
   }
@@ -53,7 +57,8 @@ export function parseParam(
       );
       if (isUndefined(funcResult)) {
         throw new RebirthDBError(
-          `Anonymous function returned \`undefined\`. Did you forget a \`return\`? in:\n${param.toString()}`
+          `Anonymous function returned \`undefined\`. Did you forget a \`return\`? in:\n${param.toString()}`,
+          { type: RebirthDBErrorType.PARSE }
         );
       }
       const term = [
@@ -83,7 +88,9 @@ export function parseParam(
     );
   }
   if (typeof param === 'number' && (isNaN(param) || !isFinite(param))) {
-    throw new RebirthDBError(`Cannot convert \`${param}\` to JSON`);
+    throw new RebirthDBError(`Cannot convert \`${param}\` to JSON`, {
+      type: RebirthDBErrorType.PARSE
+    });
   }
   return param;
 }

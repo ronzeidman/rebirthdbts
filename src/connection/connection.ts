@@ -9,6 +9,7 @@ import { Cursor } from '../response/cursor';
 import {
   Connection,
   RServerConnectionOptions,
+  RebirthDBErrorType,
   RunOptions,
   ServerInfo
 } from '../types';
@@ -134,7 +135,8 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       throw new RebirthDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
           this.connectionOptions.port
-        } in less than ${this.timeout}s.`
+        } in less than ${this.timeout}s.`,
+        { type: RebirthDBErrorType.TIMEOUT }
       );
     }
     this.startPinging();
@@ -221,7 +223,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           result.e !== ErrorType.USER ||
           result.r[0] !== 'ping'
         ) {
-          this.reportError(new RebirthDBError('Ping error'));
+          this.reportError(
+            new RebirthDBError('Ping error', { responseType: result.t })
+          );
         }
         if (this.pingTimer) {
           this.startPinging();

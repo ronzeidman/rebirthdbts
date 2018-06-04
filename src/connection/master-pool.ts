@@ -12,6 +12,7 @@ import {
   RCursor,
   RPoolConnectionOptions,
   RServer,
+  RebirthDBErrorType,
   RunOptions
 } from '../types';
 import { RebirthDBConnection } from './connection';
@@ -131,7 +132,11 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
           if (healthy) {
             resolve();
           } else {
-            reject(new RebirthDBError('Error initializing pool'));
+            reject(
+              new RebirthDBError('Error initializing pool', {
+                type: RebirthDBErrorType.POOL_FAIL
+              })
+            );
           }
         });
       }
@@ -170,7 +175,8 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   ): Promise<Cursor | undefined> {
     if (!this.isHealthy) {
       throw new RebirthDBError(
-        'None of the pools have an opened connection and failed to open a new one.'
+        'None of the pools have an opened connection and failed to open a new one.',
+        { type: RebirthDBErrorType.POOL_FAIL }
       );
     }
     this.emit('queueing');

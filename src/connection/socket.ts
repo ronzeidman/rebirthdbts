@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
 import { connect as tlsConnect } from 'tls';
 import { isUndefined } from 'util';
-import { RServerConnectionOptions } from '..';
+import { RServerConnectionOptions, RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
@@ -64,7 +64,9 @@ export class RebirthDBSocket extends EventEmitter {
 
   public async connect() {
     if (this.socket) {
-      throw new RebirthDBError('Socket already connected');
+      throw new RebirthDBError('Socket already connected', {
+        type: RebirthDBErrorType.CONNECTION
+      });
     }
     const { tls = false, ...options } = this.connectionOptions;
     let socket: Socket = (undefined as any) as Socket;
@@ -124,7 +126,7 @@ export class RebirthDBSocket extends EventEmitter {
     if (!this.socket || this.status !== 'open') {
       throw new RebirthDBError(
         '`run` was called with a closed connection after:',
-        { query }
+        { query, type: RebirthDBErrorType.CONNECTION }
       );
     }
     const encoded = JSON.stringify(query);
@@ -152,10 +154,14 @@ export class RebirthDBSocket extends EventEmitter {
     this.finishQuery(token);
   }
 
-  public readNext<T = ResponseJson>(token: number, timeout = -1): Promise<T> {
+  public readNext<T = ResponseJson>(
+    token: number,
+    timeout = -1,
+    query?: QueryJson
+  ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       if (this.status === 'open' && !this.runningQueries.includes(token)) {
-        reject(new RebirthDBError('Query is not running'));
+        reject(new RebirthDBError('Query is not running', { query }));
       }
       if (!isUndefined(this.data[token])) {
         const data = this.data[token];
@@ -167,7 +173,13 @@ export class RebirthDBSocket extends EventEmitter {
         let t: NodeJS.Timer | undefined;
         if (timeout > 0) {
           t = setTimeout(
-            () => reject(new RebirthDBError('Response timed out')),
+            () =>
+              reject(
+                new RebirthDBError('Response timed out', {
+                  query,
+                  type: RebirthDBErrorType.TIMEOUT
+                })
+              ),
             timeout
           );
         }
@@ -179,11 +191,22 @@ export class RebirthDBSocket extends EventEmitter {
           if (data) {
             resolve(data as any);
           } else {
-            reject(new RebirthDBError('Query cancelled'));
+            reject(
+              new RebirthDBError('Query cancelled', {
+                query,
+                type: RebirthDBErrorType.CANCEL
+              })
+            );
           }
         };
       } else {
-        reject(this.lastError || new RebirthDBError('Connection is closed'));
+        reject(
+          this.lastError ||
+            new RebirthDBError('Connection is closed', {
+              query,
+              type: RebirthDBErrorType.CONNECTION
+            })
+        );
       }
     });
   }
@@ -208,7 +231,9 @@ export class RebirthDBSocket extends EventEmitter {
 
   private async performHandshake() {
     if (!this.socket || this.status !== 'handshake') {
-      throw new RebirthDBError('Connection is not open');
+      throw new RebirthDBError('Connection is not open', {
+        type: RebirthDBErrorType.CONNECTION
+      });
     }
     const { randomString, authBuffer } = buildAuthBuffer(this.user);
     this.socket.write(authBuffer);
@@ -242,11 +267,13 @@ export class RebirthDBSocket extends EventEmitter {
           }
         } else {
           this.handleError(
-            new RebirthDBError(jsonMsg.error, jsonMsg.error_code)
+            new RebirthDBError(jsonMsg.error, { errorCode: jsonMsg.error_code })
           );
         }
       } catch {
-        this.handleError(new RebirthDBError(strMsg));
+        this.handleError(
+          new RebirthDBError(strMsg, { type: RebirthDBErrorType.AUTH })
+        );
       }
       this.buffer = this.buffer.slice(index + 1);
       index = this.buffer.indexOf(0);

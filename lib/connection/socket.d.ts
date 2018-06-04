@@ -29,7 +29,7 @@ export declare class RebirthDBSocket extends EventEmitter {
     connect(): Promise<void>;
     sendQuery(query: QueryJson, token?: number): number;
     stopQuery(token: number): void;
-    readNext<T = ResponseJson>(token: number, timeout?: number): Promise<T>;
+    readNext<T = ResponseJson>(token: number, timeout?: number, query?: QueryJson): Promise<T>;
     close(): void;
     private performHandshake();
     private handleHandshakeData();

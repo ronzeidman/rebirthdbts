@@ -1,7 +1,12 @@
 import { RebirthDBConnection } from '../connection/connection';
 import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
-import { R, RConnectionOptions, RPoolConnectionOptions } from '../types';
+import {
+  R,
+  RConnectionOptions,
+  RPoolConnectionOptions,
+  RebirthDBErrorType
+} from '../types';
 import { globals } from './globals';
 import { toQuery } from './query';
 import { funcall, rConfig, rConsts, termConfig } from './query-config';
@@ -19,20 +24,25 @@ export const r: R = expr as any;
   if (host || port) {
     if ((options as any).server) {
       throw new RebirthDBError(
-        'If `host` or `port` are defined `server` must not be.'
+        'If `host` or `port` are defined `server` must not be.',
+        { type: RebirthDBErrorType.API_FAIL }
       );
     } else if ((options as any).servers) {
       throw new RebirthDBError(
-        'If `host` or `port` are defined `servers` must not be.'
+        'If `host` or `port` are defined `servers` must not be.',
+        { type: RebirthDBErrorType.API_FAIL }
       );
     }
   }
   if ((options as any).server && (options as any).servers) {
-    throw new RebirthDBError('If `server` is defined `servers` must not be.');
+    throw new RebirthDBError('If `server` is defined `servers` must not be.', {
+      type: RebirthDBErrorType.API_FAIL
+    });
   }
   if (!servers.length) {
     throw new RebirthDBError(
-      'If `servers` is an array, it must contain at least one server.'
+      'If `servers` is an array, it must contain at least one server.',
+      { type: RebirthDBErrorType.API_FAIL }
     );
   }
   if ((r as any).pool) {
@@ -57,7 +67,8 @@ export const r: R = expr as any;
   } = options;
   if ((host || port) && (options as any).server) {
     throw new RebirthDBError(
-      'If `host` or `port` are defined `server` must not be.'
+      'If `host` or `port` are defined `server` must not be.',
+      { type: RebirthDBErrorType.API_FAIL }
     );
   }
   const c = new RebirthDBConnection(server, options as any);

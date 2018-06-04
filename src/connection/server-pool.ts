@@ -7,6 +7,7 @@ import {
   ConnectionPool,
   RConnectionOptions,
   RServerConnectionOptions,
+  RebirthDBErrorType,
   RunOptions
 } from '../types';
 import { RebirthDBConnection } from './connection';
@@ -91,7 +92,11 @@ export class ServerConnectionPool extends EventEmitter
           if (healthy) {
             resolve();
           } else {
-            reject(new RebirthDBError('Error initializing pool'));
+            reject(
+              new RebirthDBError('Error initializing pool', {
+                type: RebirthDBErrorType.POOL_FAIL
+              })
+            );
           }
         });
       }
@@ -166,7 +171,9 @@ export class ServerConnectionPool extends EventEmitter
     const openConnections = this.getOpenConnections();
     if (!openConnections) {
       throw this.reportError(
-        new RebirthDBError('No connections available'),
+        new RebirthDBError('No connections available', {
+          type: RebirthDBErrorType.POOL_FAIL
+        }),
         true
       );
     }

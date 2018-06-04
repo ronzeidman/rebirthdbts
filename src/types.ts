@@ -304,7 +304,7 @@ export type RCursorType =
 export interface RCursor<T = any> extends NodeJS.ReadableStream {
   readonly profile: any;
   getType(): RCursorType;
-  next(): Promise<T>;
+  next(timeout?: number): Promise<T>;
   toArray(): Promise<T[]>;
   close(): Promise<void>;
   each(
@@ -323,9 +323,20 @@ export interface RebirthDBError extends Error {
 
 export enum RebirthDBErrorType {
   UNKNOWN,
+  // driver
+  API_FAIL,
+  // query errors
+  CONNECTION,
+  POOL_FAIL,
   CURSOR_END,
+  TIMEOUT,
+  CANCEL,
+  PARSE,
+  ARITY,
+  CURSOR,
   // connection error
   AUTH,
+  UNSUPPORTED_PROTOCOL,
   // reql response errors
   INTERNAL,
   RESOURCE_LIMIT,
