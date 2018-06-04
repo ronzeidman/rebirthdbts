@@ -36,7 +36,11 @@ export class Cursor extends Readable implements RCursor {
       this.emitting = false;
     }
     this.emitting = true;
-    this._next().then(row => this.push(row)).catch((err) => {
+    this._next().then(row => {
+      if (!this.closed) {
+        this.push(row);
+      }
+    }).catch((err) => {
       if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CURSOR_END) {
         this.push(null);
         this.emitting = false;
@@ -204,7 +208,7 @@ export class Cursor extends Readable implements RCursor {
     const results = this.results && this.type === 'Atom' && Array.isArray(this.results[0])
       ? this.results[0]
       : this.results;
-    if (!this.results || isUndefined(this.results[this.position])) {
+    if (!this.results || isUndefined(results[this.position])) {
       this.close();
       throw new RebirthDBError('No more rows in the cursor.', { type: RebirthDBErrorType.CURSOR_END });
     }

@@ -58,21 +58,13 @@ const conn = await r.connect(options);
 
 # TESTS ERROR STATUS:
 
-## Remaining tests to run:
-
-* selecting-data
-* stable
-* stream (only readable stream part)
-* string-manupulation
-* transformations
-* writing-data
-
 ## Priority - medium
 
 * Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
   * Need documentation
 * Error names (ResourceError, LogicError)...
 * Should wait 2 seconds before restarting a drained pool
+* Streams on changefeeds
 
 ## Priority - low
 

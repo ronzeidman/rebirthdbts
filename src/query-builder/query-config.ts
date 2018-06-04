@@ -8,7 +8,7 @@ export type TermConfig = [
   string,
   number,
   number,
-  boolean | 'optional'
+  boolean | 'only-object'
 ];
 
 export const bracket: TermConfig = [TermType.BRACKET, '(...)', 1, 1, false];
@@ -17,7 +17,7 @@ export const funcall: TermConfig = [TermType.FUNCALL, 'do', 1, -1, false];
 export const termConfig: TermConfig[] = [
   [TermType.TABLE, 'table', 1, 2, true],
   [TermType.GET, 'get', 1, 1, false],
-  [TermType.GET_ALL, 'getAll', 1, -1, true],
+  [TermType.GET_ALL, 'getAll', 0, -1, true],
   [TermType.EQ, 'eq', 1, -1, false],
   [TermType.NE, 'ne', 1, -1, false],
   [TermType.LT, 'lt', 1, -1, false],
@@ -58,8 +58,8 @@ export const termConfig: TermConfig[] = [
   [TermType.MAP, 'map', 1, -1, false],
   [TermType.FOLD, 'fold', 2, 3, true],
   [TermType.FILTER, 'filter', 1, 2, true],
-  [TermType.CONCAT_MAP, 'concatMap', 1, -1, false],
-  [TermType.ORDER_BY, 'orderBy', 0, -1, true],
+  [TermType.CONCAT_MAP, 'concatMap', 1, 1, false],
+  [TermType.ORDER_BY, 'orderBy', 1, -1, 'only-object'],
   [TermType.DISTINCT, 'distinct', 0, 1, true],
   [TermType.COUNT, 'count', 0, 1, false],
   [TermType.IS_EMPTY, 'isEmpty', 0, 0, false],
@@ -123,8 +123,8 @@ export const termConfig: TermConfig[] = [
   [TermType.GROUP, 'group', 0, -1, true],
   [TermType.SUM, 'sum', 0, 1, false],
   [TermType.AVG, 'avg', 0, 1, false],
-  [TermType.MIN, 'min', 0, 1, 'optional'],
-  [TermType.MAX, 'max', 0, 1, 'optional'],
+  [TermType.MIN, 'min', 1, 1, 'only-object'],
+  [TermType.MAX, 'max', 1, 1, 'only-object'],
   [TermType.SPLIT, 'split', 1, 2, false],
   [TermType.UNGROUP, 'ungroup', 0, 0, false],
   [TermType.CHANGES, 'changes', 0, 1, true],
@@ -166,7 +166,7 @@ export const rConfig: TermConfig[] = [
   [TermType.ARGS, 'args', 1, 1, false],
   [TermType.TIME, 'time', 4, 7, false],
   [TermType.ISO8601, 'ISO8601', 1, 2, true],
-  [TermType.ERROR, 'error', 1, 1, false],
+  [TermType.ERROR, 'error', 0, 1, false],
   [TermType.JAVASCRIPT, 'js', 1, 2, true],
   [TermType.JSON, 'json', 1, 1, false],
   [TermType.POINT, 'point', 2, 2, false],

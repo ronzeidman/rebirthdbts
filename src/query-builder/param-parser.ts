@@ -32,7 +32,7 @@ export function parseParam(
   if (isDate(param)) {
     return {
       $reql_type$: 'TIME',
-      epochTime: param.getTime(),
+      epoch_time: param.getTime(),
       timezone: '+00:00'
     };
   }

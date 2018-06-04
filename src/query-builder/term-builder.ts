@@ -26,9 +26,9 @@ export function termBuilder(
       if (minArgs === maxArgs && argsLength !== minArgs) {
         throw new RebirthDBError(
           `\`${
-            !currentTerm ? `r.${termName}` : termName
+          !currentTerm ? `r.${termName}` : termName
           }\` takes ${minArgs} argument${
-            minArgs === 1 ? '' : 's'
+          minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -37,9 +37,9 @@ export function termBuilder(
         const termConf = termConfig.find(c => c[0] === termType);
         throw new RebirthDBError(
           `\`${
-            !currentTerm ? `r.${termName}` : termName
+          !currentTerm ? `r.${termName}` : termName
           }\` takes at least ${minArgs} argument${
-            minArgs === 1 ? '' : 's'
+          minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -47,9 +47,9 @@ export function termBuilder(
       if (maxArgs !== -1 && argsLength > maxArgs) {
         throw new RebirthDBError(
           `\`${
-            !currentTerm ? `r.${termName}` : termName
+          !currentTerm ? `r.${termName}` : termName
           }\` takes at most ${maxArgs} argument${
-            maxArgs === 1 ? '' : 's'
+          maxArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
           { term: currentTerm }
         );
@@ -57,17 +57,16 @@ export function termBuilder(
       const maybeOptarg = args.length ? args.pop() : undefined;
       optarg =
         hasOptarg &&
-        (((maxArgs > 0 && argsLength >= maxArgs) || argsLength > minArgs) &&
-          (!Array.isArray(maybeOptarg) &&
-            typeof maybeOptarg === 'object' &&
-            !isQuery(maybeOptarg)))
+          (((maxArgs > 0 && argsLength >= maxArgs) || argsLength > minArgs || hasOptarg === 'only-object') &&
+            (!Array.isArray(maybeOptarg) &&
+              typeof maybeOptarg === 'object' &&
+              !isQuery(maybeOptarg)))
           ? maybeOptarg
           : undefined;
       if (
         hasOptarg &&
         argsLength === maxArgs &&
-        !optarg &&
-        hasOptarg !== 'optional'
+        !optarg
       ) {
         throw new RebirthDBError(
           `${numToString(

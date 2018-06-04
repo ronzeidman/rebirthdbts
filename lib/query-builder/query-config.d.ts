@@ -1,5 +1,5 @@
 import { TermType } from '../proto/enums';
-export declare type TermConfig = [TermType, string, number, number, boolean | 'optional'];
+export declare type TermConfig = [TermType, string, number, number, boolean | 'only-object'];
 export declare const bracket: TermConfig;
 export declare const funcall: TermConfig;
 export declare const termConfig: TermConfig[];
