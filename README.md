@@ -91,6 +91,6 @@ const conn = await r.connect(options);
   - Throwing the standard `TypeError: xxx is not a function`
 - Supporting `.asyncIterator()`
   - Cursor is a stream reader which is an async iterator by default in node 10
-- Special r.time arity check (the current check is enogh)
+- Special r.time arity check (the current check is enough)
 - Error message mismatch
 - `r.and()` `r.or()` with no arguments
