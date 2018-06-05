@@ -3315,9 +3315,9 @@ r.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-st
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Table `test.foo` does not exist in:\nr.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-string")\n^^^^^^^^^^^^^^                                                                        \n    .add("one-last-string").map(function(var_1) {\n        return r.expr([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).map(function(var_2) {\n            return var_2("b").add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .mul(var_2("b")).merge({\n                    firstName: "xxxxxx",\n                    lastName: "yyyy",\n                    email: "xxxxx@yyyy.com",\n                    phone: "xxx-xxx-xxxx"\n                })\n        }).add(2).map(function(var_3) {\n            return var_3.add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n        })\n    })\n'
+      assert.equal(
+        e.message,
+        'Table `test.foo` does not exist in:\nr.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-string")\n^^^^^^^^^^^^^^                                                                        \n    .add("one-last-string").map(function(var_1) {\n        return r.expr([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).map(function(var_2) {\n            return var_2("b").add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .mul(var_2("b")).merge({\n                    firstName: "xxxxxx",\n                    lastName: "yyyy",\n                    email: "xxxxx@yyyy.com",\n                    phone: "xxx-xxx-xxxx"\n                })\n        }).add(2).map(function(var_3) {\n            return var_3.add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n        })\n    })\n'
       );
     }
   });
@@ -3340,9 +3340,9 @@ r.expr({
       await r.expr({ a: 1, b: r.expr(1).add('eh') }).run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.expr({\n    a: 1,\n    b: r.expr(1).add("eh")\n       ^^^^^^^^^^^^^^^^^^^\n})\n'
+      assert.equal(
+        e.message,
+        'Expected type NUMBER but found STRING in:\nr.expr({\n    a: 1,\n    b: r.expr(1).add("eh")\n       ^^^^^^^^^^^^^^^^^^^\n})\n'
       );
     }
   });
@@ -3414,13 +3414,13 @@ r.db("83db41722b445306270f0129b6bcbde0").table("1264cb52a222e32026ce2d67ac27bc23
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")\n    .replace({\n        a: 1\n    }, {\n       ^\n        durability: r.expr(1).add("heloo")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    })\n    ^ \n'
+      assert.equal(
+        e.message,
+        'Expected type NUMBER but found STRING in:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n    .replace({\n        a: 1\n    }, {\n       ^\n        durability: r.expr(1).add("heloo")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    })\n    ^ \n'
       );
     }
   });
@@ -3451,13 +3451,13 @@ r.db("6dddeb36901f203298878f980598ce0a").table("5510e0388d908dca1fa4a6dbf00c2852
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")\n    .replace({\n        a: 1\n    }, {\n       ^\n        durability: r.expr(1).add("heloo")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    })\n    ^ \n'
+      assert.equal(
+        e.message,
+        'Expected type NUMBER but found STRING in:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n    .replace({\n        a: 1\n    }, {\n       ^\n        durability: r.expr(1).add("heloo")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    })\n    ^ \n'
       );
     }
   });

@@ -141,15 +141,33 @@ function pretty(query: string, mark: string) {
   const openIndentPos: number[] = [];
   let char = '';
   let newline = true;
+  let inStr = false;
+  let eacape = false;
   let lastNewlinePos = 0;
   let lineMarkPos = 0;
   let lineMark = '';
   let nextSign = '';
+  const openBrackets: string[] = [];
   for (let i = 0; i < query.length; i++) {
     char = query.charAt(i);
+    if (!inStr) {
+      if (['{', '(', '['].includes(char)) {
+        openBrackets.unshift(char);
+      } else if (
+        (char === '}' && openBrackets[0] === '{') ||
+        (char === ')' && openBrackets[0] === '(') ||
+        (char === ']' && openBrackets[0] === '[')
+      ) {
+        openBrackets.shift();
+      }
+    }
     switch (char) {
       case '.':
-        if (result.length - lastNewlinePos >= 80) {
+        eacape = false;
+        newline = false;
+        if (inStr || result.length - lastNewlinePos <= 80) {
+          result += char;
+        } else {
           indent += 4;
           lineMark += mark.substring(lineMarkPos, i);
           lineMarkPos = i + 1;
@@ -162,62 +180,87 @@ function pretty(query: string, mark: string) {
             : `\n${' '.repeat(indent)}.`;
           lastNewlinePos = result.length - indent - 1;
           lineMark = ' '.repeat(indent) + nextSign;
-        } else {
-          result += '.';
         }
-        newline = false;
         break;
-      // case ',':
-      //   newline = true;
-      //   lineMark += mark.substring(lineMarkPos, i);
-      //   lineMarkPos = i + 1;
-      //   result += lineMark.includes('^')
-      //     ? `,\n${lineMark}\n${' '.repeat(indent)}`
-      //     : `,\n${' '.repeat(indent)}`;
-      //   lastNewlinePos = result.length - indent;
-      //   lineMark = ' '.repeat(indent);
-      // break;
+      case ',':
+        if (inStr || openBrackets[0] !== '{') {
+          newline = false;
+          result += char;
+        } else {
+          newline = true;
+          openIndentPos.push(indent);
+          indent += 4;
+          lineMark += mark.substring(lineMarkPos, i + 1);
+          lineMarkPos = i + 1;
+          result += lineMark.includes('^')
+            ? `,\n${lineMark}\n${' '.repeat(indent)}`
+            : `,\n${' '.repeat(indent)}`;
+          lastNewlinePos = result.length - indent;
+          lineMark = ' '.repeat(indent);
+        }
+        break;
       case '{':
-        newline = true;
-        openIndentPos.push(indent);
-        // indent += result
-        //   .substring(result.lastIndexOf('\n') + 1)
-        //   .trimLeft()
-        //   .startsWith('.')
-        //   ? 5
-        //   : 4;
-        indent += 4;
-        lineMark += mark.substring(lineMarkPos, i + 1);
-        lineMarkPos = i + 1;
-        result += lineMark.includes('^')
-          ? `{\n${lineMark}\n${' '.repeat(indent)}`
-          : `{\n${' '.repeat(indent)}`;
-        lastNewlinePos = result.length - indent;
-        lineMark = ' '.repeat(indent);
+        eacape = false;
+        if (inStr) {
+          newline = false;
+          result += char;
+        } else {
+          newline = true;
+          openIndentPos.push(indent);
+          indent += 4;
+          lineMark += mark.substring(lineMarkPos, i + 1);
+          lineMarkPos = i + 1;
+          result += lineMark.includes('^')
+            ? `{\n${lineMark}\n${' '.repeat(indent)}`
+            : `{\n${' '.repeat(indent)}`;
+          lastNewlinePos = result.length - indent;
+          lineMark = ' '.repeat(indent);
+        }
         break;
       case '}':
         newline = false;
-        indent = openIndentPos.pop() || 0;
-        lineMark += mark.substring(lineMarkPos, i);
-        lineMarkPos = i + 1;
-        result = result.trimRight();
-        nextSign =
-          lineMark.charAt(result.length - lastNewlinePos) || mark.charAt(i);
-        lineMark = lineMark.substring(0, result.length - lastNewlinePos);
-        result += lineMark.includes('^')
-          ? `\n${lineMark}\n${' '.repeat(indent)}}`
-          : `\n${' '.repeat(indent)}}`;
-        lastNewlinePos = result.length - indent - 1;
-        lineMark = ' '.repeat(indent) + nextSign;
+        eacape = false;
+        if (inStr) {
+          result += char;
+        } else {
+          indent = openIndentPos.pop() || 0;
+          lineMark += mark.substring(lineMarkPos, i);
+          lineMarkPos = i + 1;
+          result = result.trimRight();
+          nextSign =
+            lineMark.charAt(result.length - lastNewlinePos) || mark.charAt(i);
+          lineMark = lineMark.substring(0, result.length - lastNewlinePos);
+          result += lineMark.includes('^')
+            ? `\n${lineMark}\n${' '.repeat(indent)}}`
+            : `\n${' '.repeat(indent)}}`;
+          lastNewlinePos = result.length - indent - 1;
+          lineMark = ' '.repeat(indent) + nextSign;
+        }
         break;
       case ' ':
+        eacape = false;
         if (newline) {
           lineMarkPos++;
         } else {
-          result += ' ';
+          result += char;
         }
         break;
+      case '"':
+        if (escape) {
+          eacape = false;
+        } else {
+          inStr = !inStr;
+        }
+        newline = false;
+        result += char;
+        break;
+      case '\\':
+        eacape = !escape;
+        newline = false;
+        result += char;
+        break;
       default:
+        eacape = false;
         newline = false;
         result += char;
         break;
