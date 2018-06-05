@@ -1,6 +1,7 @@
 import { RebirthDBErrorType } from '..';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, ResponseType } from '../proto/enums';
+import { globals } from '../query-builder/globals';
 import { backtraceTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
@@ -116,15 +117,20 @@ function buildMessage(
   const t = query ? query[1] : term;
   if (t) {
     msg =
-      msg.charAt(msg.length - 1) === '.'
-        ? msg.substring(0, msg.length - 1) + ' in:'
-        : msg;
+      msg.charAt(msg.length - 1) === ':'
+        ? msg
+        : msg.charAt(msg.length - 1) === '.'
+          ? msg.substring(0, msg.length - 1) + ' in:'
+          : msg + ' in:';
     const [str, mark] = backtraceTerm(t, true, backtrace);
-    msg += `\n${pretty(str, mark)}`;
-    // msg += `\n${str}`;
-    // if (backtrace) {
-    //   msg += `\n${mark}\n`;
-    // }
+    if (globals.pretty) {
+      msg += `\n${pretty(str, mark)}`;
+    } else {
+      msg += `\n${str}\n`;
+      if (backtrace) {
+        msg += `${mark}\n`;
+      }
+    }
   }
   return msg;
 }
@@ -132,6 +138,7 @@ function buildMessage(
 function pretty(query: string, mark: string) {
   let result = '';
   let indent = 0;
+  const openIndentPos: number[] = [];
   let char = '';
   let newline = true;
   let lastNewlinePos = 0;
@@ -143,6 +150,7 @@ function pretty(query: string, mark: string) {
     switch (char) {
       case '.':
         if (result.length - lastNewlinePos >= 80) {
+          indent += 4;
           lineMark += mark.substring(lineMarkPos, i);
           lineMarkPos = i + 1;
           result = result.trimRight();
@@ -150,10 +158,10 @@ function pretty(query: string, mark: string) {
             lineMark.charAt(result.length - lastNewlinePos) || mark.charAt(i);
           lineMark = lineMark.substring(0, result.length - lastNewlinePos);
           result += lineMark.includes('^')
-            ? `\n${lineMark}\n${' '.repeat(indent + 4)}.`
-            : `\n${' '.repeat(indent + 4)}.`;
-          lastNewlinePos = result.length - indent - 5;
-          lineMark = ' '.repeat(indent + 4) + nextSign;
+            ? `\n${lineMark}\n${' '.repeat(indent)}.`
+            : `\n${' '.repeat(indent)}.`;
+          lastNewlinePos = result.length - indent - 1;
+          lineMark = ' '.repeat(indent) + nextSign;
         } else {
           result += '.';
         }
@@ -171,8 +179,15 @@ function pretty(query: string, mark: string) {
       // break;
       case '{':
         newline = true;
+        openIndentPos.push(indent);
+        // indent += result
+        //   .substring(result.lastIndexOf('\n') + 1)
+        //   .trimLeft()
+        //   .startsWith('.')
+        //   ? 5
+        //   : 4;
         indent += 4;
-        lineMark += mark.substring(lineMarkPos, i);
+        lineMark += mark.substring(lineMarkPos, i + 1);
         lineMarkPos = i + 1;
         result += lineMark.includes('^')
           ? `{\n${lineMark}\n${' '.repeat(indent)}`
@@ -182,7 +197,7 @@ function pretty(query: string, mark: string) {
         break;
       case '}':
         newline = false;
-        indent -= 4;
+        indent = openIndentPos.pop() || 0;
         lineMark += mark.substring(lineMarkPos, i);
         lineMarkPos = i + 1;
         result = result.trimRight();
@@ -193,7 +208,7 @@ function pretty(query: string, mark: string) {
           ? `\n${lineMark}\n${' '.repeat(indent)}}`
           : `\n${' '.repeat(indent)}}`;
         lastNewlinePos = result.length - indent - 1;
-        lineMark = ' '.repeat(indent + 4) + nextSign;
+        lineMark = ' '.repeat(indent) + nextSign;
         break;
       case ' ':
         if (newline) {

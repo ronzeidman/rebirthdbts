@@ -69,7 +69,7 @@ export function backtraceTerm(
             ''
           ])}) => ${backtraceTerm(
             (args as any)[1],
-            true,
+            false,
             nextBacktrace(1, backtrace)
           )}`,
           backtrace
@@ -81,7 +81,7 @@ export function backtraceTerm(
             ''
           ])}) { return ${backtraceTerm(
             (args as any)[1],
-            true,
+            false,
             nextBacktrace(1, backtrace)
           )} }`,
           backtrace
@@ -113,16 +113,13 @@ export function backtraceTerm(
         return getMarked('');
       }
       const [caller, ...params] = args;
-      if (Array.isArray(caller)) {
-        const parsedParams = [...params]
-          .map((a, i) => parseArg(a, i + 1))
-          .reduce(joinMultiArray, ['', '']);
-        return getMarked(
-          combineMarks`${parseArg(caller, 0)}(${parsedParams})`,
-          backtrace
-        );
-      }
-      return getMarked('');
+      const parsedParams = [...params]
+        .map((a, i) => parseArg(a, i + 1))
+        .reduce(joinMultiArray, ['', '']);
+      return getMarked(
+        combineMarks`${parseArg(caller, 0)}(${parsedParams})`,
+        backtrace
+      );
     }
     default: {
       const c = rConsts.find(co => co[0] === type);
@@ -181,9 +178,12 @@ export function backtraceTerm(
   }
 }
 
-function backtraceObject(optarg: any, backtrace?: Array<number | string>) {
+function backtraceObject(obj: any, backtrace?: Array<number | string>) {
   const [param, ...nextB]: any = backtrace || [];
-  return combineMarks`{ ${Object.entries(optarg)
+  if (obj.$reql_type$ === 'BINARY') {
+    return getMarked('<Buffer>', backtrace);
+  }
+  return combineMarks`{ ${Object.entries(obj)
     .map(([key, val]) => {
       const next = param === key ? nextB : undefined;
       return getMarked(

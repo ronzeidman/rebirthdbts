@@ -16,6 +16,7 @@ describe('backtraces', () => {
 
   before(async () => {
     globals.backtraceType = 'function';
+    globals.pretty = true;
     await r.connectPool(config);
     dbName = uuid();
     tableName = uuid();
@@ -1091,13 +1092,13 @@ r.expr([1, 2, 3]).eqJoin("id", r.db("5500af7b5c2c94b2672a5f0029512757").table("8
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          `Cannot perform get_field on a non-object non-sequence \`1\` in:
-r.expr([1, 2, 3]).eqJoin("id", r.db("${dbName}").table("${tableName}"))
-                         ^^^^
-    .add(1)
-`
+      assert.equal(
+        e.message,
+        'Cannot perform get_field on a non-object non-sequence `1` in:\nr.expr([1, 2, 3]).eqJoin("id", r.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '"))\n                         ^^^^                                                                                     \n    .add(1)\n'
       );
     }
   });
@@ -1247,10 +1248,7 @@ r.expr([1, 2, 3]).orderBy("foo").add(1)
     } catch (e) {
       assert(
         e.message ===
-          `Cannot perform get_field on a non-object non-sequence \`2\` in:
-r.expr([1, 2, 3]).orderBy("foo").add(1)
-                          ^^^^^
-`
+          'Cannot perform get_field on a non-object non-sequence `2` in:\nr.expr([1, 2, 3]).orderBy("foo").add(1)\n                          ^^^^^        \n'
       );
     }
   });
@@ -1487,9 +1485,9 @@ r.expr([1, 2, 3]).count(function() {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.expr([1, 2, 3]).count(function() {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return true\n    ^^^^^^^^^^^\n}).add("Hello")\n^^^^^^^^^^^^^^^\n'
+      assert.equal(
+        e.message,
+        'Expected type NUMBER but found STRING in:\nr.expr([1, 2, 3]).count(function() {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return true\n    ^^^^^^^^^^^\n}).add("Hello")\n^^^^^^^^^^^^^^^\n'
       );
     }
   });
@@ -1557,25 +1555,25 @@ Expected type SELECTION but found DATUM:
   2,
   3
 ] in:
-r.expr([1, 2, 3]).update(row => row("foo")).add("Hello")
+r.expr([1, 2, 3]).update(r.row("foo")).add("Hello")
 ^^^^^^^^^^^^^^^^^
 */
-  it('Test backtrace for r.expr([1,2,3]).update(row => row("foo")).add("Hello")', async () => {
-    try {
-      r.nextVarId = 1;
-      await r
-        .expr([1, 2, 3])
-        .update(row => row('foo'))
-        .add('Hello')
-        .run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert(
-        e.message ===
-          'Expected type SELECTION but found DATUM:\n[\n\t1,\n\t2,\n\t3\n] in:\nr.expr([1, 2, 3]).update(row => row("foo")).add("Hello")\n^^^^^^^^^^^^^^^^^                                  \n'
-      );
-    }
-  });
+  // it('Test backtrace for r.expr([1,2,3]).update(r.row("foo")).add("Hello")', async () => {
+  //   try {
+  //     r.nextVarId = 1;
+  //     await r
+  //       .expr([1, 2, 3])
+  //       .update(r.row('foo'))
+  //       .add('Hello')
+  //       .run();
+  //     assert.fail('should throw');
+  //   } catch (e) {
+  //     assert.equal(
+  //       e.message,
+  //       'Expected type SELECTION but found DATUM:\n[\n\t1,\n\t2,\n\t3\n] in:\nr.expr([1, 2, 3]).update(r.row("foo")).add("Hello")\n^^^^^^^^^^^^^^^^^                                  \n'
+  //     );
+  //   }
+  // });
 
   /*
 Frames:
@@ -2011,9 +2009,9 @@ r.expr([1, 2, 3]).match("foo").add("Hello")
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type STRING but found ARRAY in:\nr.expr([1, 2, 3]).match("foo").add("Hello")\n^^^^^^^^^^^^^^^^^                          \n'
+      assert.equal(
+        e.message,
+        'Expected type STRING but found ARRAY in:\nr.expr([1, 2, 3]).match("foo").add("Hello")\n^^^^^^^^^^^^^^^^^                          \n'
       );
     }
   });
@@ -2878,9 +2876,9 @@ r.branch(r.expr(1).add("hello"), "Hello", "World")
       await r.branch(r.expr(1).add('hello'), 'Hello', 'World').run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.branch(r.expr(1).add("hello"), "Hello", "World")\n         ^^^^^^^^^^^^^^^^^^^^^^                   \n'
+      assert.equal(
+        e.message,
+        'Expected type NUMBER but found STRING in:\nr.branch(r.expr(1).add("hello"), "Hello", "World")\n         ^^^^^^^^^^^^^^^^^^^^^^                   \n'
       );
     }
   });
@@ -2958,9 +2956,9 @@ r.expr({
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type STRING but found NUMBER in:\nr.expr({\n^^^^^^^^\n    a: 1\n    ^^^^\n})("b").default("bar").add(2)\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+      assert.equal(
+        e.message,
+        'Expected type STRING but found NUMBER in:\nr.expr({\n^^^^^^^^\n    a: 1\n    ^^^^\n})("b").default("bar").add(2)\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
       );
     }
   });
@@ -3144,13 +3142,13 @@ Available options are returnChanges <bool>, durability <string>, nonAtomic <bool
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Unrecognized option `nonValid` in `replace` after:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")\nAvailable options are returnChanges <bool>, durability <string>, nonAtomic <bool>'
+      assert.equal(
+        e.message,
+        'Unrecognized option `nonValid` in `replace` after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\nAvailable options are returnChanges <bool>, durability <string>, nonAtomic <bool>'
       );
     }
   });
@@ -3202,24 +3200,24 @@ Frames:
 
 Error:
 Expected type NUMBER but found STRING in:
-r.expr([1, 2]).map(row => row.add("eh"))
+r.expr([1, 2]).map(r.row.add("eh"))
            ^^^^^^^^^^^^^^^
 */
-  it('Test backtrace for r.expr([1,2]).map(row => row.add("eh"))', async () => {
-    try {
-      r.nextVarId = 1;
-      await r
-        .expr([1, 2])
-        .map(row => row.add('eh'))
-        .run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert(
-        e.message ===
-          'Expected type NUMBER but found STRING in:\nr.expr([1, 2]).map(row => row.add("eh"))\n                   ^^^^^^^^^^^^^^^ \n'
-      );
-    }
-  });
+  // it('Test backtrace for r.expr([1,2]).map(r.row.add("eh"))', async () => {
+  //   try {
+  //     r.nextVarId = 1;
+  //     await r
+  //       .expr([1, 2])
+  //       .map(r.row.add('eh'))
+  //       .run();
+  //     assert.fail('should throw');
+  //   } catch (e) {
+  //     assert(
+  //       e.message ===
+  //         'Expected type NUMBER but found STRING in:\nr.expr([1, 2]).map(r.row.add("eh"))\n                   ^^^^^^^^^^^^^^^ \n'
+  //     );
+  //   }
+  // });
 
   /*
 Frames:
@@ -3319,31 +3317,7 @@ r.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-st
     } catch (e) {
       assert(
         e.message ===
-          `Table \`test.foo\` does not exist in:
-r.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-string")
-^^^^^^^^^^^^^^
-    .add("one-last-string").map(function(var_1) {
-        return r.expr([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).map(function(var_2) {
-            return var_2("b").add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .mul(var_2("b")).merge({
-                    firstName: "xxxxxx",
-                    lastName: "yyyy",
-                    email: "xxxxx@yyyy.com",
-                    phone: "xxx-xxx-xxxx"
-                })
-        }).add(2).map(function(var_3) {
-            return var_3.add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-                .add("hello-super-long-string").add("another-long-string").add("one-last-string")
-        })
-    })
-`
+          'Table `test.foo` does not exist in:\nr.table("foo").add(1).add(1).add("hello-super-long-string").add("another-long-string")\n^^^^^^^^^^^^^^                                                                        \n    .add("one-last-string").map(function(var_1) {\n        return r.expr([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]).map(function(var_2) {\n            return var_2("b").add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .mul(var_2("b")).merge({\n                    firstName: "xxxxxx",\n                    lastName: "yyyy",\n                    email: "xxxxx@yyyy.com",\n                    phone: "xxx-xxx-xxxx"\n                })\n        }).add(2).map(function(var_3) {\n            return var_3.add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n                .add("hello-super-long-string").add("another-long-string").add("one-last-string")\n        })\n    })\n'
       );
     }
   });
@@ -3690,9 +3664,9 @@ r.expr([]).min()
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Cannot take the min of an empty stream.  (If you passed `min` a field name, it may be that no elements of the stream had that field.) in:\nr.expr([]).min()\n^^^^^^^^^^^^^^^^\n'
+      assert.equal(
+        e.message,
+        'Cannot take the min of an empty stream.  (If you passed `min` a field name, it may be that no elements of the stream had that field.) in:\nr.expr([]).min()\n^^^^^^^^^^^^^^^^\n'
       );
     }
   });
@@ -3715,9 +3689,9 @@ r.expr([]).max()
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Cannot take the max of an empty stream.  (If you passed `max` a field name, it may be that no elements of the stream had that field.) in:\nr.expr([]).max()\n^^^^^^^^^^^^^^^^\n'
+      assert.equal(
+        e.message,
+        'Cannot take the max of an empty stream.  (If you passed `max` a field name, it may be that no elements of the stream had that field.) in:\nr.expr([]).max()\n^^^^^^^^^^^^^^^^\n'
       );
     }
   });
@@ -4369,9 +4343,9 @@ r.expr(1).do(function(var_1) {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Not a GEOMETRY pseudotype: `"foo"` in:\nr.expr(1).do(function(var_1) {\n    return r.polygon([0, 0], [1, 1], [2, 3]).distance(r.expr("foo").polygonSub(3)).add("foo")\n                                                      ^^^^^^^^^^^^^                          \n})\n'
+      assert.equal(
+        e.message,
+        'Not a GEOMETRY pseudotype: `"foo"` in:\nr.expr(1).do(function(var_1) {\n    return r.polygon([0, 0], [1, 1], [2, 3]).distance(r.expr("foo").polygonSub(3)).add("foo")\n                                                      ^^^^^^^^^^^^^                          \n})\n'
       );
     }
   });
@@ -4396,13 +4370,13 @@ r.db("43d3ef1b574ce3176bd8a6a573be3417").table("4428ef38de9fae93c0ca5f880a296b31
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type ARRAY but found NUMBER in:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")\n    .getIntersecting(r.circle(0, 1))\n                     ^^^^^^^^^^^^^^ \n'
+      assert.equal(
+        e.message,
+        'Expected type ARRAY but found NUMBER in:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n    .getIntersecting(r.circle(0, 1))\n                     ^^^^^^^^^^^^^^ \n'
       );
     }
   });
@@ -4427,13 +4401,13 @@ r.db("9fd8231574663499a11f93d205835f51").table("4463dfde70cea8f03266cd78cfec151d
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Expected type ARRAY but found NUMBER in:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")\n    .getNearest(r.circle(0, 1))\n                ^^^^^^^^^^^^^^ \n'
+      assert.equal(
+        e.message,
+        'Expected type ARRAY but found NUMBER in:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n    .getNearest(r.circle(0, 1))\n                ^^^^^^^^^^^^^^ \n'
       );
     }
   });
@@ -4893,9 +4867,9 @@ r.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1) {
         .run(); // eslint-disable-line camelcase
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'The function passed to `map` expects 1 argument, but 2 sequences were found in:\nr.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1) {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return var_1("bah").add(3)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n})\n^^\n'
+      assert.equal(
+        e.message,
+        'The function passed to `map` expects 1 argument, but 2 sequences were found in:\nr.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1) {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return var_1("bah").add(3)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n})\n^^\n'
       );
     }
   });
@@ -4921,9 +4895,9 @@ r.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1, var_2) {
         .run(); // eslint-disable-line camelcase
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Cannot perform bracket on a non-object non-sequence `1` in:\nr.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1, var_2) {\n    return var_1("bah").add(3)\n           ^^^^^              \n})\n'
+      assert.equal(
+        e.message,
+        'Cannot perform bracket on a non-object non-sequence `1` in:\nr.map(r.expr([1, 2, 3]), [1, 2, 3], function(var_1, var_2) {\n    return var_1("bah").add(3)\n           ^^^^^              \n})\n'
       );
     }
   });

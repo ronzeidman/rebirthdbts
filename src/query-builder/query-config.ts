@@ -100,7 +100,7 @@ export const termConfig: TermConfig[] = [
   [TermType.AND, 'and', 0, -1, false],
   [TermType.FOR_EACH, 'forEach', 1, 1, false],
   [TermType.INFO, 'info', 0, 0, false],
-  [TermType.MATCH, 'match', 0, 0, false],
+  [TermType.MATCH, 'match', 1, 1, false],
   [TermType.UPCASE, 'upcase', 0, 0, false],
   [TermType.DOWNCASE, 'downcase', 0, 0, false],
   [TermType.SAMPLE, 'sample', 1, 1, false],
