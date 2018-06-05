@@ -13,7 +13,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/test/stream.js"
+        "${workspaceFolder}/test/backtrace.js"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"

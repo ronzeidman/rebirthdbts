@@ -62,7 +62,6 @@ const conn = await r.connect(options);
 
 * Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
   * Need documentation
-* Error names (ResourceError, LogicError)...
 
 ## Priority - low
 

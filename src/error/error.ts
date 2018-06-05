@@ -120,10 +120,97 @@ function buildMessage(
         ? msg.substring(0, msg.length - 1) + ' in:'
         : msg;
     const [str, mark] = backtraceTerm(t, true, backtrace);
-    msg += `\n${str}`;
-    if (backtrace) {
-      msg += `\n${mark}\n`;
-    }
+    msg += `\n${pretty(str, mark)}`;
+    // msg += `\n${str}`;
+    // if (backtrace) {
+    //   msg += `\n${mark}\n`;
+    // }
   }
   return msg;
+}
+
+function pretty(query: string, mark: string) {
+  let result = '';
+  let indent = 0;
+  let char = '';
+  let newline = true;
+  let lastNewlinePos = 0;
+  let lineMarkPos = 0;
+  let lineMark = '';
+  let nextSign = '';
+  for (let i = 0; i < query.length; i++) {
+    char = query.charAt(i);
+    switch (char) {
+      case '.':
+        if (result.length - lastNewlinePos >= 80) {
+          lineMark += mark.substring(lineMarkPos, i);
+          lineMarkPos = i + 1;
+          result = result.trimRight();
+          nextSign =
+            lineMark.charAt(result.length - lastNewlinePos) || mark.charAt(i);
+          lineMark = lineMark.substring(0, result.length - lastNewlinePos);
+          result += lineMark.includes('^')
+            ? `\n${lineMark}\n${' '.repeat(indent + 4)}.`
+            : `\n${' '.repeat(indent + 4)}.`;
+          lastNewlinePos = result.length - indent - 5;
+          lineMark = ' '.repeat(indent + 4) + nextSign;
+        } else {
+          result += '.';
+        }
+        newline = false;
+        break;
+      // case ',':
+      //   newline = true;
+      //   lineMark += mark.substring(lineMarkPos, i);
+      //   lineMarkPos = i + 1;
+      //   result += lineMark.includes('^')
+      //     ? `,\n${lineMark}\n${' '.repeat(indent)}`
+      //     : `,\n${' '.repeat(indent)}`;
+      //   lastNewlinePos = result.length - indent;
+      //   lineMark = ' '.repeat(indent);
+      // break;
+      case '{':
+        newline = true;
+        indent += 4;
+        lineMark += mark.substring(lineMarkPos, i);
+        lineMarkPos = i + 1;
+        result += lineMark.includes('^')
+          ? `{\n${lineMark}\n${' '.repeat(indent)}`
+          : `{\n${' '.repeat(indent)}`;
+        lastNewlinePos = result.length - indent;
+        lineMark = ' '.repeat(indent);
+        break;
+      case '}':
+        newline = false;
+        indent -= 4;
+        lineMark += mark.substring(lineMarkPos, i);
+        lineMarkPos = i + 1;
+        result = result.trimRight();
+        nextSign =
+          lineMark.charAt(result.length - lastNewlinePos) || mark.charAt(i);
+        lineMark = lineMark.substring(0, result.length - lastNewlinePos);
+        result += lineMark.includes('^')
+          ? `\n${lineMark}\n${' '.repeat(indent)}}`
+          : `\n${' '.repeat(indent)}}`;
+        lastNewlinePos = result.length - indent - 1;
+        lineMark = ' '.repeat(indent + 4) + nextSign;
+        break;
+      case ' ':
+        if (newline) {
+          lineMarkPos++;
+        } else {
+          result += ' ';
+        }
+        break;
+      default:
+        newline = false;
+        result += char;
+        break;
+    }
+  }
+  lineMark += mark.substring(lineMarkPos, query.length);
+  result = result.trimRight();
+  lineMark = lineMark.substring(0, result.length - lastNewlinePos);
+  result += lineMark.includes('^') ? `\n${lineMark}\n` : '\n';
+  return result;
 }

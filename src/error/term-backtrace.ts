@@ -1,6 +1,7 @@
 import { isUndefined } from 'util';
 import { QueryJson, TermJson } from '../internal-types';
 import { QueryType, TermType } from '../proto/enums';
+import { globals } from '../query-builder/globals';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
 export function backtraceTerm(
@@ -48,33 +49,47 @@ export function backtraceTerm(
       return getMarked(
         head
           ? combineMarks`r.expr([${args
-            .map(parseArg)
-            .reduce(joinMultiArray, ['', ''])}])`
+              .map(parseArg)
+              .reduce(joinMultiArray, ['', ''])}])`
           : combineMarks`[${args
-            .map(parseArg)
-            .reduce(joinMultiArray, ['', ''])}]`,
+              .map(parseArg)
+              .reduce(joinMultiArray, ['', ''])}]`,
         backtrace
       );
     }
     case TermType.FUNC: {
       const paramsBacktrace = nextBacktrace(0, backtrace);
       const params = (args as any)[0][1].map((i: number) =>
-        getMarked(`var${i}`, nextBacktrace(i, paramsBacktrace))
+        getMarked(`var_${i}`, nextBacktrace(i, paramsBacktrace))
       );
-      return getMarked(
-        combineMarks`(${params.reduce(joinMultiArray, [
-          '',
-          ''
-        ])}) => ${backtraceTerm(
-          (args as any)[1],
-          true,
-          nextBacktrace(1, backtrace)
-        )}`,
-        backtrace
-      );
+      if (globals.backtraceType === 'lambda') {
+        return getMarked(
+          combineMarks`(${params.reduce(joinMultiArray, [
+            '',
+            ''
+          ])}) => ${backtraceTerm(
+            (args as any)[1],
+            true,
+            nextBacktrace(1, backtrace)
+          )}`,
+          backtrace
+        );
+      } else {
+        return getMarked(
+          combineMarks`function(${params.reduce(joinMultiArray, [
+            '',
+            ''
+          ])}) { return ${backtraceTerm(
+            (args as any)[1],
+            true,
+            nextBacktrace(1, backtrace)
+          )} }`,
+          backtrace
+        );
+      }
     }
     case TermType.VAR: {
-      return getMarked(`var${(args as any)[0]}`, backtrace);
+      return getMarked(`var_${(args as any)[0]}`, backtrace);
     }
     case TermType.FUNCALL: {
       if (!args) {
@@ -125,12 +140,12 @@ export function backtraceTerm(
             optarg
               ? hasArgs
                 ? combineMarks`r.${
-                  rfunc[1]
+                    rfunc[1]
                   }(${rparsedParams}, ${backtraceObject(optarg, backtrace)})`
                 : combineMarks`r.${rfunc[1]}(${backtraceObject(
-                  optarg,
-                  backtrace
-                )})`
+                    optarg,
+                    backtrace
+                  )})`
               : combineMarks`r.${rfunc[1]}(${rparsedParams})`,
             backtrace
           );
@@ -156,7 +171,7 @@ export function backtraceTerm(
         parsedOptarg
           ? hasParams
             ? combineMarks`${parsedCaller}.${
-              func[1]
+                func[1]
               }(${parsedParams}, ${parsedOptarg})`
             : combineMarks`${parsedCaller}.${func[1]}(${parsedOptarg})`
           : combineMarks`${parsedCaller}.${func[1]}(${parsedParams})`,
