@@ -412,6 +412,14 @@ export interface RDatum<T = any> extends RQuery<T> {
     mul(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
     div(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
     mod(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitAnd(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitOr(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitXor(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitNot(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitSal(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitShl(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitSar(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
+    bitSht(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
     round(): T extends number ? RDatum<number> : never;
     ceil(): T extends number ? RDatum<number> : never;
     floor(): T extends number ? RDatum<number> : never;
@@ -626,6 +634,17 @@ export interface RTable<T = any> extends RSelection<T> {
     reconfigure(options: TableReconfigureOptions): RDatum<ReconfigureResult>;
     wait(options?: WaitOptions): RDatum<{
         ready: 1;
+    }>;
+    getWriteHook(): RDatum<{
+        function: Buffer;
+        query: string;
+    }>;
+    setWriteHook(func: null | Buffer | (((context: RDatum<{
+        primary_key: string;
+        timestamp: Date;
+    }>, oldVal: RDatum<T>, newVal: RDatum<T>) => any))): RDatum<{
+        function: Buffer;
+        query: string;
     }>;
 }
 export interface RDatabase {

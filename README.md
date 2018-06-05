@@ -60,9 +60,10 @@ const conn = await r.connect(options);
 
 ## Priority - medium
 
+- Pretty print error backtraces
 - Removing or fixing all unwanted tests
-- Supporting new API: `["SET_WRITE_HOOK","GET_WRITE_HOOK","BIT_AND","BIT_OR","BIT_XOR","BIT_NOT","BIT_SAL","BIT_SAR"]`
-  - Need documentation
+- New API tests (write hooks and bit ops)
+- Go through all type definitions and fix according to config
 
 ## Priority - low
 

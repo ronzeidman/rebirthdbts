@@ -137,16 +137,18 @@ export const termConfig: TermConfig[] = [
   [TermType.GET_NEAREST, 'getNearest', 2, 2, true],
   [TermType.POLYGON_SUB, 'polygonSub', 1, 1, false],
   [TermType.TO_JSON_STRING, 'toJSON', 0, 0, false],
-  [TermType.TO_JSON_STRING, 'toJsonString', 0, 0, false]
+  [TermType.TO_JSON_STRING, 'toJsonString', 0, 0, false],
   // not documented
-  // [TermType.SET_WRITE_HOOK, 'setWriteHook', -1, -1, true],
-  // [TermType.GET_WRITE_HOOK, 'getWriteHoot', -1, -1, true],
-  // [TermType.BIT_AND, 'bitAnd', -1, -1, true],
-  // [TermType.BIT_OR, 'bitOr', -1, -1, true],
-  // [TermType.BIT_XOR, 'bitXor', -1, -1, true],
-  // [TermType.BIT_NOT, 'bitNot', -1, -1, true],
-  // [TermType.BIT_SAL, 'bitShiftLeft', -1, -1, true],
-  // [TermType.BIT_SAR, 'bitShiftRight', -1, -1, true]
+  [TermType.SET_WRITE_HOOK, 'setWriteHook', 1, 1, false],
+  [TermType.GET_WRITE_HOOK, 'getWriteHook', 0, 0, false],
+  [TermType.BIT_AND, 'bitAnd', 1, -1, false],
+  [TermType.BIT_OR, 'bitOr', 1, -1, false],
+  [TermType.BIT_XOR, 'bitXor', 1, -1, false],
+  [TermType.BIT_NOT, 'bitNot', 0, 0, false],
+  [TermType.BIT_SAL, 'bitSal', 1, -1, false],
+  [TermType.BIT_SAL, 'bitShl', 1, -1, false],
+  [TermType.BIT_SAR, 'bitSar', 1, -1, false],
+  [197 as any /*TermType.BIT_SHR*/, 'bitShr', 1, -1, false]
 ];
 
 export const rConfig: TermConfig[] = [
