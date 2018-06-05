@@ -56,17 +56,21 @@ const conn = await r.connect(options);
 - Support write streams (Does anyone uses it? will add it if its a popular demand)
 - Multiple connection pools (if someone has a good usecase I'll support it)
 
-# TESTS ERROR STATUS:
+# TASKS REMAINING BEFORE RELEASE:
 
 ## Priority - medium
 
 - Pretty print error backtraces
 - Removing or fixing all unwanted tests
-- New API tests (write hooks and bit ops)
-- Go through all type definitions and fix according to config
+- Translate tests to TS
+- Add travis build step
+- Get forked into RebirthDB org
+- Publish in NPM
+- Go through all type definitions and fix according to config (maybe use https://github.com/rethinkdb/rethinkdb/blob/3edaeceb71c2caf1203025a752f61786364528ed/drivers/java/term_info.json)
 
 ## Priority - low
 
+- New API tests (write hooks and bit ops)
 - Supporting implicit var (`r.row`)
   - Use a lambda expression instead (row => row)
 
