@@ -965,7 +965,7 @@ describe('cursor', () => {
     return promise;
   });
 
-  if (satisfies(process.version, '>10')) {
+  if (satisfies(process.version, '>=10')) {
     it('`asyncIterator` should return an async iterator', async () => {
       connection = await r.connect({
         host: config.host,
