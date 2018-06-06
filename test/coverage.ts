@@ -1,19 +1,21 @@
 // 0 passing (10ms)
 // 1 failing
 import assert from 'assert';
-import * as path from 'path';
 import { TermType } from '../src/proto/enums';
+import {
+  bracket,
+  funcall,
+  rConfig,
+  rConsts,
+  termConfig
+} from '../src/query-builder/query-config';
 
-const keys = Object.keys(TermType)
-  .filter(key => isNaN(key as any))
-  .map(key => TermType[key]);
 describe('coverage', () => {
+  const keys = Object.keys(TermType)
+    .filter(key => isNaN(key as any))
+    .map(key => TermType[key]);
   // Test that the term appears somewhere in the file, which find terms that were not implemented
   it('all terms should be present in query-config.js', async () => {
-    const queryConfig = require(path.join(
-      __dirname,
-      '/../lib/query-builder/query-config.js'
-    ));
     const ignoredKeys = [
       TermType.FUNC,
       TermType.VAR,
@@ -26,11 +28,11 @@ describe('coverage', () => {
     ];
     const missing = [];
     const supportedTerms = [
-      queryConfig.bracket[0],
-      queryConfig.funcall[0],
-      ...queryConfig.termConfig.map(t => t[0]),
-      ...queryConfig.rConfig.map(t => t[0]),
-      ...queryConfig.rConsts.map(t => t[0])
+      bracket[0],
+      funcall[0],
+      ...termConfig.map(t => t[0]),
+      ...rConfig.map(t => t[0]),
+      ...rConsts.map(t => t[0])
     ];
     for (const key of keys) {
       if (ignoredKeys.includes(key)) {
