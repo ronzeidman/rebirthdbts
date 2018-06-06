@@ -1,15 +1,14 @@
 // 90 passing (2s)
 // 87 failing
-const path = require('path');
-const config = require(path.join(__dirname, '/config.js'));
-const { r } = require(path.join(__dirname, '/../lib'));
+import * as path from 'path';
+import config from './config';
+import { r } from '../src';
 const { globals } = require(path.join(
   __dirname,
   '/../lib/query-builder/globals'
 ));
-const util = require(path.join(__dirname, '/util/common.js'));
-const assert = require('assert');
-const uuid = util.uuid;
+import { uuid } from './util/common';
+import assert from 'assert';
 
 describe('backtraces', () => {
   let dbName, tableName, result;
@@ -1466,19 +1465,19 @@ Frames:
 
 Error:
 Expected type NUMBER but found STRING in:
-r.expr([1, 2, 3]).count(function() {
+r.expr([1, 2, 3]).count(() => {
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   return true
   ^^^^^^^^^^^
 }).add("Hello")
 ^^^^^^^^^^^^^^^
 */
-  it('Test backtrace for r.expr([1,2,3]).count(function() { return true}).add("Hello")', async () => {
+  it('Test backtrace for r.expr([1,2,3]).count(() => { return true}).add("Hello")', async () => {
     try {
       r.nextVarId = 1;
       await r
         .expr([1, 2, 3])
-        .count(function() {
+        .count(() => {
           return true;
         })
         .add('Hello')
@@ -1487,7 +1486,7 @@ r.expr([1, 2, 3]).count(function() {
     } catch (e) {
       assert.equal(
         e.message,
-        'Expected type NUMBER but found STRING in:\nr.expr([1, 2, 3]).count(function() {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return true\n    ^^^^^^^^^^^\n}).add("Hello")\n^^^^^^^^^^^^^^^\n'
+        'Expected type NUMBER but found STRING in:\nr.expr([1, 2, 3]).count(() => {\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    return true\n    ^^^^^^^^^^^\n}).add("Hello")\n^^^^^^^^^^^^^^^\n'
       );
     }
   });

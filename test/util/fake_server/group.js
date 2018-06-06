@@ -11,7 +11,7 @@ function Group(groups) {
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
     (function(key) {
-        Group.prototype[key] = function() {
+        Group.prototype[key] = () => {
             var groups = new Group();
             for(var k=0; k<this.groups.length; k++) {
                 groups.addGroup(this.groups[k].group, this.groups[k].reduction[key].apply(this.groups[k].reduction, arguments))
@@ -21,7 +21,7 @@ for(var i=0; i<keys.length; i++) {
     })(keys[i]);
 }
 
-Group.prototype.typeOf = function() {
+Group.prototype.typeOf = () => {
     if ((this.groups.length > 0) && (this.groups[0].reduction instanceof Sequence)) {
         return "GROUPED_STREAM";
     }
@@ -30,8 +30,8 @@ Group.prototype.typeOf = function() {
     }
 }
 
-Group.prototype.toDatum = function() {
-    var result = [];
+Group.prototype.toDatum = () => {
+    result = [];
     for(var i=0; i<this.groups.length; i++) {
         result.push({
             group: this.groups[i].group,
@@ -40,8 +40,8 @@ Group.prototype.toDatum = function() {
     }
     return result;
 }
-Group.prototype.ungroup = function() {
-    var result = new Sequence();
+Group.prototype.ungroup = () => {
+    result = new Sequence();
     for(var i=0; i<this.groups.length; i++) {
         result.push(this.groups[i]);
     }

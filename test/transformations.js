@@ -2,7 +2,7 @@
 // 3 failing
 const path = require('path')
 const config = require('./config.js')
-const { r } = require(path.join(__dirname, '/../lib'));
+import { r } from '../src';
 const assert = require('assert')
 const { uuid } = require(path.join(__dirname, '/util/common.js'))
 

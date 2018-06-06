@@ -59,7 +59,7 @@ describe('math and logic', () => {
   })
 
   it('`sub` should work', async function () {
-    var result = await r.expr(1).sub(1).run()
+    result = await r.expr(1).sub(1).run()
     assert.equal(result, 0)
 
     result = await r.sub(5, 3, 1).run()
@@ -164,7 +164,7 @@ describe('math and logic', () => {
   })
 
   it('`mod` should work', async function () {
-    var result = await r.expr(24).mod(7).run()
+    result = await r.expr(24).mod(7).run()
     assert.equal(result, 3)
 
     result = await r.mod(24, 7).run()

@@ -5,13 +5,13 @@ function Document(doc, table) {
     this.table = table;
 }
 
-Document.prototype.typeOf = function() {
+Document.prototype.typeOf = () => {
     return "SELECTION<OBJECT>";
 }
 Document.prototype.update = function(newValue, options, query) {
     options = options || {};
 
-    var result = helper.writeResult();
+    result = helper.writeResult();
     var primaryKey = this.table.options.primaryKey;
 
     // Update context
@@ -27,7 +27,7 @@ Document.prototype.update = function(newValue, options, query) {
 
 
     // TODO Refactor with replace
-    if ((updateValue[primaryKey] !== undefined) 
+    if ((updateValue[primaryKey] !== undefined)
         && (this.doc[primaryKey] !== updateValue[primaryKey])) {
         result.errors++;
         if(result.first_error === undefined) {
@@ -38,12 +38,12 @@ Document.prototype.update = function(newValue, options, query) {
     }
     else {
         if (options.return_vals === true) {
-            result.old_val = helper.deepCopy(this.doc); 
+            result.old_val = helper.deepCopy(this.doc);
         }
-        var changed = helper._merge(this.doc, updateValue)        
+        var changed = helper._merge(this.doc, updateValue)
 
         if (options.return_vals === true) {
-            result.new_val = helper.deepCopy(this.doc); 
+            result.new_val = helper.deepCopy(this.doc);
         }
 
         if (changed === true) {
@@ -59,7 +59,7 @@ Document.prototype.update = function(newValue, options, query) {
 Document.prototype.replace = function(newValue, options, query) {
     options = options || {};
 
-    var result = helper.writeResult();
+    result = helper.writeResult();
     var primaryKey = this.table.options.primaryKey;
 
     // Update context
@@ -75,7 +75,7 @@ Document.prototype.replace = function(newValue, options, query) {
 
 
 
-    if ((replaceValue[primaryKey] !== undefined) 
+    if ((replaceValue[primaryKey] !== undefined)
         && (this.doc[primaryKey] !== replaceValue[primaryKey])) {
         result.errors++;
         if(result.first_error === undefined) {
@@ -86,12 +86,12 @@ Document.prototype.replace = function(newValue, options, query) {
     }
     else {
         if (options.return_vals === true) {
-            result.old_val = helper.deepCopy(this.doc); 
+            result.old_val = helper.deepCopy(this.doc);
         }
-        var changed = helper._replace(this.doc, replaceValue)        
+        var changed = helper._replace(this.doc, replaceValue)
 
         if (options.return_vals === true) {
-            result.new_val = helper.deepCopy(this.doc); 
+            result.new_val = helper.deepCopy(this.doc);
         }
 
         if (changed === true) {
@@ -104,16 +104,16 @@ Document.prototype.replace = function(newValue, options, query) {
     return result;
 }
 
-Document.prototype.delete = function() {
-    var result = helper.writeResult();
+Document.prototype.delete = () => {
+    result = helper.writeResult();
     var primaryKey = this.table.options.primaryKey;
-    
+
     return this.table._delete(this.doc);
 
 }
 
-Document.prototype.toDatum = function() {
-    var result = {};
+Document.prototype.toDatum = () => {
+    result = {};
     for(var key in this.doc) {
         if (typeof this.doc[key].toDatum === "function") {
             result[key] = this.doc[key].toDatum();

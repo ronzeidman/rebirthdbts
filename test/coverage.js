@@ -1,13 +1,13 @@
 // 0 passing (10ms)
 // 1 failing
-const path = require('path');
+import * as path from 'path';
 const { TermType } = require(path.join(__dirname, '/../lib/proto/enums.js'));
 const fs = require('fs');
 const keys = Object.keys(TermType)
   .filter(key => isNaN(key))
   .map(key => TermType[key]);
 
-const assert = require('assert');
+import assert from 'assert';
 
 describe('coverage', () => {
   // Test that the term appears somewhere in the file, which find terms that were not implemented

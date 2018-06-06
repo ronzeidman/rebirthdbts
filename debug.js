@@ -1,7 +1,7 @@
 const { r } = require('./lib');
 const config = require('./test/config');
 const { uuid } = require('./test/util/common');
-const assert = require('assert');
+import assert from 'assert';
 const numDocs = 100; // Number of documents in the "big table" used to test the SUCCESS_PARTIAL
 const smallNumDocs = 5; // Number of documents in the "small table"
 const options = {

@@ -39,14 +39,14 @@ Query.prototype.run = function(query) {
     try {
         this.frames.push(0);
         this.options = query[2];
-        var result = this.evaluate(query[1]);
+        result = this.evaluate(query[1]);
         this.frames.pop();
 
         // TODO Check more types
         if (result instanceof Database) {
             throw new Error.ReqlRuntimeError("Query result must be of type DATUM, GROUPED_DATA, or STREAM (got DATABASE)");
         }
-        
+
 
         var type;
 
@@ -79,7 +79,7 @@ Query.prototype.evaluate = function(term) {
     else if (helper.isPlainObject(term)) {
         // Plain object
         var keys = Object.keys(term);
-        var result = {};
+        result = {};
         for(var i=0; i<keys.length; i++) {
             this.frames.push(keys[i])
             result[keys[i]] = this.evaluate(term[keys[i]]);
@@ -117,7 +117,7 @@ Query.prototype.evaluate = function(term) {
             return this.context[varId];
         case termTypes.JAVASCRIPT:
             //TODO That's unsafe... but can we do better?
-            var result;
+            result;
             with(this.context) {
                result = eval(term[1][0]);
             }
@@ -260,7 +260,7 @@ Query.prototype.evaluate = function(term) {
             return !value.toBool()
         case termTypes.ADD:
             this.frames.push(0);
-            var result = this.evaluate(term[1][0]);
+            result = this.evaluate(term[1][0]);
             this.frames.pop();
 
             var valueToAdd;
@@ -285,7 +285,7 @@ Query.prototype.evaluate = function(term) {
             return result;
         case termTypes.SUB:
             this.frames.push(0);
-            var result = this.evaluate(term[1][0]);
+            result = this.evaluate(term[1][0]);
             this.frames.pop();
 
             var valueToAdd;
@@ -309,7 +309,7 @@ Query.prototype.evaluate = function(term) {
             }
             return result;
         case termTypes.MUL:
-            var result = 1;
+            result = 1;
             for(var i=0; i<term[1].length; i++) {
                 this.frames.push(i);
                 valueToMul = this.evaluate(term[1][i]);
@@ -322,7 +322,7 @@ Query.prototype.evaluate = function(term) {
             return result;
         case termTypes.DIV:
             this.frames.push(0);
-            var result = this.evaluate(term[1][0]);
+            result = this.evaluate(term[1][0]);
             this.frames.pop();
 
             for(var i=1; i<term[1].length; i++) {
@@ -498,7 +498,7 @@ Query.prototype.evaluate = function(term) {
             var obj = this.evaluate(term[1][0])
             this.frames.pop();
 
-            var result = new Sequence();
+            result = new Sequence();
             var keys = Object.keys(obj);
             for(var i=0; i<keys.length; i++) {
                 result.push(keys[i]);
@@ -508,7 +508,7 @@ Query.prototype.evaluate = function(term) {
             if (term[1].length%2 === 1) {
                 throw new Error.ReqlRuntimeError("OBJECT expects an even number of arguments (but found "+term[1].length+")")
             }
-            var result = {};
+            result = {};
             var key, value;
             var i=0;
             while (i<term[1].length) {
@@ -626,7 +626,7 @@ Query.prototype.evaluate = function(term) {
         case termTypes.ORDERBY:
             var sequence = this.evaluate(term[1][0]);
             var fields = [];
-            
+
             for(var i=0; i<term[1].length; i++) {
                 fields.push(term[1][i]);
             }
@@ -708,7 +708,7 @@ Query.prototype.evaluate = function(term) {
             this.frames.push(0);
             var sequence = this.evaluate(term[1][0])
             this.frames.pop();
-            
+
             this.frames.push(1);
             var position = this.evaluate(term[1][1])
             if (position > sequence.sequence.length) {
@@ -736,13 +736,13 @@ Query.prototype.evaluate = function(term) {
                 end = this.evaluate(term[1][2])
                 this.frames.pop();
             }
-          
+
             return sequence.deleteAt(start, end, this);
         case termTypes.CHANGE_AT:
             this.frames.push(0);
             var sequence = this.evaluate(term[1][0])
             this.frames.pop();
-            
+
             this.frames.push(1);
             var position = this.evaluate(term[1][1])
             if (position > sequence.sequence.length) {
@@ -760,7 +760,7 @@ Query.prototype.evaluate = function(term) {
             this.frames.push(0);
             var sequence = this.evaluate(term[1][0])
             this.frames.pop();
-            
+
             this.frames.push(1);
             var position = this.evaluate(term[1][1])
             if (position > sequence.sequence.length) {
@@ -784,7 +784,7 @@ Query.prototype.evaluate = function(term) {
             this.frames.pop();
 
             var currentType = helper.typeOf(value);
-            
+
             if (newType === "NUMBER") {
                 return parseFloat(value);
             }
@@ -796,7 +796,7 @@ Query.prototype.evaluate = function(term) {
                     return value.toSequence();
                 }
                 else if (helper.isPlainObject(value)) {
-                    var result = new Sequence();
+                    result = new Sequence();
                     var keys = Object.keys(value);
                     for(var i=0; i<keys.length; i++) {
                         var pair = new Sequence();
@@ -941,7 +941,7 @@ Query.prototype.evaluate = function(term) {
             var table = this.evaluate(term[1][0]);
             this.frames.pop();
             this.frames.push(1);
-            var name = this.evaluate(term[1][1]); 
+            var name = this.evaluate(term[1][1]);
             this.frames.pop();
             var fn = term[1][2]; // DO NOT EVALUATE
             try {
@@ -1017,7 +1017,7 @@ Query.prototype.evaluate = function(term) {
 
         case termTypes.FUNCALL:
             // FUNCALL, FN [ AR[], BODY]
-            //  0       1  [ 0 [ ...], 
+            //  0       1  [ 0 [ ...],
             var fn = term[1][0];
             var argsFn = fn[1][0][1];
             for(var i=0; i<argsFn.length; i++) {
@@ -1025,7 +1025,7 @@ Query.prototype.evaluate = function(term) {
                 this.context[argsFn[i]] = this.evaluate(term[1][i+1]);
                 this.frames.pop();
             }
-            var result = this.evaluate(term[1][0]);
+            result = this.evaluate(term[1][0]);
 
             for(var i=0; i<argsFn.length; i++) {
                 delete this.context[argsFn[i]];
@@ -1074,7 +1074,7 @@ Query.prototype.evaluate = function(term) {
             var fnArgs = term[1][0];
             var body = term[1][1];
             this.frames.push(1);
-            var result = this.evaluate(body);
+            result = this.evaluate(body);
             this.frames.push(0);
             return result;
         case termTypes.ASC:
@@ -1204,7 +1204,7 @@ Query.prototype.evaluate = function(term) {
             var right = new Date(helper.dateToString(this.evaluate(term[1][2])));
             this.frames.pop();
 
-            var result = true;
+            result = true;
             if (options.left_bound === "closed") {
                 result = result && (left <= date)
             }
@@ -1464,7 +1464,7 @@ Query.prototype.evaluate = function(term) {
                 this.frames.pop();
             }
 
-            var result = str.split(separator);
+            result = str.split(separator);
             if (limit !== undefined) {
                 if (limit < result.length) {
                     result = result.slice(0, limit).concat(result.slice(limit).join(''))

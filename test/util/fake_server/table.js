@@ -26,7 +26,7 @@ function Table(name, db, options) {
 var keys = Object.keys(Selection.prototype);
 for(var i=0; i<keys.length; i++) {
     (function(key) {
-        Table.prototype[key] = function() {
+        Table.prototype[key] = () => {
             var docs = [];
             for(var internalPk in this.documents) {
                 docs.push(this.documents[internalPk]);
@@ -37,7 +37,7 @@ for(var i=0; i<keys.length; i++) {
     })(keys[i]);
 }
 
-Table.prototype.typeOf = function() {
+Table.prototype.typeOf = () => {
     return "TABLE";
 }
 
@@ -67,7 +67,7 @@ Table.prototype._delete = function(doc) {
 Table.prototype.insert = function(docs, options) {
     options = options || {};
 
-    var result = helper.writeResult();
+    result = helper.writeResult();
     var generatedKeys = [];
     var newUuid;
     if (docs instanceof Sequence) {
@@ -156,10 +156,10 @@ Table.prototype.getAll = function(args, options, query) {
 
     // If no secondary index is provided, we are dealing with the primary key
     if ((helper.isPlainObject(options) === false) || (typeof options.index !== 'string')) {
-        options.index = this.options.primaryKey; 
+        options.index = this.options.primaryKey;
     };
 
-        
+
     var keys = Object.keys(this.documents);
     var valueIndex, valuesIndex;
 
@@ -206,7 +206,7 @@ Table.prototype.between = function(left, right, options, query) {
 
     // If no secondary index is provided, we are dealing with the primary key
     if ((helper.isPlainObject(options) === false) || (typeof options.index !== 'string')) {
-        options.index = this.options.primaryKey; 
+        options.index = this.options.primaryKey;
     };
 
     //TODO Enforce valid options
@@ -217,7 +217,7 @@ Table.prototype.between = function(left, right, options, query) {
         options.right_bound = "open";
     }
 
-        
+
     var valueIndex, valuesIndex, keep;
 
     var keys = Object.keys(this.documents);
@@ -293,7 +293,7 @@ Table.prototype.between = function(left, right, options, query) {
         }
         delete query.context[varId];
     }
-    
+
     return selection;
 }
 
@@ -351,9 +351,9 @@ Table.prototype.indexDrop = function(name) {
     return {dropped: 1};
 }
 
-Table.prototype.indexWait = function() {
+Table.prototype.indexWait = () => {
     var args = Array.prototype.slice(arguments);
-    var result = [];
+    result = [];
 
     if (args.length === 0) {
         var indexes = Object.keys(this.indexes);
@@ -508,7 +508,7 @@ Table.prototype.orderBy = function(fields, options, query) {
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
     (function(key) {
-        Table.prototype[key] = function() {
+        Table.prototype[key] = () => {
             return Sequence.prototype[key].apply(this, arguments);
         }
     })(keys[i]);

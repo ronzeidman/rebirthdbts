@@ -1,9 +1,9 @@
 // 14 passing (67ms)
 // 3 failing
-const path = require('path');
+import * as path from 'path';
 const config = require('./config.js');
-const { r } = require(path.join(__dirname, '/../lib'));
-const assert = require('assert');
+import { r } from '../src';
+import assert from 'assert';
 
 describe('datum', function () {
   before(async () => {

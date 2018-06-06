@@ -1,7 +1,7 @@
-const path = require('path');
+import * as path from 'path';
 const config = require('./config.js');
-const { r } = require(path.join(__dirname, '/../lib'));
-const assert = require('assert');
+import { r } from '../src';
+import assert from 'assert';
 const { uuid } = require(path.join(__dirname, '/util/common.js'));
 const { Readable } = require('stream');
 
@@ -62,7 +62,7 @@ describe('stream', () => {
     await r.getPoolMaster().drain();
   });
 
-  it('`table` should return a stream', async function() {
+  it('`table` should return a stream', async () => {
     const stream = await r
       .db(dbName)
       .table(tableName)
@@ -72,7 +72,7 @@ describe('stream', () => {
     stream.close();
   });
 
-  it('Arrays should return a stream', async function() {
+  it('Arrays should return a stream', async () => {
     const data = [10, 11, 12, 13, 14, 15, 16];
     const stream = await r.expr(data).getCursor();
     assert(stream);
@@ -80,7 +80,7 @@ describe('stream', () => {
 
     await new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', function() {
+      stream.on('data', () => {
         count++;
         if (count === data.length) {
           resolve();
@@ -89,7 +89,7 @@ describe('stream', () => {
     });
   });
 
-  it('changes() should return a stream', async function() {
+  it('changes() should return a stream', async () => {
     const data = [{}, {}, {}, {}];
     const stream = await r
       .db(dbName)
@@ -100,7 +100,7 @@ describe('stream', () => {
     assert(stream instanceof Readable);
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', function() {
+      stream.on('data', () => {
         count++;
         if (count === data.length) {
           resolve();
@@ -117,7 +117,7 @@ describe('stream', () => {
     await promise;
   });
 
-  it('get().changes() should return a stream', async function() {
+  it('get().changes() should return a stream', async () => {
     const id = uuid();
     await r
       .db(dbName)
@@ -135,7 +135,7 @@ describe('stream', () => {
 
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', function() {
+      stream.on('data', () => {
         count++;
         if (count === 3) {
           resolve();
@@ -165,7 +165,7 @@ describe('stream', () => {
     await promise;
   });
 
-  it('`table` should return a stream - testing empty SUCCESS_COMPLETE', async function() {
+  it('`table` should return a stream - testing empty SUCCESS_COMPLETE', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -183,7 +183,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  it('Test flowing - event data', async function() {
+  it('Test flowing - event data', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -197,7 +197,7 @@ describe('stream', () => {
       .getCursor(connection, { maxBatchRows: 1 });
     await new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', function() {
+      stream.on('data', () => {
         count++;
         if (count === numDocs) {
           resolve();
@@ -208,7 +208,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  it('Test read', async function() {
+  it('Test read', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -221,7 +221,7 @@ describe('stream', () => {
       .table(tableName)
       .getCursor(connection, { maxBatchRows: 1 });
     await new Promise((resolve, reject) => {
-      stream.once('readable', function() {
+      stream.once('readable', () => {
         const doc = stream.read();
         if (doc === null) {
           reject(
@@ -243,7 +243,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  it('Test flowing - event data', async function() {
+  it('Test flowing - event data', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -257,7 +257,7 @@ describe('stream', () => {
       .getCursor(connection, { maxBatchRows: 1 });
     await new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', function() {
+      stream.on('data', () => {
         count++;
         if (count === numDocs) {
           resolve();
@@ -273,7 +273,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  it('Test read with null value', async function() {
+  it('Test read with null value', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -294,7 +294,7 @@ describe('stream', () => {
       )
       .getCursor(connection, { maxBatchRows: 1 });
     await new Promise((resolve, reject) => {
-      stream.once('readable', function() {
+      stream.once('readable', () => {
         let count = 0;
         stream.on('data', function(data) {
           count++;
@@ -310,7 +310,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  it('Test read', async function() {
+  it('Test read', async () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
@@ -323,7 +323,7 @@ describe('stream', () => {
       .table(tableName)
       .getCursor(connection, { maxBatchRows: 1 });
     await new Promise((resolve, reject) => {
-      stream.once('readable', function() {
+      stream.once('readable', () => {
         stream.read() === null
           ? reject(
               new Error(
@@ -337,7 +337,7 @@ describe('stream', () => {
     await connection.close();
   });
 
-  // it('Import with stream as default', async function() {
+  // it('Import with stream as default', async () => {
   //   const r1 = rethinkdbdash({
   //     host: config.host,
   //     port: config.port,
@@ -356,14 +356,14 @@ describe('stream', () => {
   //   await r1.getPool().drain();
   // });
 
-  it('toStream', async function() {
+  it('toStream', async () => {
     const stream = await r
       .db(dbName)
       .table(tableName)
       .getCursor();
 
     await new Promise((resolve, reject) => {
-      stream.once('readable', function() {
+      stream.once('readable', () => {
         const doc = stream.read();
         if (doc === null) {
           reject(
@@ -384,7 +384,7 @@ describe('stream', () => {
     await stream.close();
   });
 
-  it('toStream - with grouped data', async function() {
+  it('toStream - with grouped data', async () => {
     const stream = await r
       .db(dbName)
       .table(tableName)
@@ -392,7 +392,7 @@ describe('stream', () => {
       .getCursor();
 
     await new Promise((resolve, reject) => {
-      stream.once('readable', function() {
+      stream.once('readable', () => {
         const doc = stream.read();
         if (doc === null) {
           reject(

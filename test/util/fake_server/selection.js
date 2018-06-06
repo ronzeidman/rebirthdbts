@@ -11,7 +11,7 @@ function Selection(selection, table) {
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
     (function(key) {
-        Selection.prototype[key] = function() {
+        Selection.prototype[key] = () => {
             var docs = [];
             for(var i=0; i<this.selection.length; i++) {
                 docs.push(this.selection[i].doc)
@@ -22,11 +22,11 @@ for(var i=0; i<keys.length; i++) {
     })(keys[i]);
 }
 
-Selection.prototype.typeOf = function() {
+Selection.prototype.typeOf = () => {
     return "SELECTION<STREAM>";
 }
-Selection.prototype.toSequence = function() {
-    var result = new Sequence();
+Selection.prototype.toSequence = () => {
+    result = new Sequence();
     for(var i=0; i<this.selection.length; i++) {
         result.push(this.selection[i].doc);
     }
@@ -48,7 +48,7 @@ Selection.prototype.filter = function(filter, options, query) {
     if (options.default === undefined) {
         options.default = false;
     }
-    
+
     if ((Array.isArray(filter)) && (filter[0] === 69)) {
         var varId = filter[1][0][1][0];
         for(var i=0; i<this.selection.length; i++) {
@@ -80,14 +80,14 @@ Selection.prototype.filter = function(filter, options, query) {
             }
         }
     }
-    
+
     return selection;
 }
 
 Selection.prototype.update = function(rawUpdate, options, query) {
     options = options || {};
 
-    var result = helper.writeResult();
+    result = helper.writeResult();
     var primaryKey = this.table.options.primaryKey;
     var updateValue;
 
@@ -101,7 +101,7 @@ Selection.prototype.update = function(rawUpdate, options, query) {
 Selection.prototype.replace = function(newValue, options, query) {
     options = options || {};
 
-    var result = helper.writeResult();
+    result = helper.writeResult();
     var primaryKey = this.table.options.primaryKey;
     var replaceValue;
 
@@ -112,8 +112,8 @@ Selection.prototype.replace = function(newValue, options, query) {
 }
 
 
-Selection.prototype.delete = function() {
-    var result = helper.writeResult();
+Selection.prototype.delete = () => {
+    result = helper.writeResult();
     for(var i=0; i<this.selection.length; i++) {
         result.deleted += this.selection[i].delete().deleted;
     }
@@ -121,7 +121,7 @@ Selection.prototype.delete = function() {
 }
 
 Selection.prototype.skip = function(skip) {
-    var result = new Selection();
+    result = new Selection();
     for(var i=skip; i<this.selection.length; i++) {
         // TODO Should we also deep copy this.selection[i]
         result.push(this.selection[i]);
@@ -129,7 +129,7 @@ Selection.prototype.skip = function(skip) {
     return result;
 }
 Selection.prototype.limit = function(limit) {
-    var result = new Selection();
+    result = new Selection();
     for(var i=0; i<Math.min(limit,this.selection.length); i++) {
         // TODO Should we also deep copy this.selection[i]
         result.push(this.selection[i]);
@@ -186,8 +186,8 @@ Selection.prototype.orderBy = function(fields, options, query) {
 }
 
 
-Selection.prototype.toDatum = function() {
-    var result = [];
+Selection.prototype.toDatum = () => {
+    result = [];
     for(var i=0; i<this.selection.length; i++) {
         result.push(this.selection[i].toDatum())
     }

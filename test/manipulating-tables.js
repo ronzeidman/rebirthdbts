@@ -1,10 +1,10 @@
 // 15 passing (16s)
 // 2 failing
-const path = require('path');
+import * as path from 'path';
 const config = require('./config.js');
-const { r } = require(path.join(__dirname, '/../lib'));
+import { r } from '../src';
 const { uuid } = require(path.join(__dirname, '/util/common.js'));
-const assert = require('assert');
+import assert from 'assert';
 
 describe('manipulating tables', () => {
   let dbName;

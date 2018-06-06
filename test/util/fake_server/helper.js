@@ -144,7 +144,7 @@ helper.merge = function(self, toMerge, query) {
 }
 helper.mergeDatum = function merge(self, obj) {
     //A non in place merge, used for the ReQL `merge` command
-    var result = helper.deepCopy(self);
+    result = helper.deepCopy(self);
     for(var key in obj) {
         // Recursively merge only if both fields are objects, else we'll overwrite the field
         if (helper.isPlainObject(obj[key]) && helper.isPlainObject(result[key])) {
@@ -276,7 +276,7 @@ helper.validDate = function(date) {
 //TODO CamelCase the thing
 helper.dateToString = function(date) {
     var timezone = date.timezone;
-    
+
     // Extract data from the timezone
     var timezone_array = date.timezone.split(':');
     var sign = timezone_array[0][0]; // Keep the sign
@@ -361,7 +361,7 @@ helper.isDate = function(date) {
 
 // Obviously not a "full" deep copy...
 helper.deepCopy = function(value) {
-    var result;
+    result;
     if (helper.isPlainObject(value)) {
         result = {};
         for(var key in value) {
@@ -644,7 +644,7 @@ helper.filter = function(doc, filter) {
 }
 
 helper.toDatum = function(doc) {
-    var result;
+    result;
     if (Array.isArray(doc)) {
         result = [];
         for(var i=0; i<doc.length; i++) {
@@ -699,7 +699,7 @@ helper.isTrue = function(value) {
     return !(value === false || value === null)
 }
 helper.pluck = function(obj, keys) {
-    var result = {};
+    result = {};
     for(var i=0; i<keys.length; i++) {
         result[keys[i]] = obj[keys[i]];
     }
@@ -716,7 +716,7 @@ helper.hasFields = function(obj, keys) {
 
 
 helper.without = function(obj, keys) {
-    var result = helper.deepCopy(obj);
+    result = helper.deepCopy(obj);
 
     for(var i=0; i<keys.length; i++) {
         delete result[keys[i]];

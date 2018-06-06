@@ -37,20 +37,20 @@ function Server(options) {
         });
         index++
     });
-    self.server.listen(self.port, function() { //'listening' listener
+    self.server.listen(self.port, () => { //'listening' listener
     });
     self.server.on('error', function(error) {
     });
 }
 
-Server.prototype.close = function() {
+Server.prototype.close = () => {
     var self = this;
     this.server.close();
     for(var id in this._connections) {
         this._connections[id].connection.end();
     }
 }
-Server.prototype.destroy = function() {
+Server.prototype.destroy = () => {
     this.server.close();
     for(var id in this._connections) {
         this._connections[id].connection.destroy();
@@ -116,7 +116,7 @@ function Connection(connection, server, options) {
     self.auth;
     self.protocol;
 
-    self.connection.on('connect', function() {
+    self.connection.on('connect', () => {
         self.open = true;
         self.numConnections++;
     });
@@ -124,12 +124,12 @@ function Connection(connection, server, options) {
         self.buffer = Buffer.concat([self.buffer, data])
         self.read();
     });
-    self.connection.on("end", function() {
+    self.connection.on("end", () => {
         delete self.server._connections[self.id]
         self.numConnections--;
     });
 }
-Connection.prototype.read = function() {
+Connection.prototype.read = () => {
     var self = this;
 
     if (self.version === undefined) {
@@ -144,7 +144,7 @@ Connection.prototype.read = function() {
             else {
                 self.version = version;
             }
-            
+
             self.read();
         }
         // else, we need more data
@@ -194,7 +194,7 @@ Connection.prototype.read = function() {
                 self.buffer = self.buffer.slice(queryLength);
                 try {
                     if (queryStr === '[1,[15,[[14,["rethinkdb"]],"server_status"]],{"db":[14,["test"]]}]') {
-                        var result = self.server._mock.shift();
+                        result = self.server._mock.shift();
                         var response = {
                             t: protodef.Response.ResponseType.SUCCESS_SEQUENCE,
                             r: result

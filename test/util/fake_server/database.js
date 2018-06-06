@@ -14,7 +14,7 @@ Database.prototype.tableDrop = function(name) {
 Database.prototype.tableCreate = function(name) {
     this.tables[name] = new Table(name)
 }
-Database.prototype.typeOf = function() {
+Database.prototype.typeOf = () => {
     return "DB";
 }
 
