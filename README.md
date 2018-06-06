@@ -60,10 +60,6 @@ const conn = await r.connect(options);
 
 ## Priority - medium
 
-- Pretty print error backtraces
-- Removing or fixing all unwanted tests
-- Translate tests to TS
-- Add travis build step
 - Get forked into RebirthDB org
 - Publish in NPM
 - Go through all type definitions and fix according to config (maybe use https://github.com/rethinkdb/rethinkdb/blob/3edaeceb71c2caf1203025a752f61786364528ed/drivers/java/term_info.json)
