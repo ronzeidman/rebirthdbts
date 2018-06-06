@@ -155,6 +155,7 @@ export const rConfig: TermConfig[] = [
   [TermType.DB, 'db', 1, 1, false],
   [TermType.DB_CREATE, 'dbCreate', 1, 1, false],
   [TermType.DB_DROP, 'dbDrop', 1, 1, false],
+  [TermType.GRANT, 'grant', 2, 2, false],
   [TermType.DB_LIST, 'dbList', 0, 0, false],
   [TermType.TABLE, 'table', 1, 2, true],
   [TermType.TABLE_CREATE, 'tableCreate', 1, 2, true],
