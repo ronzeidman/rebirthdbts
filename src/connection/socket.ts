@@ -35,8 +35,8 @@ export class RebirthDBSocket extends EventEmitter {
     }
     return 'open';
   }
+  public socket?: Socket;
   private isOpen = false;
-  private socket?: Socket;
   private nextToken = 0;
   private buffer = new Buffer(0);
   private mode: 'handshake' | 'response' = 'handshake';

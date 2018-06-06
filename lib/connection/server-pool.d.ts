@@ -7,6 +7,7 @@ import { RebirthDBConnection } from './connection';
 import { RNConnOpts } from './socket';
 export declare class ServerConnectionPool extends EventEmitter implements ConnectionPool {
     readonly server: RNConnOpts;
+    private draining;
     private healthy;
     private buffer;
     private max;
@@ -22,8 +23,8 @@ export declare class ServerConnectionPool extends EventEmitter implements Connec
     eventNames(): string[];
     initConnections(): Promise<void>;
     readonly isHealthy: boolean;
-    waitForHealthy(): Promise<{}>;
-    setOptions({buffer, max, silent, log, timeoutError, timeoutGb, maxExponent}: RConnectionOptions): void;
+    waitForHealthy(this: ServerConnectionPool): Promise<ServerConnectionPool>;
+    setOptions({buffer, max, silent, log, timeoutError, timeoutGb, maxExponent}: RConnectionOptions): Promise<void>;
     drain({noreplyWait}?: {
         noreplyWait?: boolean;
     }, emit?: boolean): Promise<void>;

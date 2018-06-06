@@ -15,7 +15,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/test/cursor.ts"
+        "${workspaceFolder}/test/pool_legacy.ts"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"

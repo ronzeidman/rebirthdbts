@@ -18,6 +18,7 @@ const REBALANCE_EVERY = 30 * 1000;
 export class ServerConnectionPool extends EventEmitter
   implements ConnectionPool {
   public readonly server: RNConnOpts;
+  private draining = false;
   private healthy: boolean | undefined = undefined;
   private buffer: number;
   private max: number;
@@ -74,7 +75,7 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   public async initConnections(): Promise<void> {
-    if (this.connections.length < this.buffer) {
+    if (this.connections.length < this.buffer && !this.draining) {
       return this.createConnection().then(() => this.initConnections());
     }
   }
@@ -83,14 +84,14 @@ export class ServerConnectionPool extends EventEmitter
     return this.connections.some(conn => conn.open);
   }
 
-  public waitForHealthy() {
-    return new Promise((resolve, reject) => {
+  public waitForHealthy(this: ServerConnectionPool) {
+    return new Promise<ServerConnectionPool>((resolve, reject) => {
       if (this.isHealthy) {
-        resolve();
+        resolve(this);
       } else {
         this.once('healthy', healthy => {
           if (healthy) {
-            resolve();
+            resolve(this);
           } else {
             reject(
               new RebirthDBError('Error initializing pool', {
@@ -103,7 +104,7 @@ export class ServerConnectionPool extends EventEmitter
     });
   }
 
-  public setOptions({
+  public async setOptions({
     buffer = this.buffer,
     max = this.max,
     silent = this.silent,
@@ -119,7 +120,7 @@ export class ServerConnectionPool extends EventEmitter
     this.maxExponent = maxExponent;
     if (this.buffer < buffer && this.connections.length < buffer) {
       this.buffer = buffer;
-      this.initConnections();
+      await this.initConnections();
     } else {
       this.connections.forEach(conn => this.checkIdle(conn));
     }
@@ -130,7 +131,7 @@ export class ServerConnectionPool extends EventEmitter
         if (!conn) {
           break;
         }
-        this.closeConnection(conn);
+        await this.closeConnection(conn);
       }
     }
     this.max = max;
@@ -141,6 +142,7 @@ export class ServerConnectionPool extends EventEmitter
       this.emit('draining');
       this.setHealthy(undefined);
     }
+    this.draining = true;
     await Promise.all(this.connections.map(conn => this.closeConnection(conn)));
   }
 
@@ -202,7 +204,7 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   private subscribeToConnection(conn: RebirthDBConnection) {
-    if (conn.open) {
+    if (conn.open && !this.draining) {
       const size = this.getOpenConnections().length;
       this.emit('size', size);
       this.setHealthy(true);
@@ -215,7 +217,7 @@ export class ServerConnectionPool extends EventEmitter
             this.setHealthy(false);
             // if no connections are available need to remove all connections and start over
             // so it won't try to reconnect all connections at once
-            this.drain({}, false).then(() => this.initConnections());
+            // this.drain({}, false).then(() => this.initConnections());
           }
           conn.removeAllListeners();
           this.persistConnection(conn);
@@ -225,15 +227,16 @@ export class ServerConnectionPool extends EventEmitter
     }
   }
 
-  private closeConnection(conn: RebirthDBConnection) {
+  private async closeConnection(conn: RebirthDBConnection) {
     this.removeIdleTimer(conn);
     conn.removeAllListeners();
-    conn.close();
     this.connections = this.connections.filter(c => c !== conn);
+    await conn.close();
     this.emit('size', this.getOpenConnections().length);
   }
 
   private checkIdle(conn: RebirthDBConnection) {
+    this.removeIdleTimer(conn);
     if (!conn.numOfQueries) {
       this.emit('available-size', this.getIdleConnections().length);
       this.timers.set(
@@ -241,13 +244,12 @@ export class ServerConnectionPool extends EventEmitter
         setTimeout(() => {
           this.timers.delete(conn);
           if (this.connections.length > this.buffer) {
-            this.closeConnection(conn);
-            this.emit('available-size', this.getIdleConnections().length);
+            this.closeConnection(conn).then(() =>
+              this.emit('available-size', this.getIdleConnections().length)
+            );
           }
         }, this.timeoutGb)
       );
-    } else {
-      this.removeIdleTimer(conn);
     }
   }
 
@@ -261,7 +263,7 @@ export class ServerConnectionPool extends EventEmitter
 
   private async persistConnection(conn: RebirthDBConnection) {
     let exp = 0;
-    while (this.connections.includes(conn) && !conn.open) {
+    while (this.connections.includes(conn) && !conn.open && !this.draining) {
       try {
         await conn.reconnect();
       } catch (err) {
@@ -280,9 +282,9 @@ export class ServerConnectionPool extends EventEmitter
         exp = Math.min(exp + 1, this.maxExponent);
       }
     }
-    if (!this.connections.includes(conn)) {
+    if (!this.connections.includes(conn) || this.draining) {
       // draining/removing
-      await conn.close();
+      await this.closeConnection(conn);
       return;
     }
     this.subscribeToConnection(conn);

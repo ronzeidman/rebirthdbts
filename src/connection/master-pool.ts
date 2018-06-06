@@ -20,6 +20,7 @@ import { ServerConnectionPool } from './server-pool';
 import { setConnectionDefaults } from './socket';
 
 export class MasterConnectionPool extends EventEmitter implements MasterPool {
+  public draining = false;
   private healthy: boolean | undefined = undefined;
   private discovery: boolean;
   private discoveryCursor?: RCursor<Changes<ServerStatus>>;
@@ -27,8 +28,6 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   private serverPools: ServerConnectionPool[];
 
   private connParam: RPoolConnectionOptions;
-
-  private timers = new Map<ServerConnectionPool, NodeJS.Timer>();
 
   constructor({
     db = 'test',
@@ -111,10 +110,14 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
 
   public async initServers(serverNum = 0): Promise<void> {
     if (serverNum < this.servers.length) {
-      return this.createServerPool(this.servers[serverNum]).then(() =>
-        this.initServers(serverNum + 1)
-      );
-    } else {
+      return this.createServerPool(this.servers[serverNum]).then(pool => {
+        if (!this.draining) {
+          return this.initServers(serverNum + 1);
+        } else {
+          return pool.drain();
+        }
+      });
+    } else if (!this.draining) {
       this.setServerPoolsOptions(this.connParam);
     }
   }
@@ -145,11 +148,12 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
 
   public async drain({ noreplyWait = false } = {}) {
     this.emit('draining');
+    this.draining = true;
     this.discovery = false;
     if (this.discoveryCursor) {
       this.discoveryCursor.close();
     }
-    this.setHealthy(undefined);
+    this.setHealthy(false);
     await Promise.all(this.serverPools.map(pool => this.closeServerPool(pool)));
   }
 
@@ -190,7 +194,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
       buffer: 1,
       max: 1
     });
-    this.serverPools = [...this.serverPools, pool];
+    this.serverPools.push(pool);
     this.subscribeToPool(pool);
     pool.initConnections().catch(() => undefined);
     return pool.waitForHealthy();
@@ -202,19 +206,28 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     const healthyLength = pools.filter(pool => pool.isHealthy).length;
     for (let i = 0; i < pools.length; i++) {
       const pool = pools[i];
-      pool.setOptions(
-        pool.isHealthy
-          ? {
-              ...otherParams,
-              buffer:
-                Math.floor(buffer / healthyLength) +
-                (i === buffer % healthyLength - 1 ? 1 : 0),
-              max:
-                Math.floor(max / healthyLength) +
-                (i === max % healthyLength - 1 ? 1 : 0)
-            }
-          : otherParams
-      );
+      pool
+        .setOptions(
+          pool.isHealthy
+            ? {
+                ...otherParams,
+                buffer:
+                  Math.floor(buffer / healthyLength) +
+                  (i === (buffer % healthyLength) - 1 ? 1 : 0),
+                max:
+                  Math.floor(max / healthyLength) +
+                  (i === (max % healthyLength) - 1 ? 1 : 0)
+              }
+            : otherParams
+        )
+        .then(() => {
+          if (this.draining) {
+            pool.drain();
+          }
+        });
+    }
+    if (this.draining) {
+      pools.forEach(pool => pool.drain());
     }
   }
 
@@ -307,9 +320,24 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
           this.emit('error', error);
         }
       })
-      .on('healthy', healthy =>
-        this.setHealthy(!!this.getHealthyServerPools().length)
-      );
+      .on('healthy', healthy => {
+        if (!healthy) {
+          const { server } = pool;
+          this.closeServerPool(pool)
+            .then(
+              () =>
+                new Promise(resolve =>
+                  setTimeout(resolve, this.connParam.timeoutError)
+                )
+            )
+            .then(() => {
+              if (!this.draining) {
+                return this.createServerPool(server).catch(() => undefined);
+              }
+            });
+        }
+        this.setHealthy(!!this.getHealthyServerPools().length);
+      });
   }
 
   private setHealthy(healthy: boolean | undefined) {
@@ -321,10 +349,13 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     }
   }
 
-  private closeServerPool(pool: ServerConnectionPool) {
+  private async closeServerPool(pool: ServerConnectionPool) {
     if (pool) {
       pool.removeAllListeners();
-      this.serverPools = this.serverPools.filter(sp => sp !== pool);
+      const index = this.serverPools.indexOf(pool);
+      if (index >= 0) {
+        this.serverPools.splice(index, 1);
+      }
       return pool.drain();
     }
   }

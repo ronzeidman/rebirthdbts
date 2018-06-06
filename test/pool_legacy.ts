@@ -1,8 +1,7 @@
 // 13 passing (2m)
-import * as path from 'path';
-import config from './config';
-import { r } from '../src';
 import assert from 'assert';
+import { r } from '../src';
+import config from './config';
 import { uuid } from './util/common';
 
 describe('pool legacy', () => {
@@ -202,9 +201,10 @@ describe('pool legacy', () => {
       await r.expr(1).run();
       assert.fail('should throw');
     } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
+      assert(
+        e.message.startsWith(
+          '`run` was called without a connection and no pool has been created after:'
+        )
       );
     } finally {
       await r.getPoolMaster().drain();
@@ -221,9 +221,10 @@ describe('pool legacy', () => {
       await r.expr(1).run();
       assert.fail('should throw');
     } catch (e) {
-      assert.equal(
-        e.message,
-        'None of the pools have an opened connection and failed to open a new one.'
+      assert(
+        e.message.startsWith(
+          '`run` was called without a connection and no pool has been created after:'
+        )
       );
     } finally {
       await r.getPoolMaster().drain();

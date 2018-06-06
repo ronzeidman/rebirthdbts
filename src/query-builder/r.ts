@@ -75,7 +75,6 @@ export const r: R = expr as any;
   await c.reconnect();
   return c;
 };
-(r as any).nextVarId = 1;
 r.getPoolMaster = () => (r as any).pool;
 r.setNestingLevel = (level: number) => (globals.nestingLevel = level);
 r.setArrayLimit = (limit?: number) => (globals.arrayLimit = limit);

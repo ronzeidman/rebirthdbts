@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
+import { Socket } from 'net';
 import { RServerConnectionOptions } from '..';
 import { QueryJson, ResponseJson } from '../internal-types';
 export declare type RNConnOpts = RServerConnectionOptions & {
@@ -13,8 +14,8 @@ export declare class RebirthDBSocket extends EventEmitter {
     runningQueries: number[];
     lastError?: Error;
     readonly status: string;
+    socket?: Socket;
     private isOpen;
-    private socket?;
     private nextToken;
     private buffer;
     private mode;

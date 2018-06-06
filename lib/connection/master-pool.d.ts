@@ -5,13 +5,13 @@ import { Cursor } from '../response/cursor';
 import { Connection, MasterPool, RPoolConnectionOptions, RunOptions } from '../types';
 import { ServerConnectionPool } from './server-pool';
 export declare class MasterConnectionPool extends EventEmitter implements MasterPool {
+    draining: boolean;
     private healthy;
     private discovery;
     private discoveryCursor?;
     private servers;
     private serverPools;
     private connParam;
-    private timers;
     constructor({db, user, password, discovery, servers, buffer, max, timeout, pingInterval, timeoutError, timeoutGb, maxExponent, silent, log}?: RPoolConnectionOptions);
     setOptions({discovery, buffer, max, timeoutError, timeoutGb, maxExponent, silent, log}: {
         discovery?: boolean;

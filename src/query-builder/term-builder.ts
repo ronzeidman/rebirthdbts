@@ -109,7 +109,7 @@ export const runQueryFunc = (term: TermJson) => {
     const c = conn instanceof RebirthDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
     const opt = conn instanceof RebirthDBConnection ? options : conn;
-    if (!c && !cpool) {
+    if (!c && (!cpool || cpool.draining)) {
       throw new RebirthDBError(
         '`run` was called without a connection and no pool has been created after:',
         { term, type: RebirthDBErrorType.API_FAIL }
@@ -145,7 +145,7 @@ export const getCursorQueryFunc = (term: TermJson) => {
     const c = conn instanceof RebirthDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
     const opt = conn instanceof RebirthDBConnection ? options : conn;
-    if (!c && !cpool) {
+    if (!c && (!cpool || cpool.draining)) {
       throw new RebirthDBError(
         '`getCursor` was called without a connection and no pool has been created after:',
         { term, type: RebirthDBErrorType.API_FAIL }
