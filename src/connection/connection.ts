@@ -77,7 +77,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
   }
 
   public get numOfQueries() {
-    return this.socket.runningQueries.length;
+    return this.socket.runningQueries.size;
   }
 
   public async close({ noreplyWait = false } = {}): Promise<void> {
@@ -86,9 +86,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (noreplyWait) {
         await this.noreplyWait();
       }
-      this.socket.close();
+      await this.socket.close();
     } catch (err) {
-      this.socket.close();
+      await this.socket.close();
       throw err;
     }
   }
@@ -110,7 +110,9 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     try {
       let timer: any;
       await Promise.race([
-        new Promise(resolve => (timer = setTimeout(resolve, this.timeout))),
+        new Promise(
+          resolve => (timer = setTimeout(resolve, this.timeout * 1000))
+        ),
         this.socket.connect()
       ]);
       if (timer) {
@@ -131,7 +133,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     if (this.socket.status !== 'open') {
       this.emit('timeout');
       this.emit('close');
-      this.close();
+      this.close().catch(() => undefined);
       throw new RebirthDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
           this.connectionOptions.port
@@ -217,7 +219,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           QueryType.START,
           [TermType.ERROR, ['ping']]
         ]);
-        const result = await this.socket.readNext(token, 5000);
+        const result = await this.socket.readNext(token);
         if (
           result.t !== ResponseType.RUNTIME_ERROR ||
           result.e !== ErrorType.USER ||

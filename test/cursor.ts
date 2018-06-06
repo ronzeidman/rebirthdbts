@@ -3,7 +3,13 @@
 import assert from 'assert';
 import * as iterall from 'iterall';
 import { satisfies } from 'semver';
-import { Connection, RCursor, r } from '../src';
+import {
+  Connection,
+  RCursor,
+  RebirthDBErrorType,
+  isRebirthDBError,
+  r
+} from '../src';
 import config from './config';
 import { uuid } from './util/common';
 
@@ -609,13 +615,20 @@ describe('cursor', () => {
     const promise = new Promise((resolve, reject) => {
       let i = 0;
       while (true) {
-        feed.next().then(assert);
+        feed
+          .next()
+          .then(assert)
+          .catch(err => {
+            if (
+              isRebirthDBError(err) &&
+              err.type === RebirthDBErrorType.CANCEL
+            ) {
+              resolve();
+            }
+          });
         i++;
         if (i === smallNumDocs) {
-          return feed
-            .close()
-            .then(resolve)
-            .catch(reject);
+          return feed.close().catch(reject);
         }
       }
     });
@@ -966,7 +979,7 @@ describe('cursor', () => {
   });
 
   if (satisfies(process.version, '>=10')) {
-    it('`asyncIterator` should return an async iterator', async () => {
+    it('cursor should be an async iterator', async () => {
       connection = await r.connect({
         host: config.host,
         port: config.port,
@@ -987,8 +1000,8 @@ describe('cursor', () => {
       connection.socket.close();
     });
 
-    it('`asyncIterator` should have a working `next`method', async () => {
-      feed = await r
+    it('`asyncIterator` should work', async () => {
+      const feed = await r
         .db(dbName)
         .table(tableName2)
         .changes()
@@ -996,23 +1009,23 @@ describe('cursor', () => {
       assert(feed);
 
       const value = 1;
-      const iterator = feed;
-      assert(iterator);
 
-      const promise = new Promise((resolve, reject) => {
-        iterator
-          .next()
-          .then(resolve)
-          .catch(reject);
-      });
+      const promise = (async () => {
+        let res: any;
+        for await (const row of feed) {
+          res = row;
+          feed.close();
+        }
+        return res;
+      })();
 
       await r
         .db(dbName)
         .table(tableName2)
-        .update({ foo: value })
+        .insert({ foo: value })
         .run();
       result = await promise;
-      assert(result.value.new_val.foo === value);
+      assert(result.new_val.foo === value);
     });
   }
 });

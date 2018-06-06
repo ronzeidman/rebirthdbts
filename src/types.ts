@@ -305,7 +305,7 @@ export type RCursorType =
 export interface RCursor<T = any> extends NodeJS.ReadableStream {
   readonly profile: any;
   getType(): RCursorType;
-  next(timeout?: number): Promise<T>;
+  next(): Promise<T>;
   toArray(): Promise<T[]>;
   close(): Promise<void>;
   each(

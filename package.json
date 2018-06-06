@@ -25,7 +25,7 @@
   "homepage": "https://github.com/ronzeidman/rebirthdbts#readme",
   "devDependencies": {
     "@types/mocha": "^5.2.0",
-    "@types/node": "^8.10.17",
+    "@types/node": "^10.3.1",
     "@types/semver": "^5.5.0",
     "coveralls": "^3.0.1",
     "iterall": "^1.2.2",

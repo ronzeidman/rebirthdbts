@@ -145,6 +145,7 @@ describe('manipulating databases', () => {
 
     result = await r.dbDrop(dbName).run();
     assert.deepEqual(result.dbs_dropped, 1);
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     result = await r.dbList().run();
     assert(Array.isArray(result));

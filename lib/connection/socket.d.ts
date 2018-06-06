@@ -11,15 +11,18 @@ export declare class RebirthDBSocket extends EventEmitter {
     connectionOptions: RNConnOpts;
     readonly user: string;
     readonly password: Buffer;
-    runningQueries: number[];
     lastError?: Error;
     readonly status: string;
     socket?: Socket;
+    runningQueries: Map<number, {
+        resolve: (data: Error | ResponseJson) => void;
+        query: QueryJson;
+        data: Promise<ResponseJson>;
+    }>;
     private isOpen;
     private nextToken;
     private buffer;
     private mode;
-    private data;
     private ca?;
     constructor({connectionOptions, user, password}: {
         connectionOptions: RNConnOpts;
@@ -29,15 +32,12 @@ export declare class RebirthDBSocket extends EventEmitter {
     eventNames(): string[];
     connect(): Promise<void>;
     sendQuery(query: QueryJson, token?: number): number;
-    stopQuery(token: number): void;
-    readNext<T = ResponseJson>(token: number, timeout?: number, query?: QueryJson): Promise<T>;
+    stopQuery(token: number): number;
+    readNext<T = ResponseJson>(token: number): Promise<T>;
     close(): void;
     private performHandshake();
     private handleHandshakeData();
     private handleData();
-    private startQuery(token);
-    private finishQuery(token);
-    private setData(token, response?);
     private handleError(err);
 }
 export declare function setConnectionDefaults(connectionOptions: RServerConnectionOptions): RNConnOpts;

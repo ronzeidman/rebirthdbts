@@ -3,7 +3,7 @@ import { isUndefined } from 'util';
 import { RebirthDBSocket } from '../connection/socket';
 import { RebirthDBError, isRebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
-import { QueryType, ResponseNote, ResponseType } from '../proto/enums';
+import { ResponseNote, ResponseType } from '../proto/enums';
 import { RCursor, RCursorType, RebirthDBErrorType, RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
 
@@ -48,8 +48,15 @@ export class Cursor extends Readable implements RCursor {
       .catch(err => {
         if (
           isRebirthDBError(err) &&
-          err.type === RebirthDBErrorType.CURSOR_END
+          [
+            RebirthDBErrorType.CURSOR_END,
+            RebirthDBErrorType.CANCEL,
+            RebirthDBErrorType.CONNECTION
+          ].includes(err.type)
         ) {
+          if (err.type === RebirthDBErrorType.CONNECTION && !this.closed) {
+            this.emit('error', err);
+          }
           this.push(null);
           this.emitting = false;
         } else {
@@ -81,12 +88,14 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public async close() {
-    this.conn.stopQuery(this.token);
+    if (this.conn.status === 'open') {
+      this.conn.stopQuery(this.token);
+    }
     this.emitting = false;
     this.closed = true;
   }
 
-  public async next(timeout = -1) {
+  public async next() {
     if (this.emitting) {
       throw new RebirthDBError(
         'You cannot call `next` once you have bound listeners on the Feed.',
@@ -99,7 +108,7 @@ export class Cursor extends Readable implements RCursor {
         { type: RebirthDBErrorType.CURSOR }
       );
     }
-    return await this._next(timeout);
+    return await this._next();
   }
 
   public async toArray() {
@@ -159,7 +168,14 @@ export class Cursor extends Readable implements RCursor {
         break;
       }
       resume = callback(err, next);
-      if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CONNECTION) {
+      if (
+        isRebirthDBError(err) &&
+        [
+          RebirthDBErrorType.CURSOR_END,
+          RebirthDBErrorType.CANCEL,
+          RebirthDBErrorType.CONNECTION
+        ].includes(err.type)
+      ) {
         break;
       }
     }
@@ -219,16 +235,18 @@ export class Cursor extends Readable implements RCursor {
       }
       if (
         !isRebirthDBError(error) ||
-        error.type !== RebirthDBErrorType.CURSOR_END
+        ![RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
+          error.type
+        )
       ) {
         throw error;
       }
     }
   }
 
-  public async resolve(timeout = -1) {
+  public async resolve() {
     try {
-      const response = await this.conn.readNext(this.token, timeout);
+      const response = await this.conn.readNext(this.token);
       const { n: notes, t: type, r: results, p: profile } = response;
       this._profile = profile;
       this.position = 0;
@@ -245,16 +263,13 @@ export class Cursor extends Readable implements RCursor {
     }
   }
 
-  private async _next(timeout = -1) {
+  private async _next() {
     let results = this.getResults();
     while (
       isUndefined(results) ||
       (this.hasNextBatch && isUndefined(results[this.position]))
     ) {
-      if (results) {
-        this.conn.sendQuery([QueryType.CONTINUE], this.token);
-      }
-      await this.resolve(timeout);
+      await this.resolve();
       results = this.getResults();
     }
     if (isUndefined(results) || isUndefined(results[this.position])) {

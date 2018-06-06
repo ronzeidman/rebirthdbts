@@ -1,7 +1,6 @@
-import * as path from 'path';
-import config from './config';
-import { r } from '../src';
 import assert from 'assert';
+import { r } from '../src';
+import config from './config';
 import { uuid } from './util/common';
 const { Readable } = require('stream');
 
@@ -108,7 +107,7 @@ describe('stream', () => {
         }
       });
     });
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 500));
     await r
       .db(dbName)
       .table(tableName)
