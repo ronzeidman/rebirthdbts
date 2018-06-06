@@ -7,7 +7,8 @@ export type Primitives = null | string | boolean | number;
 export type Format = 'native' | 'raw';
 export type Durability = 'hard' | 'soft';
 export type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
-export type FieldSelector = object | any[] | string;
+export type MultiFieldSelector = object | any[] | string;
+export type FieldSelector<T, U = any> = string | Func<T, U>;
 
 export interface ServerInfo {
   id: string;
@@ -437,7 +438,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   ): T extends any[] ? RES : never;
 
   withFields(
-    ...fields: FieldSelector[]
+    ...fields: MultiFieldSelector[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
   filter<U = T extends Array<infer T1> ? T1 : never>(
     predicate: (doc: RDatum<U>) => RValue<boolean>,
@@ -454,7 +455,7 @@ export interface RDatum<T = any> extends RQuery<T> {
 
   // ORDER BY
   orderBy<U = T extends Array<infer T1> ? T1 : never>(
-    ...fields: Array<FieldSelector | Func<U>>
+    ...fields: Array<FieldSelector<T>>
   ): T extends Array<infer T1> ? RDatum<T> : never;
 
   // GROUP
@@ -462,26 +463,26 @@ export interface RDatum<T = any> extends RQuery<T> {
     F extends T extends Array<infer T1> ? keyof T1 : never,
     D extends T extends Array<infer T2> ? T2 : never
   >(
-    ...fieldOrFunc: Array<F | Func<D>>
+    ...fieldOrFunc: Array<FieldSelector<T>>
   ): T extends Array<infer T1> ? RDatum : never; // <GroupResults<T[U], T[]>>;
 
   ungroup(): RDatum<Array<GroupResults<any, any>>>;
 
   // SELECT FUNCTIONS
   count<U = T extends Array<infer T1> ? T1 : never>(
-    value?: FieldSelector | Func<U, boolean>
+    value?: RValue<U> | Func<U, boolean>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   sum<U = T extends Array<infer T1> ? T1 : never>(
-    value?: FieldSelector | Func<U, number | null>
+    value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   avg<U = T extends Array<infer T1> ? T1 : never>(
-    value?: FieldSelector | Func<U, number | null>
+    value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   min<U = T extends Array<infer T1> ? T1 : never>(
-    value?: FieldSelector | Func<U, number | null>
+    value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   max<U = T extends Array<infer T1> ? T1 : never>(
-    value?: FieldSelector | Func<U, number | null>
+    value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   reduce<U = any, ONE = T extends Array<infer T1> ? T1 : never>(
     reduceFunction: (left: RDatum<ONE>, right: RDatum<ONE>) => any
@@ -503,11 +504,11 @@ export interface RDatum<T = any> extends RQuery<T> {
   distinct(): RDatum<T>;
 
   pluck(
-    ...fields: FieldSelector[]
+    ...fields: MultiFieldSelector[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
 
   without(
-    ...fields: FieldSelector[]
+    ...fields: MultiFieldSelector[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
 
   merge<U = any>(
@@ -540,7 +541,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     regexp: RValue<string>
   ): T extends string ? RDatum<MatchResults> : never;
   split(
-    seperator: RValue<string>,
+    seperator?: RValue<string>,
     maxSplits?: RValue<number>
   ): T extends string ? RDatum<string[]> : never;
   upcase(): T extends string ? RDatum<string> : never;
@@ -694,8 +695,8 @@ export interface RStream<T = any> extends RQuery<T[]> {
   ): RStream<U>;
 
   // WHERE
-  withFields(...fields: FieldSelector[]): RStream<Partial<T>>;
-  hasFields(...fields: FieldSelector[]): RStream<T>;
+  withFields(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
+  hasFields(...fields: MultiFieldSelector[]): RStream<T>;
   filter(
     predicate: (doc: RDatum<T>) => RValue<boolean>,
     options?: { default: boolean }
@@ -711,7 +712,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
 
   // ORDER BY
   orderBy(
-    ...fieldOrIndex: Array<FieldSelector | Func<T> | { index: string }>
+    ...fieldOrIndex: Array<FieldSelector<T> | { index: string }>
   ): RStream<T>; // also r.desc(string)
 
   // GROUP
@@ -747,8 +748,8 @@ export interface RStream<T = any> extends RQuery<T[]> {
   distinct(): RStream<T>;
   distinct<TIndex = any>(index: { index: string }): RStream<TIndex>;
 
-  pluck(...fields: FieldSelector[]): RStream<Partial<T>>;
-  without(...fields: FieldSelector[]): RStream<Partial<T>>;
+  pluck(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
+  without(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
 
   merge<U = any>(...objects: any[]): RStream<U>;
 
@@ -787,8 +788,8 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
 
   // WHERE
 
-  withFields(...fields: FieldSelector[]): RFeed<Partial<T>>;
-  hasFields(...fields: FieldSelector[]): RFeed<T>;
+  withFields(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
+  hasFields(...fields: MultiFieldSelector[]): RFeed<T>;
   filter(
     predicate: (doc: RDatum<T>) => RValue<boolean>,
     options?: { default: boolean }
@@ -806,8 +807,8 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
     }
   ): RFeed<RES>;
 
-  pluck(...fields: FieldSelector[]): RFeed<Partial<T>>;
-  without(...fields: FieldSelector[]): RFeed<Partial<T>>;
+  pluck(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
+  without(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
 }
 
 export interface RSingleSelection<T = any> extends RDatum<T> {
@@ -1004,6 +1005,11 @@ export interface R {
       }>
     >;
   }>;
+  reconfigure(
+    tableOrDatabase: RTable | RDatabase,
+    options: TableReconfigureOptions
+  ): RDatum<ReconfigureResult>;
+  rebalance(tableOrDatabase: RTable | RDatabase): RDatum<RebalanceResult>;
 
   dbCreate(dbName: RValue<string>): RDatum<DBChangeResult>;
   dbDrop(dbName: RValue<string>): RDatum<DBChangeResult>;
@@ -1021,23 +1027,23 @@ export interface R {
   // additional
   count<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
-    value?: FieldSelector | Func<T, boolean>
+    value?: FieldSelector<T, boolean>
   ): RDatum<number>;
   sum<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
-    value?: FieldSelector | Func<T, number | null>
+    value?: FieldSelector<T, number | null>
   ): RDatum<number>;
   avg<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
-    value?: FieldSelector | Func<T, number | null>
+    value?: FieldSelector<T, number | null>
   ): RDatum<number>;
   min<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
-    value?: FieldSelector | Func<T, number | null> | { index: string }
+    value?: FieldSelector<T, number | null> | { index: string }
   ): RDatum<number>;
   max<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
-    value?: FieldSelector | Func<T, number | null> | { index: string }
+    value?: FieldSelector<T, number | null> | { index: string }
   ): RDatum<number>;
   distinct<T>(caller: T[] | RDatum<T[]>): RDatum<T[]>;
   map<T = any>(

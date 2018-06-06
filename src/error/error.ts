@@ -49,6 +49,18 @@ export class RebirthDBError extends Error {
     Error.captureStackTrace(this, RebirthDBError);
   }
 
+  public addBacktrace({
+    term,
+    query,
+    backtrace
+  }: {
+    term?: TermJson;
+    query?: QueryJson;
+    backtrace?: [string, string];
+  } = {}) {
+    this.message = buildMessage(this.msg, query, term, backtrace);
+  }
+
   private setErrorType({
     errorCode,
     type,
@@ -147,6 +159,7 @@ function pretty(query: string, mark: string) {
   let lineMarkPos = 0;
   let lineMark = '';
   let nextSign = '';
+  let isLastIndentDot = false;
   const openBrackets: string[] = [];
   for (let i = 0; i < query.length; i++) {
     char = query.charAt(i);
@@ -165,10 +178,12 @@ function pretty(query: string, mark: string) {
       case '.':
         eacape = false;
         newline = false;
-        if (inStr || result.length - lastNewlinePos <= 80) {
+        if (inStr || result.length - lastNewlinePos <= 80 + indent) {
           result += char;
         } else {
-          indent += 4;
+          if (!isLastIndentDot) {
+            indent += 4;
+          }
           lineMark += mark.substring(lineMarkPos, i);
           lineMarkPos = i + 1;
           result = result.trimRight();
@@ -180,6 +195,7 @@ function pretty(query: string, mark: string) {
             : `\n${' '.repeat(indent)}.`;
           lastNewlinePos = result.length - indent - 1;
           lineMark = ' '.repeat(indent) + nextSign;
+          isLastIndentDot = true;
         }
         break;
       case ',':
@@ -188,8 +204,6 @@ function pretty(query: string, mark: string) {
           result += char;
         } else {
           newline = true;
-          openIndentPos.push(indent);
-          indent += 4;
           lineMark += mark.substring(lineMarkPos, i + 1);
           lineMarkPos = i + 1;
           result += lineMark.includes('^')
@@ -201,12 +215,13 @@ function pretty(query: string, mark: string) {
         break;
       case '{':
         eacape = false;
-        if (inStr) {
+        if (inStr || query.charAt(i + 1) === '}') {
           newline = false;
           result += char;
         } else {
           newline = true;
           openIndentPos.push(indent);
+          isLastIndentDot = false;
           indent += 4;
           lineMark += mark.substring(lineMarkPos, i + 1);
           lineMarkPos = i + 1;
@@ -220,7 +235,7 @@ function pretty(query: string, mark: string) {
       case '}':
         newline = false;
         eacape = false;
-        if (inStr) {
+        if (inStr || query.charAt(i - 1) === '{') {
           result += char;
         } else {
           indent = openIndentPos.pop() || 0;

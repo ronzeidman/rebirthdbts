@@ -8,11 +8,10 @@
     "test": "test"
   },
   "scripts": {
-    "test":
-      "ts-mocha -p ./tsconfig.test.json --check-leaks -t 20000 ./test/*.ts",
+    "test": "nyc --reporter=text ts-mocha -p ./tsconfig.test.json --check-leaks -t 60000 ./test/*.ts",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "build": "tsc",
-    "proto":
-      "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"
+    "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"
   },
   "repository": {
     "type": "git",
@@ -27,9 +26,13 @@
   "devDependencies": {
     "@types/mocha": "^5.2.0",
     "@types/node": "^8.10.17",
+    "@types/semver": "^5.5.0",
+    "coveralls": "^3.0.1",
     "iterall": "^1.2.2",
     "mocha": "^5.2.0",
+    "nyc": "^12.0.2",
     "protobufjs": "^6.8.6",
+    "semver": "^5.5.0",
     "ts-mocha": "^1.2.0",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",

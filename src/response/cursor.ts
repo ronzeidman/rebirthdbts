@@ -159,6 +159,9 @@ export class Cursor extends Readable implements RCursor {
         break;
       }
       resume = callback(err, next);
+      if (isRebirthDBError(err) && err.type === RebirthDBErrorType.CONNECTION) {
+        break;
+      }
     }
     if (onFinishedCallback) {
       onFinishedCallback();
@@ -224,16 +227,22 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public async resolve(timeout = -1) {
-    const response = await this.conn.readNext(this.token, timeout);
-    const { n: notes, t: type, r: results, p: profile } = response;
-    this._profile = profile;
-    this.position = 0;
-    this.results = getNativeTypes(results, this.runOptions);
-    this.handleResponseNotes(type, notes);
-    this.handleErrors(response);
-    this.hasNextBatch =
-      this.type.endsWith('Feed') || type === ResponseType.SUCCESS_PARTIAL;
-    return this.results;
+    try {
+      const response = await this.conn.readNext(this.token, timeout);
+      const { n: notes, t: type, r: results, p: profile } = response;
+      this._profile = profile;
+      this.position = 0;
+      this.results = getNativeTypes(results, this.runOptions);
+      this.handleResponseNotes(type, notes);
+      this.handleErrors(response);
+      this.hasNextBatch =
+        this.type.endsWith('Feed') || type === ResponseType.SUCCESS_PARTIAL;
+      return this.results;
+    } catch (error) {
+      this.results = undefined;
+      this.hasNextBatch = false;
+      throw error;
+    }
   }
 
   private async _next(timeout = -1) {

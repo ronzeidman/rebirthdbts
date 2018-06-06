@@ -8,18 +8,18 @@ function Sequence(sequence) {
 }
 
 //TODO Prefix with an underscore
-Sequence.prototype.push = function(element) {
+Sequence.prototype.push = (element) => {
     this.sequence.push(element);
     this.length++;
     return this;
 }
-Sequence.prototype.unshift = function(element) {
+Sequence.prototype.unshift = (element) => {
     this.sequence.unshift(element);
     this.length++;
     return this;
 }
 
-Sequence.prototype.sum = function(field, query) {
+Sequence.prototype.sum = (field, query) => {
     //TODO Check field
     var fn, toAdd;
     if (typeof field === "string") {
@@ -52,7 +52,7 @@ Sequence.prototype.sum = function(field, query) {
     return result;
 }
 
-Sequence.prototype.avg = function(field, query) {
+Sequence.prototype.avg = (field, query) => {
     //TODO Check field
     var fn;
     if (typeof field === "string") {
@@ -87,7 +87,7 @@ Sequence.prototype.avg = function(field, query) {
     }
     return result/count;
 }
-Sequence.prototype.min = function(field, query) {
+Sequence.prototype.min = (field, query) => {
     //TODO Check field
     var fn;
     if (typeof field === "string") {
@@ -128,7 +128,7 @@ Sequence.prototype.min = function(field, query) {
     return result;
 }
 
-Sequence.prototype.max = function(field, query) {
+Sequence.prototype.max = (field, query) => {
     //TODO Check field
     var fn;
     if (typeof field === "string") {
@@ -170,7 +170,7 @@ Sequence.prototype.max = function(field, query) {
 }
 
 
-Sequence.prototype.group = function(fn, query) {
+Sequence.prototype.group = (fn, query) => {
     var Group = require(__dirname+"/group.js");
 
     if (typeof fn === "string") {
@@ -193,7 +193,7 @@ Sequence.prototype.group = function(fn, query) {
     return groups;
 }
 
-Sequence.prototype.concat = function(other) {
+Sequence.prototype.concat = (other) => {
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
         result.push(this.sequence[i]);
@@ -204,7 +204,7 @@ Sequence.prototype.concat = function(other) {
     }
     return result;
 }
-Sequence.prototype.insertAt = function(position, value) {
+Sequence.prototype.insertAt = (position, value) => {
     if (position < 0) {
         position = this.sequence.length+position+1;
     }
@@ -221,7 +221,7 @@ Sequence.prototype.insertAt = function(position, value) {
     return result;
 }
 
-Sequence.prototype.changeAt = function(position, value) {
+Sequence.prototype.changeAt = (position, value) => {
     if (position < 0) {
         position = this.sequence.length+position;
     }
@@ -239,7 +239,7 @@ Sequence.prototype.changeAt = function(position, value) {
     }
     return result;
 }
-Sequence.prototype.spliceAt = function(position, other) {
+Sequence.prototype.spliceAt = (position, other) => {
     if (position < 0) {
         position = this.sequence.length+position+1;
     }
@@ -249,7 +249,7 @@ Sequence.prototype.spliceAt = function(position, other) {
     }
     return result;
 }
-Sequence.prototype.deleteAt = function(start, end, query) {
+Sequence.prototype.deleteAt = (start, end, query) => {
     if (start < 0) {
         start = this.sequence.length+start;
     }
@@ -274,7 +274,7 @@ Sequence.prototype.deleteAt = function(start, end, query) {
 
 
 
-Sequence.prototype.zip = function(query) {
+Sequence.prototype.zip = (query) => {
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
         result.push(helper.merge(this.sequence[i].left, this.sequence[i].right, query));
@@ -283,7 +283,7 @@ Sequence.prototype.zip = function(query) {
 }
 Sequence.prototype.distinct = () => {
     var copy = this.toSequence();
-    copy.sequence.sort(function(left, right) {
+    copy.sequence.sort((left, right) => {
         if (helper.lt(left, right)) {
             return -1;
         }
@@ -305,7 +305,7 @@ Sequence.prototype.distinct = () => {
     return result;
 }
 
-Sequence.prototype.reduce = function(fn, query) {
+Sequence.prototype.reduce = (fn, query) => {
     if (this.sequence.length === 0) {
         throw new Error.ReqlRuntimeError("Cannot reduce over an empty stream", query.frames)
     }
@@ -328,7 +328,7 @@ Sequence.prototype.reduce = function(fn, query) {
         return result;
     }
 }
-Sequence.prototype.hasFields = function(keys) {
+Sequence.prototype.hasFields = (keys) => {
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
         if (helper.hasFields(this.sequence[i], keys)) {
@@ -339,7 +339,7 @@ Sequence.prototype.hasFields = function(keys) {
 }
 
 //TODO Use a hash? a deterministic JSON.stringify? (for all the set/array operations
-Sequence.prototype.difference = function(other) {
+Sequence.prototype.difference = (other) => {
     result = new Sequence();
     var found;
 
@@ -359,7 +359,7 @@ Sequence.prototype.difference = function(other) {
 
     return result;
 }
-Sequence.prototype.setInsert = function(value) {
+Sequence.prototype.setInsert = (value) => {
     result = new Sequence();
     var found;
 
@@ -391,7 +391,7 @@ Sequence.prototype.setInsert = function(value) {
 
     return result;
 }
-Sequence.prototype.contains = function(predicate, query) {
+Sequence.prototype.contains = (predicate, query) => {
     if ((Array.isArray(predicate)) && (predicate[0] === 69)) {
         var varId = predicate[1][0][1][0];
         for(var i=0; i<this.sequence.length; i++) {
@@ -415,7 +415,7 @@ Sequence.prototype.contains = function(predicate, query) {
     }
     return false;
 }
-Sequence.prototype.setIntersection = function(other) {
+Sequence.prototype.setIntersection = (other) => {
     result = new Sequence();
     var found;
 
@@ -433,7 +433,7 @@ Sequence.prototype.setIntersection = function(other) {
     }
     return result;
 }
-Sequence.prototype.setDifference = function(other) {
+Sequence.prototype.setDifference = (other) => {
     result = new Sequence();
     var found;
 
@@ -461,7 +461,7 @@ Sequence.prototype.setDifference = function(other) {
     return result;
 }
 
-Sequence.prototype.setUnion = function(other) {
+Sequence.prototype.setUnion = (other) => {
     // TODO This is a really not efficient now...
     result = this;
     for(var i=0; i<other.sequence.length; i++) {
@@ -479,7 +479,7 @@ Sequence.prototype.toSequence = () => {
     }
     return result;
 }
-Sequence.prototype.sample = function(sample) {
+Sequence.prototype.sample = (sample) => {
     if (sample > this.sequence.length) {
         return sequence.toSequence();
     }
@@ -495,7 +495,7 @@ Sequence.prototype.sample = function(sample) {
     }
 }
 
-Sequence.prototype.merge = function(toMerge, query) {
+Sequence.prototype.merge = (toMerge, query) => {
     result = new Sequence();
 
     for(var i=0; i<this.sequence.length; i++) {
@@ -506,7 +506,7 @@ Sequence.prototype.merge = function(toMerge, query) {
 }
 
 
-Sequence.prototype.eqJoin = function(leftField, other, options, query) {
+Sequence.prototype.eqJoin = (leftField, other, options, query) => {
     // other is a table since eqJoin requires an index
 
     result = new Sequence();
@@ -538,7 +538,7 @@ Sequence.prototype.eqJoin = function(leftField, other, options, query) {
     return result;
 }
 
-Sequence.prototype.join = function(type, other, predicate, query) {
+Sequence.prototype.join = (type, other, predicate, query) => {
     result = new Sequence();
     var varIds, predicateResult, returned;
 
@@ -574,17 +574,17 @@ Sequence.prototype.join = function(type, other, predicate, query) {
     return result;
 }
 
-Sequence.prototype.filter = function(filter, options, query) {
+Sequence.prototype.filter = (filter, options, query) => {
     //TODO
     return new Sequence();
 }
 
-Sequence.prototype.pop = function(element) {
+Sequence.prototype.pop = (element) => {
     this.length--;
     this.sequence.pop();
 }
 
-Sequence.prototype._get = function(i) {
+Sequence.prototype._get = (i) => {
     return this.sequence[i];
 }
 
@@ -592,7 +592,7 @@ Sequence.prototype.count = () => {
     return this.sequence.length;
 }
 
-Sequence.prototype.skip = function(skip) {
+Sequence.prototype.skip = (skip) => {
     result = new Sequence();
     for(var i=skip; i<this.sequence.length; i++) {
         // TODO Should we also deep copy this.selection[i]
@@ -601,7 +601,7 @@ Sequence.prototype.skip = function(skip) {
     return result;
 }
 
-Sequence.prototype.limit = function(limit) {
+Sequence.prototype.limit = (limit) => {
     result = new Sequence();
     for(var i=0; i<Math.min(limit,this.sequence.length); i++) {
         // TODO Should we also deep copy this.selection[i]
@@ -610,14 +610,14 @@ Sequence.prototype.limit = function(limit) {
     return result;
 }
 
-Sequence.prototype.pluck = function(keys) {
+Sequence.prototype.pluck = (keys) => {
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
         result.push(helper.pluck(this.sequence[i], keys));
     }
     return result;
 }
-Sequence.prototype.without = function(keys) {
+Sequence.prototype.without = (keys) => {
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
         result.push(helper.without(this.sequence[i], keys));
@@ -626,7 +626,7 @@ Sequence.prototype.without = function(keys) {
 }
 
 
-Sequence.prototype.slice = function(start, end, options) {
+Sequence.prototype.slice = (start, end, options) => {
     result = new Sequence();
     var leftBound = options.left_bound || "closed";
     var rightBound = options.right_bound || "open";
@@ -658,7 +658,7 @@ Sequence.prototype.slice = function(start, end, options) {
     return result;
 }
 
-Sequence.prototype.nth = function(index, query) {
+Sequence.prototype.nth = (index, query) => {
     if (index < 0) {
         index = this.sequence.length+index;
     }
@@ -668,7 +668,7 @@ Sequence.prototype.nth = function(index, query) {
     return this.sequence[index]
 }
 
-Sequence.prototype.indexesOf = function(predicate, query) {
+Sequence.prototype.indexesOf = (predicate, query) => {
     result = new Sequence();
 
     var value, varId, predicateResult;
@@ -702,7 +702,7 @@ Sequence.prototype.isEmpty = () => {
 }
 
 
-Sequence.prototype.map = function(fn, query) {
+Sequence.prototype.map = (fn, query) => {
     //TODO Check that fn is a function
     result = new Sequence();
     for(var i=0; i<this.sequence.length; i++) {
@@ -719,7 +719,7 @@ Sequence.prototype.map = function(fn, query) {
     return result;
 }
 
-Sequence.prototype.concatMap = function(fn, query) {
+Sequence.prototype.concatMap = (fn, query) => {
     //TODO Check that fn is a function
     result = new Sequence();
     var partial;
@@ -740,7 +740,7 @@ Sequence.prototype.concatMap = function(fn, query) {
     }
     return result;
 }
-Sequence.prototype.withFields = function(fields) {
+Sequence.prototype.withFields = (fields) => {
     // fields is a Sequence
 
     result = new Sequence();
@@ -765,9 +765,9 @@ Sequence.prototype.withFields = function(fields) {
     return result;
 }
 
-Sequence.prototype.orderBy = function(fields, options, query) {
+Sequence.prototype.orderBy = (fields, options, query) => {
     result = new Sequence(this.sequence);
-    result.sequence.sort(function(left, right) {
+    result.sequence.sort((left, right) => {
         var index = 0;
         var field, leftValue, rightValue;
 

@@ -19,5 +19,10 @@ export declare class RebirthDBError extends Error {
     private query?;
     private backtrace?;
     constructor(msg: string, {type, term, query, errorCode, backtrace, responseType, responseErrorType}?: RebirthDBErrorArgs);
+    addBacktrace({term, query, backtrace}?: {
+        term?: TermJson;
+        query?: QueryJson;
+        backtrace?: [string, string];
+    }): void;
     private setErrorType({errorCode, type, responseErrorType});
 }

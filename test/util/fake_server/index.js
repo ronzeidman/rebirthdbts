@@ -28,7 +28,7 @@ function Server(options) {
     self.id = _util.uuid();
 
     var index = 0;
-    self.server = net.createServer(function(connection) { //'connection' listener
+    self.server = net.createServer((connection) => { //'connection' listener
         self._connections[index] = new Connection(connection, self, {
             version: self.version,
             authKey: self.authKey,
@@ -39,7 +39,7 @@ function Server(options) {
     });
     self.server.listen(self.port, () => { //'listening' listener
     });
-    self.server.on('error', function(error) {
+    self.server.on('error', (error) => {
     });
 }
 
@@ -57,7 +57,7 @@ Server.prototype.destroy = () => {
     }
 }
 
-Server.prototype.mockServersStatus = function(servers) {
+Server.prototype.mockServersStatus = (servers) => {
     var response = [];
     for(var i=0; i<servers.length; i++) {
         var server = servers[i];
@@ -98,7 +98,7 @@ Server.prototype.mockServersStatus = function(servers) {
     this._mock.push(response);
 }
 
-Server.prototype.cleanMockServersStatus = function(servers) {
+Server.prototype.cleanMockServersStatus = (servers) => {
     this._mock = [];
 }
 
@@ -120,7 +120,7 @@ function Connection(connection, server, options) {
         self.open = true;
         self.numConnections++;
     });
-    self.connection.on('data', function(data) {
+    self.connection.on('data', (data) => {
         self.buffer = Buffer.concat([self.buffer, data])
         self.read();
     });

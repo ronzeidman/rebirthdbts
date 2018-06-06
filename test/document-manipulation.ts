@@ -1,13 +1,13 @@
 // 42 passing (2s)
 // 5 failing
-import * as path from 'path';
-const config = require('./config.js');
-import { r } from '../src';
 import assert from 'assert';
-const { uuid } = require(path.join(__dirname, '/util/common.js'));
+import { r } from '../src';
+import config from './config';
+import { uuid } from './util/common';
 
 describe('document manipulation', () => {
-  let dbName, tableName;
+  let dbName: string;
+  let tableName: string;
 
   before(async () => {
     await r.connectPool(config);
@@ -28,7 +28,7 @@ describe('document manipulation', () => {
     await r.getPoolMaster().drain();
   });
 
-  it('`row => row` should work - 1', async function () {
+  it('`row => row` should work - 1', async () => {
     const result = await r
       .expr([1, 2, 3])
       .map(row => row)
@@ -36,7 +36,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 2, 3]);
   });
 
-  it('`row => row` should work - 2', async function () {
+  it('`row => row` should work - 2', async () => {
     let result = await r
       .db(dbName)
       .table(tableName)
@@ -52,7 +52,7 @@ describe('document manipulation', () => {
     assert.equal(result.replaced, 1);
   });
 
-  it('`row => row` should work - 3', async function () {
+  it('`row => row` should work - 3', async () => {
     const result = await r
       .db(dbName)
       .table(tableName)
@@ -61,18 +61,18 @@ describe('document manipulation', () => {
     assert.equal(result.replaced, 0);
   });
 
-  it('`row => row` should work - 4', async function () {
+  it('`row => row` should work - 4', async () => {
     const result = await r
       .db(dbName)
       .table(tableName)
-      .replace(function (doc) {
+      .replace(function(doc) {
         return doc.merge({ idCopyReplace: doc('id') });
       })
       .run();
     assert.equal(result.replaced, 1);
   });
 
-  it('`row => row` should work - 5', async function () {
+  it('`row => row` should work - 5', async () => {
     const result = await r
       .db(dbName)
       .table(tableName)
@@ -81,7 +81,7 @@ describe('document manipulation', () => {
     assert.equal(result.deleted, 1);
   });
 
-  it('`pluck` should work', async function () {
+  it('`pluck` should work', async () => {
     let result = await r
       .expr({ a: 0, b: 1, c: 2 })
       .pluck('a', 'b')
@@ -95,7 +95,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [{ a: 0, b: 1 }, { a: 0, b: 10 }]);
   });
 
-  it('`pluck` should throw if no argument has been passed', async function () {
+  it('`pluck` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -107,15 +107,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`pluck` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`without` should work', async function () {
+  it('`without` should work', async () => {
     let result = await r
       .expr({ a: 0, b: 1, c: 2 })
       .without('c')
@@ -129,7 +129,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [{ b: 1 }, { b: 10 }]);
   });
 
-  it('`without` should throw if no argument has been passed', async function () {
+  it('`without` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -140,15 +140,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`without` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`merge` should work', async function () {
+  it('`merge` should work', async () => {
     let result = await r
       .expr({ a: 0 })
       .merge({ b: 1 })
@@ -185,10 +185,10 @@ describe('document manipulation', () => {
     assert.deepEqual(result, { a: 1, nested: { a: 1 }, b: 2 });
   });
 
-  it('`merge` should take an anonymous function', async function () {
+  it('`merge` should take an anonymous function', async () => {
     let result = await r
       .expr({ a: 0 })
-      .merge(function (doc) {
+      .merge(function(doc) {
         return { b: doc('a').add(1) };
       })
       .run();
@@ -203,7 +203,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, { a: 0, b: 1 });
   });
 
-  it('`literal` should work', async function () {
+  it('`literal` should work', async () => {
     const result = await r
       .expr({ a: { b: 1 } })
       .merge({ a: r.literal({ c: 2 }) })
@@ -211,7 +211,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, { a: { c: 2 } });
   });
 
-  it('`literal` is not defined after a term', async function () {
+  it('`literal` is not defined after a term', async () => {
     try {
       await r
         .expr(1)
@@ -219,11 +219,11 @@ describe('document manipulation', () => {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert.equal(e.message, '`literal` is not defined after:\nr.expr(1)');
+      assert(e.message.endsWith('.literal is not a function'));
     }
   });
 
-  it('`merge` should throw if no argument has been passed', async function () {
+  it('`merge` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -235,15 +235,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`merge` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`literal` should work with no argument', async function () {
+  it('`literal` should work with no argument', async () => {
     const result = await r
       .expr({ foo: 'bar' })
       .merge({ foo: r.literal() })
@@ -251,7 +251,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, {});
   });
 
-  it('`append` should work', async function () {
+  it('`append` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .append(4)
@@ -259,7 +259,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 2, 3, 4]);
   });
 
-  it('`append` should throw if no argument has been passed', async function () {
+  it('`append` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -271,15 +271,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`append` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`prepend` should work', async function () {
+  it('`prepend` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .prepend(4)
@@ -287,7 +287,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [4, 1, 2, 3]);
   });
 
-  it('`prepend` should throw if no argument has been passed', async function () {
+  it('`prepend` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -299,15 +299,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`prepend` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`difference` should work', async function () {
+  it('`difference` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .prepend(4)
@@ -315,7 +315,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [4, 1, 2, 3]);
   });
 
-  it('`difference` should throw if no argument has been passed', async function () {
+  it('`difference` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -327,15 +327,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`difference` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`setInsert` should work', async function () {
+  it('`setInsert` should work', async () => {
     let result = await r
       .expr([1, 2, 3])
       .setInsert(4)
@@ -349,7 +349,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 2, 3]);
   });
 
-  it('`setInsert` should throw if no argument has been passed', async function () {
+  it('`setInsert` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -361,15 +361,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`setInsert` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`setUnion` should work', async function () {
+  it('`setUnion` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .setUnion([2, 4])
@@ -377,7 +377,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 2, 3, 4]);
   });
 
-  it('`setUnion` should throw if no argument has been passed', async function () {
+  it('`setUnion` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -389,15 +389,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`setUnion` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`setIntersection` should work', async function () {
+  it('`setIntersection` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .setIntersection([2, 4])
@@ -405,7 +405,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [2]);
   });
 
-  it('`setIntersection` should throw if no argument has been passed', async function () {
+  it('`setIntersection` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -417,15 +417,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`setIntersection` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`setDifference` should work', async function () {
+  it('`setDifference` should work', async () => {
     const result = await r
       .expr([1, 2, 3])
       .setDifference([2, 4])
@@ -433,7 +433,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 3]);
   });
 
-  it('`setDifference` should throw if no argument has been passed', async function () {
+  it('`setDifference` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -445,15 +445,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`setDifference` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`getField` should work', async function () {
+  it('`getField` should work', async () => {
     let result = await r
       .expr({ a: 0, b: 1 })('a')
       .run();
@@ -471,7 +471,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [0, 1]);
   });
 
-  it('`(...)` should throw if no argument has been passed', async function () {
+  it('`(...)` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -479,11 +479,18 @@ describe('document manipulation', () => {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert.equal(e.message, '`(...)` takes 1 argument, 0 provided.');
+      assert.equal(
+        e.message,
+        '`(...)` takes 1 argument, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
+      );
     }
   });
 
-  it('`getField` should throw if no argument has been passed', async function () {
+  it('`getField` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -494,16 +501,16 @@ describe('document manipulation', () => {
     } catch (e) {
       assert.equal(
         e.message,
-        '`(...)` takes 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+        '`getField` takes 1 argument, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`hasFields` should work', async function () {
+  it('`hasFields` should work', async () => {
     const result = await r
       .expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }, { b: 1, c: 3 }])
       .hasFields('a', 'c')
@@ -511,7 +518,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }]);
   });
 
-  it('`hasFields` should throw if no argument has been passed', async function () {
+  it('`hasFields` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -523,15 +530,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`hasFields` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`insertAt` should work', async function () {
+  it('`insertAt` should work', async () => {
     let result = await r
       .expr([1, 2, 3, 4])
       .insertAt(0, 2)
@@ -545,7 +552,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 2, 3, 2, 4]);
   });
 
-  it('`insertAt` should throw if no argument has been passed', async function () {
+  it('`insertAt` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -557,15 +564,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`insertAt` takes 2 arguments, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`spliceAt` should work', async function () {
+  it('`spliceAt` should work', async () => {
     const result = await r
       .expr([1, 2, 3, 4])
       .spliceAt(1, [9, 9])
@@ -573,7 +580,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 9, 9, 2, 3, 4]);
   });
 
-  it('`spliceAt` should throw if no argument has been passed', async function () {
+  it('`spliceAt` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -584,16 +591,16 @@ describe('document manipulation', () => {
     } catch (e) {
       assert.equal(
         e.message,
-        '`spliceAt` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+        '`spliceAt` takes 2 arguments, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`deleteAt` should work', async function () {
+  it('`deleteAt` should work', async () => {
     let result = await r
       .expr([1, 2, 3, 4])
       .deleteAt(1)
@@ -607,7 +614,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 4]);
   });
 
-  it('`deleteAt` should throw if no argument has been passed', async function () {
+  it('`deleteAt` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -619,15 +626,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`deleteAt` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`deleteAt` should throw if too many arguments', async function () {
+  it('`deleteAt` should throw if too many arguments', async () => {
     try {
       await r
         .db(dbName)
@@ -639,15 +646,15 @@ describe('document manipulation', () => {
       assert.equal(
         e.message,
         '`deleteAt` takes at most 2 arguments, 4 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`changeAt` should work', async function () {
+  it('`changeAt` should work', async () => {
     const result = await r
       .expr([1, 2, 3, 4])
       .changeAt(1, 3)
@@ -655,7 +662,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [1, 3, 3, 4]);
   });
 
-  it('`changeAt` should throw if no argument has been passed', async function () {
+  it('`changeAt` should throw if no argument has been passed', async () => {
     try {
       await r
         .db(dbName)
@@ -666,16 +673,16 @@ describe('document manipulation', () => {
     } catch (e) {
       assert.equal(
         e.message,
-        '`changeAt` takes at least 1 argument, 0 provided after:\nr.db("' +
-        dbName +
-        '").table("' +
-        tableName +
-        '")'
+        '`changeAt` takes 2 arguments, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
 
-  it('`keys` should work', async function () {
+  it('`keys` should work', async () => {
     const result = await r
       .expr({ a: 0, b: 1, c: 2 })
       .keys()
@@ -684,7 +691,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, ['a', 'b', 'c']);
   });
 
-  it('`keys` throw on a string', async function () {
+  it('`keys` throw on a string', async () => {
     try {
       await r
         .expr('hello')
@@ -699,7 +706,7 @@ describe('document manipulation', () => {
     }
   });
 
-  it('`values` should work', async function () {
+  it('`values` should work', async () => {
     const result = await r
       .expr({ a: 0, b: 1, c: 2 })
       .values()
@@ -708,7 +715,7 @@ describe('document manipulation', () => {
     assert.deepEqual(result, [0, 1, 2]);
   });
 
-  it('`object` should work', async function () {
+  it('`object` should work', async () => {
     const result = await r.object('a', 1, r.expr('2'), 'foo').run();
     assert.deepEqual(result, { a: 1, '2': 'foo' });
   });

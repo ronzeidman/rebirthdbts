@@ -10,7 +10,7 @@ function Selection(selection, table) {
 // Import methods from Sequence
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
-    (function(key) {
+    ((key) => {
         Selection.prototype[key] = () => {
             var docs = [];
             for(var i=0; i<this.selection.length; i++) {
@@ -33,16 +33,16 @@ Selection.prototype.toSequence = () => {
     return result;
 }
 
-Selection.prototype.push = function(doc) {
+Selection.prototype.push = (doc) => {
     this.selection.push(doc);
     this.length++;
 }
-Selection.prototype.pop = function(doc) {
+Selection.prototype.pop = (doc) => {
     this.length--;
     return this.selection.pop();
 }
 
-Selection.prototype.filter = function(filter, options, query) {
+Selection.prototype.filter = (filter, options, query) => {
     var selection = new Selection([], this.table);
 
     if (options.default === undefined) {
@@ -84,7 +84,7 @@ Selection.prototype.filter = function(filter, options, query) {
     return selection;
 }
 
-Selection.prototype.update = function(rawUpdate, options, query) {
+Selection.prototype.update = (rawUpdate, options, query) => {
     options = options || {};
 
     result = helper.writeResult();
@@ -98,7 +98,7 @@ Selection.prototype.update = function(rawUpdate, options, query) {
     }
     return result;
 }
-Selection.prototype.replace = function(newValue, options, query) {
+Selection.prototype.replace = (newValue, options, query) => {
     options = options || {};
 
     result = helper.writeResult();
@@ -120,7 +120,7 @@ Selection.prototype.delete = () => {
     return result;
 }
 
-Selection.prototype.skip = function(skip) {
+Selection.prototype.skip = (skip) => {
     result = new Selection();
     for(var i=skip; i<this.selection.length; i++) {
         // TODO Should we also deep copy this.selection[i]
@@ -128,7 +128,7 @@ Selection.prototype.skip = function(skip) {
     }
     return result;
 }
-Selection.prototype.limit = function(limit) {
+Selection.prototype.limit = (limit) => {
     result = new Selection();
     for(var i=0; i<Math.min(limit,this.selection.length); i++) {
         // TODO Should we also deep copy this.selection[i]
@@ -139,9 +139,9 @@ Selection.prototype.limit = function(limit) {
 
 
 
-Selection.prototype.orderBy = function(fields, options, query) {
+Selection.prototype.orderBy = (fields, options, query) => {
     var selection = new Selection(this.selection);
-    selection.selection.sort(function(left, right) {
+    selection.selection.sort((left, right) => {
         var index = 0;
         var field, leftValue, rightValue;
 

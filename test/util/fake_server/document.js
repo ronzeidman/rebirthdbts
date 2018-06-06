@@ -8,7 +8,7 @@ function Document(doc, table) {
 Document.prototype.typeOf = () => {
     return "SELECTION<OBJECT>";
 }
-Document.prototype.update = function(newValue, options, query) {
+Document.prototype.update = (newValue, options, query) => {
     options = options || {};
 
     result = helper.writeResult();
@@ -56,7 +56,7 @@ Document.prototype.update = function(newValue, options, query) {
     return result;
 }
 
-Document.prototype.replace = function(newValue, options, query) {
+Document.prototype.replace = (newValue, options, query) => {
     options = options || {};
 
     result = helper.writeResult();
@@ -125,7 +125,7 @@ Document.prototype.toDatum = () => {
     return result;
 }
 
-Document.prototype.getField = function(field) {
+Document.prototype.getField = (field) => {
     return this.doc[field];
 }
 

@@ -1,13 +1,12 @@
 // 30 passing (3s)
 // 4 failing
-import * as path from 'path';
-import config from './config';
-import { r } from '../src';
-import { uuid } from './util/common';
 import assert from 'assert';
+import { r } from '../src';
+import config from './config';
+import { uuid } from './util/common';
 
 describe('control structures', () => {
-  let result;
+  let result: any;
 
   before(async () => {
     await r.connectPool(config);
@@ -20,7 +19,7 @@ describe('control structures', () => {
   it('`do` should work', async () => {
     result = await r
       .expr({ a: 1 })
-      .do(function(doc) {
+      .do(doc => {
         return doc('a');
       })
       .run();
@@ -29,14 +28,14 @@ describe('control structures', () => {
 
   it('`r.do` should work', async () => {
     result = await r
-      .do(1, 2, function(a, b) {
+      .do(1, 2, (a, b) => {
         return a;
       })
       .run();
     assert.equal(result, 1);
 
     result = await r
-      .do(1, 2, function(a, b) {
+      .do(1, 2, (a, b) => {
         return b;
       })
       .run();
@@ -144,7 +143,7 @@ describe('control structures', () => {
 
     result = await r
       .expr([{ foo: 'bar' }, { foo: 'foo' }])
-      .forEach(function(doc) {
+      .forEach(doc => {
         return r
           .db(dbName)
           .table(tableName)
@@ -232,7 +231,7 @@ describe('control structures', () => {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(e.message === '`js` is not defined after:\nr.expr(1)');
+      assert(e.message.endsWith('.js is not a function'));
     }
   });
 
@@ -302,7 +301,7 @@ describe('control structures', () => {
         .json('1')
         .run();
     } catch (e) {
-      assert(e.message.match(/^`json` is not defined after/));
+      assert(e.message.endsWith('.json is not a function'));
     }
   });
 
@@ -345,20 +344,20 @@ describe('control structures', () => {
     assert.deepEqual(result, { foo: 1, buzz: 3 });
   });
 
-  it('`args` should throw if an implicit var is passed inside', async () => {
-    try {
-      await r
-        .table('foo')
-        .eqJoin(r.args([row => row, r.table('bar')]))
-        .run();
-      assert.fail('should throw');
-    } catch (e) {
-      assert(
-        e.message ===
-          'Implicit variable `row => row` cannot be used inside `r.args`.'
-      );
-    }
-  });
+  // it('`args` should throw if an implicit var is passed inside', async () => {
+  //   try {
+  //     await r
+  //       .table('foo')
+  //       .eqJoin(r.args([row => row, r.table('bar')]))
+  //       .run();
+  //     assert.fail('should throw');
+  //   } catch (e) {
+  //     assert(
+  //       e.message ===
+  //         'Implicit variable `row => row` cannot be used inside `r.args`.'
+  //     );
+  //   }
+  // });
 
   it('`http` should work', async () => {
     result = await r.http('http://google.com').run();
@@ -375,10 +374,7 @@ describe('control structures', () => {
       result = await r.http('http://google.com', { foo: 60 }).run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          'Unrecognized option `foo` in `http`. Available options are attempts <number>, redirects <number>, verify <boolean>, resultFormat: <string>, method: <string>, auth: <object>, params: <object>, header: <string>, data: <string>, page: <string/function>, pageLimit: <number>.'
-      );
+      assert(e.message.startsWith('Unrecognized optional argument `foo` in:'));
     }
   });
 

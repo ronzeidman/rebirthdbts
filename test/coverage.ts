@@ -1,14 +1,12 @@
 // 0 passing (10ms)
 // 1 failing
-import * as path from 'path';
-const { TermType } = require(path.join(__dirname, '/../lib/proto/enums.js'));
-const fs = require('fs');
-const keys = Object.keys(TermType)
-  .filter(key => isNaN(key))
-  .map(key => TermType[key]);
-
 import assert from 'assert';
+import * as path from 'path';
+import { TermType } from '../src/proto/enums';
 
+const keys = Object.keys(TermType)
+  .filter(key => isNaN(key as any))
+  .map(key => TermType[key]);
 describe('coverage', () => {
   // Test that the term appears somewhere in the file, which find terms that were not implemented
   it('all terms should be present in query-config.js', async () => {

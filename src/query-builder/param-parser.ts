@@ -1,4 +1,4 @@
-import { isBuffer, isDate, isFunction, isUndefined } from 'util';
+import { isBuffer, isDate, isFunction, isObject, isUndefined } from 'util';
 import { RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { TermJson } from '../internal-types';
@@ -95,7 +95,10 @@ export function parseParam(
   return param;
 }
 
-export function parseOptarg(obj: object) {
+export function parseOptarg(obj?: any) {
+  if (!isObject(obj) || Array.isArray(obj)) {
+    return undefined;
+  }
   return Object.entries(obj).reduce(
     (acc, [key, value]) => ({
       ...acc,

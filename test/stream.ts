@@ -1,8 +1,8 @@
 import * as path from 'path';
-const config = require('./config.js');
+import config from './config';
 import { r } from '../src';
 import assert from 'assert';
-const { uuid } = require(path.join(__dirname, '/util/common.js'));
+import { uuid } from './util/common';
 const { Readable } = require('stream');
 
 describe('stream', () => {
@@ -231,7 +231,7 @@ describe('stream', () => {
           );
         }
         let count = 1;
-        stream.on('data', function(data) {
+        stream.on('data', data => {
           count++;
           if (count === numDocs) {
             resolve();
@@ -296,7 +296,7 @@ describe('stream', () => {
     await new Promise((resolve, reject) => {
       stream.once('readable', () => {
         let count = 0;
-        stream.on('data', function(data) {
+        stream.on('data', data => {
           count++;
           if (count === 20) {
             resolve();
@@ -373,7 +373,7 @@ describe('stream', () => {
           );
         }
         let count = 1;
-        stream.on('data', function(data) {
+        stream.on('data', data => {
           count++;
           if (count === numDocs) {
             resolve();
@@ -402,7 +402,7 @@ describe('stream', () => {
           );
         }
         let count = 1;
-        stream.on('data', function(data) {
+        stream.on('data', data => {
           count++;
           if (count === numDocs) {
             resolve();

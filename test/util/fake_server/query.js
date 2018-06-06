@@ -30,7 +30,7 @@ function Query(server, query, options) {
 // - assert type
 
 //TODO Make sure there are no stray arrays going around
-Query.prototype.run = function(query) {
+Query.prototype.run = (query) => {
     query = query || this.query;
 
     var queryType = query[0];
@@ -71,7 +71,7 @@ Query.prototype.run = function(query) {
     }
 }
 
-Query.prototype.evaluate = function(term) {
+Query.prototype.evaluate = (term) => {
     if ((Array.isArray(term) === false) && (helper.isPlainObject(term) === false)) {
         // Primtiive
         return term;

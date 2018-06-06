@@ -1,0 +1,25 @@
+sudo: required
+
+services:
+  - docker
+
+language: node_js
+
+node_js:
+  - "8"
+  - "9"
+  - "node"
+
+git:
+  depth: 1
+
+before_install:
+  - docker pull rethinkdb:latest
+  - docker run -d -p 28015:28015 rethinkdb
+
+script:
+  - npm test
+  - npm run build
+
+after_success:
+  - npm run coveralls

@@ -156,6 +156,29 @@ export function backtraceTerm(
         );
       }
       const [caller, ...params] = args;
+      // TODO: Maybe this is better but should fix tests
+      // if (
+      //   typeof caller === 'object' &&
+      //   (!Array.isArray(caller) || caller[0] === TermType.MAKE_ARRAY)
+      // ) {
+      //   const rparsedParams = [...(args || [])]
+      //     .map(parseArg)
+      //     .reduce(joinMultiArray, ['', '']);
+      //   return getMarked(
+      //     optarg
+      //       ? hasArgs
+      //         ? combineMarks`r.${func[1]}(${rparsedParams}, ${backtraceObject(
+      //             optarg,
+      //             backtrace
+      //           )})`
+      //         : combineMarks`r.${func[1]}(${backtraceObject(
+      //             optarg,
+      //             backtrace
+      //           )})`
+      //       : combineMarks`r.${func[1]}(${rparsedParams})`,
+      //     backtrace
+      //   );
+      // }
       const hasParams = params.length > 0;
       const parsedParams = [...params]
         .map((a, i) => parseArg(a, i + 1))
@@ -183,12 +206,14 @@ function backtraceObject(obj: any, backtrace?: Array<number | string>) {
   if (obj.$reql_type$ === 'BINARY') {
     return getMarked('<Buffer>', backtrace);
   }
+  if (Object.keys(obj).length === 0) {
+    return getMarked('{}', backtrace);
+  }
   return combineMarks`{ ${Object.entries(obj)
     .map(([key, val]) => {
       const next = param === key ? nextB : undefined;
       return getMarked(
-        combineMarks`${snakeToCamel(key)}: ${backtraceTerm(val, false, next)}`,
-        next
+        combineMarks`${snakeToCamel(key)}: ${backtraceTerm(val, false, next)}`
       );
     })
     .reduce(joinMultiArray, ['', ''])} }`;

@@ -6,7 +6,7 @@ helper.isPlainObject = function isPlainObject(value) {
     return Object.prototype.toString.call(value) === '[object Object]';
 }
 
-helper.typeOf = function(value, query) {
+helper.typeOf = (value, query) => {
     //TODO Properly handle circular references
     var Sequence = require(__dirname+"/sequence.js");
 
@@ -108,7 +108,7 @@ helper.writeResult = function writeResult() {
 }
 
 // Merging write result in place
-helper.mergeWriteResult = function(left, right) {
+helper.mergeWriteResult = (left, right) => {
     left.deleted += right.deleted;
     left.errors += right.errors;
     left.inserted += right.inserted;
@@ -128,7 +128,7 @@ helper.mergeWriteResult = function(left, right) {
     }
 }
 
-helper.merge = function(self, toMerge, query) {
+helper.merge = (self, toMerge, query) => {
     var varId;
     if (Array.isArray(toMerge) && (toMerge[0] === 69)) {
         varId = toMerge[1][0][1][0];
@@ -243,7 +243,7 @@ helper._replace = function replace(self, obj) {
     return changed
 }
 
-helper.makeInternalPk = function(value) {
+helper.makeInternalPk = (value) => {
     // Build the internal prinary key we use in the hash table
     if (typeof value === 'string') {
         return "string_"+value
@@ -264,7 +264,7 @@ helper.makeInternalPk = function(value) {
     }
 
 }
-helper.validDate = function(date) {
+helper.validDate = (date) => {
     // `date` should be an object with the field $reql_type$ mapping to "TIME"
     if (typeof date.epoch_time !== "number") {
         throw new Error.ReqlRuntimeError("RqlRuntimeError: Invalid time object constructed (no field `epoch_time`):\n"+JSON.stringify(date, null, 2))
@@ -274,7 +274,7 @@ helper.validDate = function(date) {
     }
 }
 //TODO CamelCase the thing
-helper.dateToString = function(date) {
+helper.dateToString = (date) => {
     var timezone = date.timezone;
 
     // Extract data from the timezone
@@ -332,11 +332,11 @@ helper.dateToString = function(date) {
     return raw_date_str.slice(0, raw_date_str.indexOf('GMT')+3)+timezone
 }
 
-helper.getHours = function(date) {
+helper.getHours = (date) => {
     //TODO
 }
 
-helper.getTimezone = function(date, options) {
+helper.getTimezone = (date, options) => {
     options = options || {};
 
     if (date.match(/Z$/)) {
@@ -355,12 +355,12 @@ helper.getTimezone = function(date, options) {
         }
     }
 }
-helper.isDate = function(date) {
+helper.isDate = (date) => {
     return helper.isPlainObject(date) && (date.$reql_type$ === "TIME")
 }
 
 // Obviously not a "full" deep copy...
-helper.deepCopy = function(value) {
+helper.deepCopy = (value) => {
     result;
     if (helper.isPlainObject(value)) {
         result = {};
@@ -380,7 +380,7 @@ helper.deepCopy = function(value) {
         return value;
     }
 }
-helper.convertTimezone = function(timezone) {
+helper.convertTimezone = (timezone) => {
     if (timezone === "Z") {
         return "+00:00"
     }
@@ -391,7 +391,7 @@ helper.convertTimezone = function(timezone) {
     return timezone;
 }
 
-helper.monthToInt = function(month) {
+helper.monthToInt = (month) => {
     switch(month) {
         case "Jan":
             return 1
@@ -422,7 +422,7 @@ helper.monthToInt = function(month) {
     }
 }
 
-helper.dayToInt = function(day) {
+helper.dayToInt = (day) => {
     switch(day) {
         case "Mon":
             return 1
@@ -443,7 +443,7 @@ helper.dayToInt = function(day) {
     }
 }
 
-helper.eq = function(left, right) {
+helper.eq = (left, right) => {
     //TODO Sequence?
     if ((Array.isArray(left)) && (Array.isArray(right))) {
         if (left.length !== right.length) {
@@ -476,7 +476,7 @@ helper.eq = function(left, right) {
     }
 }
 
-helper.lt = function(left, right) {
+helper.lt = (left, right) => {
     // array < bool < null < number < object < string < time
 
     // Keep the require here to avoid issues with circular rerefences
@@ -596,16 +596,16 @@ helper.lt = function(left, right) {
     }
 }
 
-helper.gt = function(left, right) {
+helper.gt = (left, right) => {
     return !(helper.lt(left, right) || helper.eq(left, right))
 }
 
-helper.ge = function(left, right) {
+helper.ge = (left, right) => {
     return helper.gt(left, right) || helper.eq(left, right)
 }
 
 
-helper.filter = function(doc, filter) {
+helper.filter = (doc, filter) => {
     if (helper.isPlainObject(filter)) {
         if (helper.isPlainObject(doc)) {
             for(var key in filter) {
@@ -643,7 +643,7 @@ helper.filter = function(doc, filter) {
     return true;
 }
 
-helper.toDatum = function(doc) {
+helper.toDatum = (doc) => {
     result;
     if (Array.isArray(doc)) {
         result = [];
@@ -674,7 +674,7 @@ helper.toDatum = function(doc) {
 }
 
 // Take a datum and replace arrays with instances of Sequence
-helper.revertDatum = function(value) {
+helper.revertDatum = (value) => {
     if (Array.isArray(value)) {
         var Sequence = require(__dirname+"/sequence.js");
         var sequence = new Sequence();
@@ -695,17 +695,17 @@ helper.revertDatum = function(value) {
     }
 }
 
-helper.isTrue = function(value) {
+helper.isTrue = (value) => {
     return !(value === false || value === null)
 }
-helper.pluck = function(obj, keys) {
+helper.pluck = (obj, keys) => {
     result = {};
     for(var i=0; i<keys.length; i++) {
         result[keys[i]] = obj[keys[i]];
     }
     return result;
 }
-helper.hasFields = function(obj, keys) {
+helper.hasFields = (obj, keys) => {
     for(var i=0; i<keys.length; i++) {
         if ((obj.hasOwnProperty(keys[i]) === false) || (obj[keys[i]] === undefined)) {
             return false;
@@ -715,7 +715,7 @@ helper.hasFields = function(obj, keys) {
 }
 
 
-helper.without = function(obj, keys) {
+helper.without = (obj, keys) => {
     result = helper.deepCopy(obj);
 
     for(var i=0; i<keys.length; i++) {
@@ -724,7 +724,7 @@ helper.without = function(obj, keys) {
     return result;
 }
 
-helper.toBool = function(val) {
+helper.toBool = (val) => {
     if ((val === false) || (val === null)) {
         return false;
     }

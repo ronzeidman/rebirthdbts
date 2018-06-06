@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
 import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
 import { connect as tlsConnect } from 'tls';
-import { isUndefined } from 'util';
+import { isError, isUndefined } from 'util';
 import { RServerConnectionOptions, RebirthDBErrorType } from '..';
-import { RebirthDBError } from '../error/error';
+import { RebirthDBError, isRebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
 import {
@@ -40,7 +40,9 @@ export class RebirthDBSocket extends EventEmitter {
   private nextToken = 0;
   private buffer = new Buffer(0);
   private mode: 'handshake' | 'response' = 'handshake';
-  private data: Array<ResponseJson | ((arg: ResponseJson) => void)> = [];
+  private data: Array<
+    Error | ResponseJson | ((arg: ResponseJson) => void)
+  > = [];
   private ca?: Buffer[];
 
   constructor({
@@ -165,7 +167,9 @@ export class RebirthDBSocket extends EventEmitter {
       }
       if (!isUndefined(this.data[token])) {
         const data = this.data[token];
-        if (typeof data !== 'function') {
+        if (isError(data)) {
+          reject(data);
+        } else if (typeof data !== 'function') {
           delete this.data[token];
           resolve(data as any);
         }
@@ -188,8 +192,13 @@ export class RebirthDBSocket extends EventEmitter {
           if (t) {
             clearTimeout(t);
           }
-          if (data) {
+          if (data && !isError(data)) {
             resolve(data as any);
+          } else if (isRebirthDBError(data)) {
+            data.addBacktrace({ query });
+            reject(data);
+          } else if (isError(data)) {
+            reject(data);
           } else {
             reject(
               new RebirthDBError('Query cancelled', {
@@ -214,7 +223,13 @@ export class RebirthDBSocket extends EventEmitter {
   public close() {
     for (const key in this.data) {
       if (this.data.hasOwnProperty(key)) {
-        this.setData(+key);
+        this.setData(
+          +key,
+          new RebirthDBError(
+            'The connection was closed before the query could be completed.',
+            { type: RebirthDBErrorType.CONNECTION }
+          )
+        );
       }
     }
     if (!this.socket) {
@@ -320,7 +335,7 @@ export class RebirthDBSocket extends EventEmitter {
     }
   }
 
-  private setData(token: number, response?: ResponseJson) {
+  private setData(token: number, response?: ResponseJson | Error) {
     if (typeof this.data[token] === 'function') {
       (this.data[token] as any)(response);
       delete this.data[token];

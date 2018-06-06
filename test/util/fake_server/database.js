@@ -5,13 +5,13 @@ function Database(name) {
     this.tables = {};
 }
 
-Database.prototype.table = function(name) {
+Database.prototype.table = (name) => {
     return this.tables[name];
 }
-Database.prototype.tableDrop = function(name) {
+Database.prototype.tableDrop = (name) => {
     delete this.tables[name];
 }
-Database.prototype.tableCreate = function(name) {
+Database.prototype.tableCreate = (name) => {
     this.tables[name] = new Table(name)
 }
 Database.prototype.typeOf = () => {

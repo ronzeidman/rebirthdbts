@@ -163,10 +163,7 @@ describe('administration', () => {
       result = await r.reconfigure().run();
       assert.fail('should throw');
     } catch (e) {
-      assert.equal(
-        e.message,
-        '`r.reconfigure` takes at least 1 argument, 0 provided.'
-      );
+      assert.equal(e.message, '`r.reconfigure` takes 2 arguments, 0 provided.');
     }
   });
 

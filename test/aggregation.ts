@@ -1,12 +1,13 @@
 // 30 passing (2s)
-import * as path from 'path';
-import config from './config';
-import { r } from '../src';
 import assert from 'assert';
-const { uuid } = require(path.join(__dirname, './util/common.js'));
+import { r } from '../src';
+import config from './config';
+import { uuid } from './util/common';
 
 describe('aggregation', () => {
-  let dbName, tableName, result;
+  let dbName: string;
+  let tableName: string;
+  let result: any;
 
   before(async () => {
     await r.connectPool(config);
@@ -31,7 +32,7 @@ describe('aggregation', () => {
   it('`reduce` should work -- no base ', async () => {
     result = await r
       .expr([1, 2, 3])
-      .reduce(function(left, right) {
+      .reduce((left, right) => {
         return left.add(right);
       })
       .run();
@@ -46,13 +47,13 @@ describe('aggregation', () => {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          '`reduce` takes 1 argument, 0 provided after:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")'
+      assert.equal(
+        e.message,
+        '`reduce` takes 1 argument, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });
@@ -60,7 +61,7 @@ describe('aggregation', () => {
   it('`fold` should work', async () => {
     result = await r
       .expr([1, 2, 3])
-      .fold(10, function(left, right) {
+      .fold(10, (left, right) => {
         return left.add(right);
       })
       .run();
@@ -72,11 +73,11 @@ describe('aggregation', () => {
       .expr(['foo', 'bar', 'buzz', 'hello', 'world'])
       .fold(
         0,
-        function(acc, row) {
+        (acc, row) => {
           return acc.add(1);
         },
         {
-          emit: function(oldAcc, element, newAcc) {
+          emit: (oldAcc, element, newAcc) => {
             return [oldAcc, element, newAcc];
           }
         }
@@ -106,14 +107,14 @@ describe('aggregation', () => {
       .expr(['foo', 'bar', 'buzz', 'hello', 'world'])
       .fold(
         0,
-        function(acc, row) {
+        (acc, row) => {
           return acc.add(1);
         },
         {
-          emit: function(oldAcc, element, newAcc) {
+          emit: (oldAcc, element, newAcc) => {
             return [oldAcc, element, newAcc];
           },
-          finalEmit: function(acc) {
+          finalEmit: acc => {
             return [acc];
           }
         }
@@ -156,7 +157,7 @@ describe('aggregation', () => {
 
     result = await r
       .expr([0, 1, 2, 3, 4, 5])
-      .count(function(doc) {
+      .count(doc => {
         return doc.eq(2);
       })
       .run();
@@ -362,7 +363,7 @@ describe('aggregation', () => {
 
     result = await r
       .expr([1, 2, 3])
-      .contains(function(doc) {
+      .contains(doc => {
         return doc.eq(1);
       })
       .run();
@@ -396,13 +397,13 @@ describe('aggregation', () => {
         .run();
       assert.fail('should throw');
     } catch (e) {
-      assert(
-        e.message ===
-          '`contains` takes at least 1 argument, 0 provided after:\nr.db("' +
-            dbName +
-            '").table("' +
-            tableName +
-            '")'
+      assert.equal(
+        e.message,
+        '`contains` takes at least 1 argument, 0 provided after:\nr.db("' +
+          dbName +
+          '").table("' +
+          tableName +
+          '")\n'
       );
     }
   });

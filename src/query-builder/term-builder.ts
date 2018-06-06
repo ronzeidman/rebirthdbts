@@ -12,15 +12,15 @@ import { TermConfig, funcall, termConfig } from './query-config';
 import { r } from './r';
 
 export function termBuilder(
-  [termType, termName, minArgs, maxArgs, hasOptarg]: TermConfig,
+  [termType, termName, minArgs, maxArgs, optargType]: TermConfig,
   currentTerm?: TermJson
 ) {
   return (...args: any[]) => {
-    let optarg: any;
+    let optarg: object | undefined;
     const params: TermJson[] = !isUndefined(currentTerm) ? [currentTerm] : [];
     if (isQuery(args[0]) && args[0].term[0] === TermType.ARGS) {
       params.push(parseParam(args[0]));
-      optarg = hasOptarg ? args[1] : undefined;
+      optarg = optargType !== false ? args[1] : undefined;
     } else {
       const argsLength = args.length;
       if (minArgs === maxArgs && argsLength !== minArgs) {
@@ -54,18 +54,21 @@ export function termBuilder(
           { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
-      const maybeOptarg = args.length ? args.pop() : undefined;
-      optarg =
-        hasOptarg &&
-        (((maxArgs > 0 && argsLength >= maxArgs) ||
-          argsLength > minArgs ||
-          hasOptarg === 'only-object') &&
-          (!Array.isArray(maybeOptarg) &&
-            typeof maybeOptarg === 'object' &&
-            !isQuery(maybeOptarg)))
-          ? maybeOptarg
-          : undefined;
-      if (hasOptarg && argsLength === maxArgs && !optarg) {
+      switch (optargType) {
+        case 'last':
+          optarg = parseOptarg(args[maxArgs - 1]);
+          break;
+        case 'required':
+        case 'optional':
+        case 'last-optional':
+          optarg = parseOptarg(args[argsLength - 1]);
+      }
+      if (
+        !optarg &&
+        (optargType === 'required' ||
+          (argsLength === maxArgs &&
+            ['last', 'last-optional'].includes(optargType as any)))
+      ) {
         throw new RebirthDBError(
           `${numToString(
             argsLength
@@ -73,17 +76,18 @@ export function termBuilder(
           { term: currentTerm, type: RebirthDBErrorType.ARITY }
         );
       }
-      if (!isUndefined(maybeOptarg) && isUndefined(optarg)) {
-        args.push(maybeOptarg);
-      }
-      params.push(...args.map(x => parseParam(x)));
+      params.push(
+        ...args
+          .filter((_, i) => (optarg ? i < argsLength - 1 : true))
+          .map(x => parseParam(x))
+      );
     }
     const term: ComplexTermJson = [termType];
     if (params.length > 0) {
       term[1] = params;
     }
     if (optarg) {
-      term[2] = parseOptarg(optarg) as any;
+      term[2] = optarg;
     }
     return toQuery(term);
   };

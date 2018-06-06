@@ -6,7 +6,8 @@ export declare type Primitives = null | string | boolean | number;
 export declare type Format = 'native' | 'raw';
 export declare type Durability = 'hard' | 'soft';
 export declare type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
-export declare type FieldSelector = object | any[] | string;
+export declare type MultiFieldSelector = object | any[] | string;
+export declare type FieldSelector<T, U = any> = string | Func<T, U>;
 export interface ServerInfo {
     id: string;
     name: string;
@@ -360,29 +361,29 @@ export interface RDatum<T = any> extends RQuery<T> {
     map<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     concatMap<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never, RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<WriteResult<U>>>(func: (res: RDatum<ONE>) => RES): T extends any[] ? RES : never;
-    withFields(...fields: FieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+    withFields(...fields: MultiFieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
     filter<U = T extends Array<infer T1> ? T1 : never>(predicate: (doc: RDatum<U>) => RValue<boolean>, options?: {
         default: boolean;
     }): this;
     includes(geometry: RDatum): T extends Array<infer T1> ? RDatum<T> : never;
     intersects(geometry: RDatum): T extends Array<infer T1> ? RDatum<T> : never;
     contains<U = T extends Array<infer T1> ? T1 : never>(val1: any[] | null | string | number | object | Func<U>, ...value: Array<any[] | null | string | number | object | Func<U>>): T extends Array<infer T1> ? RDatum<boolean> : never;
-    orderBy<U = T extends Array<infer T1> ? T1 : never>(...fields: Array<FieldSelector | Func<U>>): T extends Array<infer T1> ? RDatum<T> : never;
-    group<F extends T extends Array<infer T1> ? keyof T1 : never, D extends T extends Array<infer T2> ? T2 : never>(...fieldOrFunc: Array<F | Func<D>>): T extends Array<infer T1> ? RDatum : never;
+    orderBy<U = T extends Array<infer T1> ? T1 : never>(...fields: Array<FieldSelector<T>>): T extends Array<infer T1> ? RDatum<T> : never;
+    group<F extends T extends Array<infer T1> ? keyof T1 : never, D extends T extends Array<infer T2> ? T2 : never>(...fieldOrFunc: Array<FieldSelector<T>>): T extends Array<infer T1> ? RDatum : never;
     ungroup(): RDatum<Array<GroupResults<any, any>>>;
-    count<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector | Func<U, boolean>): T extends Array<infer T1> ? RDatum<number> : never;
-    sum<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector | Func<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
-    avg<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector | Func<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
-    min<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector | Func<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
-    max<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector | Func<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
+    count<U = T extends Array<infer T1> ? T1 : never>(value?: RValue<U> | Func<U, boolean>): T extends Array<infer T1> ? RDatum<number> : never;
+    sum<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
+    avg<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
+    min<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
+    max<U = T extends Array<infer T1> ? T1 : never>(value?: FieldSelector<U, number | null>): T extends Array<infer T1> ? RDatum<number> : never;
     reduce<U = any, ONE = T extends Array<infer T1> ? T1 : never>(reduceFunction: (left: RDatum<ONE>, right: RDatum<ONE>) => any): T extends Array<infer T1> ? RDatum<U> : never;
     fold<ACC = any, RES = any, ONE = T extends Array<infer T1> ? T1 : never>(base: any, foldFunction: (acc: RDatum<ACC>, next: RDatum<ONE>) => any, options?: {
         emit?: (acc: RDatum<ACC>, next: RDatum<ONE>, new_acc: RDatum<ACC>) => any[];
         finalEmit?: (acc: RStream) => any[];
     }): T extends Array<infer T1> ? RDatum<RES[]> : never;
     distinct(): RDatum<T>;
-    pluck(...fields: FieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
-    without(...fields: FieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+    pluck(...fields: MultiFieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+    without(...fields: MultiFieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
     merge<U = any>(...objects: object[]): T extends Array<infer T1> ? RDatum<U[]> : RDatum<U>;
     skip(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
     limit(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
@@ -399,7 +400,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     coerceTo(type: 'number'): T extends string ? RDatum<number> : never;
     coerceTo(type: 'binary'): T extends string ? RDatum<Buffer> : never;
     match(regexp: RValue<string>): T extends string ? RDatum<MatchResults> : never;
-    split(seperator: RValue<string>, maxSplits?: RValue<number>): T extends string ? RDatum<string[]> : never;
+    split(seperator?: RValue<string>, maxSplits?: RValue<number>): T extends string ? RDatum<string[]> : never;
     upcase(): T extends string ? RDatum<string> : never;
     downcase(): T extends string ? RDatum<string> : never;
     add(...str: Array<RValue<string> | RValue<number>>): T extends string | number | Date ? RDatum<T> : never;
@@ -479,15 +480,15 @@ export interface RStream<T = any> extends RQuery<T[]> {
     }>): RFeed<U>;
     map<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RStream<U>;
     concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RStream<U>;
-    withFields(...fields: FieldSelector[]): RStream<Partial<T>>;
-    hasFields(...fields: FieldSelector[]): RStream<T>;
+    withFields(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
+    hasFields(...fields: MultiFieldSelector[]): RStream<T>;
     filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
         default: boolean;
     }): this;
     includes(geometry: RDatum): RStream<T>;
     intersects(geometry: RDatum): RStream<T>;
     contains(val1: any[] | null | string | number | object | Func<T>, ...value: Array<any[] | null | string | number | object | Func<T>>): RDatum<boolean>;
-    orderBy(...fieldOrIndex: Array<FieldSelector | Func<T> | {
+    orderBy(...fieldOrIndex: Array<FieldSelector<T> | {
         index: string;
     }>): RStream<T>;
     group<U extends keyof T>(...fieldOrFunc: Array<U | ((row: RDatum<T>) => any) | {
@@ -512,8 +513,8 @@ export interface RStream<T = any> extends RQuery<T[]> {
     distinct<TIndex = any>(index: {
         index: string;
     }): RStream<TIndex>;
-    pluck(...fields: FieldSelector[]): RStream<Partial<T>>;
-    without(...fields: FieldSelector[]): RStream<Partial<T>>;
+    pluck(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
+    without(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
     merge<U = any>(...objects: any[]): RStream<U>;
     skip(n: RValue<number>): RStream<T>;
     limit(n: RValue<number>): RStream<T>;
@@ -536,8 +537,8 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
     }>): RFeed<U>;
     map<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RFeed<U>;
     concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RFeed<U>;
-    withFields(...fields: FieldSelector[]): RFeed<Partial<T>>;
-    hasFields(...fields: FieldSelector[]): RFeed<T>;
+    withFields(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
+    hasFields(...fields: MultiFieldSelector[]): RFeed<T>;
     filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
         default: boolean;
     }): this;
@@ -547,8 +548,8 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
         emit?: (acc: RDatum<ACC>, next: RDatum<T>, new_acc: RDatum<ACC>) => any[];
         finalEmit?: (acc: RStream) => any[];
     }): RFeed<RES>;
-    pluck(...fields: FieldSelector[]): RFeed<Partial<T>>;
-    without(...fields: FieldSelector[]): RFeed<Partial<T>>;
+    pluck(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
+    without(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
 }
 export interface RSingleSelection<T = any> extends RDatum<T> {
     update(obj: RValue<Partial<T>>, options?: UpdateOptions): RDatum<WriteResult<T>>;
@@ -711,6 +712,8 @@ export interface R {
             config: boolean;
         }>>;
     }>;
+    reconfigure(tableOrDatabase: RTable | RDatabase, options: TableReconfigureOptions): RDatum<ReconfigureResult>;
+    rebalance(tableOrDatabase: RTable | RDatabase): RDatum<RebalanceResult>;
     dbCreate(dbName: RValue<string>): RDatum<DBChangeResult>;
     dbDrop(dbName: RValue<string>): RDatum<DBChangeResult>;
     dbList(): RDatum<string[]>;
@@ -719,13 +722,13 @@ export interface R {
     tableDrop(tableName: RValue<string>): RDatum<TableChangeResult>;
     tableList(): RDatum<string>;
     table<T = any>(tableName: RValue<string>, options?: TableOptions): RTable<T>;
-    count<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector | Func<T, boolean>): RDatum<number>;
-    sum<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector | Func<T, number | null>): RDatum<number>;
-    avg<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector | Func<T, number | null>): RDatum<number>;
-    min<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector | Func<T, number | null> | {
+    count<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, boolean>): RDatum<number>;
+    sum<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, number | null>): RDatum<number>;
+    avg<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, number | null>): RDatum<number>;
+    min<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, number | null> | {
         index: string;
     }): RDatum<number>;
-    max<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector | Func<T, number | null> | {
+    max<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, number | null> | {
         index: string;
     }): RDatum<number>;
     distinct<T>(caller: T[] | RDatum<T[]>): RDatum<T[]>;

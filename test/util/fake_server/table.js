@@ -14,7 +14,7 @@ function Table(name, db, options) {
     this.indexes = {}; // String -> FUNC terms
     this.indexes[this.options.primaryKey] = {
         //TODO Make me use TERMS
-        //fn: function(doc) { return doc[name] },
+        //fn: (doc) => { return doc[name] },
         // 69=FUNC, 2=MAKE_ARRAY, 31=GET_FIELD, 10=VAR, 1=ARGUMENT_INDEX
         //TODO Use a uuid to avoid collision
         fn: [ 69, [ [ 2, [ 1 ] ], [ 31, [ [ 10, [ 1 ] ], this.options.primaryKey ] ] ] ],
@@ -25,7 +25,7 @@ function Table(name, db, options) {
 // Import methods from Selection
 var keys = Object.keys(Selection.prototype);
 for(var i=0; i<keys.length; i++) {
-    (function(key) {
+    ((key) => {
         Table.prototype[key] = () => {
             var docs = [];
             for(var internalPk in this.documents) {
@@ -41,7 +41,7 @@ Table.prototype.typeOf = () => {
     return "TABLE";
 }
 
-Table.prototype.get = function(primaryKeyValue) {
+Table.prototype.get = (primaryKeyValue) => {
     var pk = this.options.primaryKey;
     var internalPk = helper.makeInternalPk(primaryKeyValue);
     if (this.documents[internalPk] === undefined) {
@@ -52,7 +52,7 @@ Table.prototype.get = function(primaryKeyValue) {
     }
 }
 
-Table.prototype._delete = function(doc) {
+Table.prototype._delete = (doc) => {
     var pk = this.options.primaryKey;
     var internalPk = helper.makeInternalPk(doc[pk]);
     if (this.documents[internalPk] === undefined) {
@@ -64,7 +64,7 @@ Table.prototype._delete = function(doc) {
     }
 }
 
-Table.prototype.insert = function(docs, options) {
+Table.prototype.insert = (docs, options) => {
     options = options || {};
 
     result = helper.writeResult();
@@ -108,7 +108,7 @@ Table.prototype.insert = function(docs, options) {
     }
     return result;
 }
-Table.prototype._singleInsert = function(doc, options, result) {
+Table.prototype._singleInsert = (doc, options, result) => {
     if (!(doc instanceof Document)) doc = new Document(doc, this);
 
     var pk = this.options.primaryKey;
@@ -150,7 +150,7 @@ Table.prototype._singleInsert = function(doc, options, result) {
         }
     }
 }
-Table.prototype.getAll = function(args, options, query) {
+Table.prototype.getAll = (args, options, query) => {
     //TODO Implement frames
     var selection = new Selection();
 
@@ -198,7 +198,7 @@ Table.prototype.getAll = function(args, options, query) {
     return selection;
 }
 
-Table.prototype.between = function(left, right, options, query) {
+Table.prototype.between = (left, right, options, query) => {
     //TODO Implement frames
 
     // TODO Mimick the server's by returning a table hack to enable chaining between and orderBy
@@ -299,7 +299,7 @@ Table.prototype.between = function(left, right, options, query) {
 
 
 
-Table.prototype.indexCreate = function(name, fn, options) {
+Table.prototype.indexCreate = (name, fn, options) => {
     if (this.indexes[name] != null) {
         throw new Error("Index `"+name+"` already exists on table `"+this.db+"."+this.table+"`")
     }
@@ -308,7 +308,7 @@ Table.prototype.indexCreate = function(name, fn, options) {
     if (arguments.length === 1) {
         this.indexes[name] = {
             //TODO Make me use TERMS
-            //fn: function(doc) { return doc[name] },
+            //fn: (doc) => { return doc[name] },
             // 69=FUNC, 2=MAKE_ARRAY, 31=GET_FIELD, 10=VAR, 1=ARGUMENT_INDEX
             //TODO Use uuid for variable names?
             fn: [ 69, [ [ 2, [ name+1 ] ], [ 31, [ [ 10, [ name+1 ] ], name ] ] ] ],
@@ -319,7 +319,7 @@ Table.prototype.indexCreate = function(name, fn, options) {
         if (helper.isPlainObject(fn)) {
             options = fn;
             //TODO Make me use TERMS
-            //fn = function(doc) { return doc[name] }
+            //fn = (doc) => { return doc[name] }
             fn = [ 69, [ [ 2, [ name+1 ] ], [ 31, [ [ 10, [ name+1 ] ], name ] ] ] ];
 
         }
@@ -343,7 +343,7 @@ Table.prototype.indexCreate = function(name, fn, options) {
     }
 }
 
-Table.prototype.indexDrop = function(name) {
+Table.prototype.indexDrop = (name) => {
     if (this.indexes[name] == null) {
         throw new Error("Index `"+name+"` does not exist on table `"+this.db+"."+this.table+"`")
     }
@@ -381,7 +381,7 @@ Table.prototype.indexWait = () => {
 
 
 // Table can use an index
-Table.prototype.orderBy = function(fields, options, query) {
+Table.prototype.orderBy = (fields, options, query) => {
     var self = this;
 
     var selection = new Selection();
@@ -389,7 +389,7 @@ Table.prototype.orderBy = function(fields, options, query) {
         selection.push(self.documents[internalKey]);
     }
     //TODO Refactor with the while loop
-    selection.selection.sort(function(left, right) {
+    selection.selection.sort((left, right) => {
         var index = 0;
         var field, leftValue, rightValue;
 
@@ -507,7 +507,7 @@ Table.prototype.orderBy = function(fields, options, query) {
 // Import methods from Sequence
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
-    (function(key) {
+    ((key) => {
         Table.prototype[key] = () => {
             return Sequence.prototype[key].apply(this, arguments);
         }

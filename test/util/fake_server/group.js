@@ -10,7 +10,7 @@ function Group(groups) {
 // Import methods from Sequence
 var keys = Object.keys(Sequence.prototype);
 for(var i=0; i<keys.length; i++) {
-    (function(key) {
+    ((key) => {
         Group.prototype[key] = () => {
             var groups = new Group();
             for(var k=0; k<this.groups.length; k++) {
@@ -48,13 +48,13 @@ Group.prototype.ungroup = () => {
     return result;
 }
 
-Group.prototype.addGroup = function(group, value) {
+Group.prototype.addGroup = (group, value) => {
     this.groups.push({
         group: group,
         reduction: value
     })
 }
-Group.prototype.push = function(group, value) {
+Group.prototype.push = (group, value) => {
     var found = false;
     for(var i=0; i<this.groups.length; i++) {
         if (helper.eq(this.groups[i].group, group)) {
