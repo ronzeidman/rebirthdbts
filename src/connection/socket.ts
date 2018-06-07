@@ -169,15 +169,26 @@ export class RebirthDBSocket extends EventEmitter {
     } else {
       let resolve: any;
       const data = new Promise<ResponseJson>((res, rej) => (resolve = res));
-      const { query: runningQuery = query } =
+      const { query: runningQuery = query, data: oldData = null } =
         this.runningQueries.get(token) || {};
-      this.runningQueries.set(token, {
-        resolve,
-        data,
-        query: runningQuery
-      });
-      this.socket.write(buffer);
-      if (type !== QueryType.CONTINUE) {
+      if (oldData) {
+        oldData.then(() => {
+          if (this.socket) {
+            this.runningQueries.set(token, {
+              resolve,
+              data,
+              query: runningQuery
+            });
+            this.socket.write(buffer);
+          }
+        });
+      } else {
+        this.runningQueries.set(token, {
+          resolve,
+          data,
+          query: runningQuery
+        });
+        this.socket.write(buffer);
         this.emit('query', token);
       }
       return token;
@@ -199,7 +210,9 @@ export class RebirthDBSocket extends EventEmitter {
         );
     }
     if (!this.runningQueries.has(token)) {
-      throw new RebirthDBError('Query is not running');
+      throw new RebirthDBError('No more rows in the cursor.', {
+        type: RebirthDBErrorType.CURSOR_END
+      });
     }
     const { data = null } = this.runningQueries.get(token) || {};
     if (data) {

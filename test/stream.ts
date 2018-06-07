@@ -1,11 +1,14 @@
 import assert from 'assert';
+import { Readable } from 'stream';
 import { r } from '../src';
 import config from './config';
 import { uuid } from './util/common';
-const { Readable } = require('stream');
 
 describe('stream', () => {
-  let dbName, tableName, tableName2, dumpTable;
+  let dbName: string;
+  let tableName: string;
+  let tableName2: string;
+  let dumpTable: string;
   const numDocs = 100; // Number of documents in the "big table" used to test the SUCCESS_PARTIAL
   const smallNumDocs = 5; // Number of documents in the "small table"
 
@@ -107,12 +110,13 @@ describe('stream', () => {
         }
       });
     });
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await r
-      .db(dbName)
-      .table(tableName)
-      .insert(data)
-      .run();
+    // tried include initial, still doesn't work
+    setTimeout(() => {
+      r.db(dbName)
+        .table(tableName)
+        .insert(data)
+        .run();
+    }, 1000);
     await promise;
   });
 

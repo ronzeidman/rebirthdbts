@@ -37,26 +37,20 @@ export class Cursor extends Readable implements RCursor {
       this.emitting = false;
     }
     this.emitting = true;
-    const push = (row: any): any =>
-      row === null
-        ? this._next().then(push)
-        : this.closed
-          ? null
-          : this.push(row);
+    const push = (row: any): any => {
+      if (row === null) {
+        this._next().then(push);
+      } else if (this.closed) {
+        this.push(null);
+        this.emitting = false;
+      } else {
+        this.push(row);
+      }
+    };
     this._next()
       .then(push)
       .catch(err => {
-        if (
-          isRebirthDBError(err) &&
-          [
-            RebirthDBErrorType.CURSOR_END,
-            RebirthDBErrorType.CANCEL,
-            RebirthDBErrorType.CONNECTION
-          ].includes(err.type)
-        ) {
-          if (err.type === RebirthDBErrorType.CONNECTION && !this.closed) {
-            this.emit('error', err);
-          }
+        if (this.closed) {
           this.push(null);
           this.emitting = false;
         } else {
@@ -118,7 +112,6 @@ export class Cursor extends Readable implements RCursor {
         { type: RebirthDBErrorType.CURSOR }
       );
     }
-    const all: any[] = [];
     if (!this.results) {
       await this.resolve();
       if (this.results && this.type === 'Atom') {
@@ -129,6 +122,12 @@ export class Cursor extends Readable implements RCursor {
         return [result];
       }
     }
+    if (this.type.endsWith('Feed')) {
+      throw new RebirthDBError('You cannot call `toArray` on a change Feed.', {
+        type: RebirthDBErrorType.CURSOR
+      });
+    }
+    const all: any[] = [];
     return this.eachAsync(async row => all.push(row)).then(() => all);
   }
 
@@ -168,16 +167,6 @@ export class Cursor extends Readable implements RCursor {
         break;
       }
       resume = callback(err, next);
-      if (
-        isRebirthDBError(err) &&
-        [
-          RebirthDBErrorType.CURSOR_END,
-          RebirthDBErrorType.CANCEL,
-          RebirthDBErrorType.CONNECTION
-        ].includes(err.type)
-      ) {
-        break;
-      }
     }
     if (onFinishedCallback) {
       onFinishedCallback();
@@ -253,10 +242,17 @@ export class Cursor extends Readable implements RCursor {
       this.results = getNativeTypes(results, this.runOptions);
       this.handleResponseNotes(type, notes);
       this.handleErrors(response);
-      this.hasNextBatch =
-        this.type.endsWith('Feed') || type === ResponseType.SUCCESS_PARTIAL;
+      this.hasNextBatch = type === ResponseType.SUCCESS_PARTIAL;
       return this.results;
     } catch (error) {
+      if (
+        [RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
+          error.type
+        )
+      ) {
+        this.emitting = false;
+        this.closed = true;
+      }
       this.results = undefined;
       this.hasNextBatch = false;
       throw error;
@@ -264,21 +260,27 @@ export class Cursor extends Readable implements RCursor {
   }
 
   private async _next() {
-    let results = this.getResults();
-    while (
-      isUndefined(results) ||
-      (this.hasNextBatch && isUndefined(results[this.position]))
-    ) {
-      await this.resolve();
-      results = this.getResults();
-    }
-    if (isUndefined(results) || isUndefined(results[this.position])) {
+    try {
+      let results = this.getResults();
+      if (isUndefined(results) || isUndefined(results[this.position])) {
+        await this.resolve();
+        results = this.getResults();
+      }
+      if (isUndefined(results) || isUndefined(results[this.position])) {
+        if (!this.hasNextBatch) {
+          throw new RebirthDBError('No more rows in the cursor.', {
+            type: RebirthDBErrorType.CURSOR_END
+          });
+        } else {
+          await this.resolve();
+          results = this.getResults();
+        }
+      }
+      return results[this.position++];
+    } catch (error) {
       this.close();
-      throw new RebirthDBError('No more rows in the cursor.', {
-        type: RebirthDBErrorType.CURSOR_END
-      });
+      throw error;
     }
-    return results[this.position++];
   }
 
   private getResults() {
