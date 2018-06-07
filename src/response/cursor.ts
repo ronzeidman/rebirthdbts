@@ -47,10 +47,7 @@ export class Cursor extends Readable implements RCursor {
     const push = (row: any): any => {
       if (row === null) {
         this._next().then(push);
-      } else if (this.closed) {
-        this.push(null);
-        this.emitting = false;
-      } else {
+      } else if (this.emitting) {
         this.push(row);
       }
     };
@@ -290,7 +287,6 @@ export class Cursor extends Readable implements RCursor {
       this.position++;
       return next;
     } catch (error) {
-      this.emitting = false;
       this.closed = true;
       throw error;
     }
