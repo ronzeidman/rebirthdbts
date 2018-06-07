@@ -100,6 +100,7 @@ export interface RunOptions {
   db?: string;
   arrayLimit?: number; // default 100,000
   minBatchRows?: number; // default 8
+  maxBatchRows?: number;
   maxBatchRow?: number; // default unlimited
   maxBatchBytes?: number; // default 1MB
   maxBatchSeconds?: number; // default 0.5

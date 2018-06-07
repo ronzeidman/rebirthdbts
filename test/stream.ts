@@ -1,6 +1,5 @@
 import assert from 'assert';
 import { Readable } from 'stream';
-import { inspect } from 'util';
 import { r } from '../src';
 import config from './config';
 import { uuid } from './util/common';
@@ -76,294 +75,291 @@ describe('stream', () => {
     await r.getPoolMaster().drain();
   });
 
-  // it('`table` should return a stream', async () => {
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor();
-  //   assert(stream);
-  //   assert(stream instanceof Readable);
-  //   stream.close();
-  // });
-
-  // it('Arrays should return a stream', async () => {
-  //   const data = [10, 11, 12, 13, 14, 15, 16];
-  //   const stream = await r.expr(data).getCursor();
-  //   assert(stream);
-  //   assert(stream instanceof Readable);
-
-  //   await new Promise((resolve, reject) => {
-  //     let count = 0;
-  //     stream.on('data', () => {
-  //       count++;
-  //       if (count === data.length) {
-  //         resolve();
-  //       }
-  //     });
-  //   });
-  // });
-
-  it('changes() should return a stream', async () => {
-    console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
-    const data = [{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }, { n: 6 }];
-    const conn1 = await r.connect(config);
-    const conn2 = await r.connect(config);
+  it('`table` should return a stream', async () => {
     const stream = await r
       .db(dbName)
       .table(tableName)
-      .changes()
-      .getCursor(conn1);
+      .getCursor();
+    assert(stream);
+    assert(stream instanceof Readable);
+    stream.close();
+  });
+
+  it('Arrays should return a stream', async () => {
+    const data = [10, 11, 12, 13, 14, 15, 16];
+    const stream = await r.expr(data).getCursor();
+    assert(stream);
+    assert(stream instanceof Readable);
+
+    await new Promise((resolve, reject) => {
+      let count = 0;
+      stream.on('data', () => {
+        count++;
+        if (count === data.length) {
+          resolve();
+        }
+      });
+    });
+  });
+
+  it('changes() should return a stream', async () => {
+    const data = [
+      { n: 1 },
+      { n: 2 },
+      { n: 3 },
+      { n: 4 },
+      { n: 5 },
+      { n: 6 },
+      { n: 7 }
+    ];
+    // added include initial, so it won't hang on some extreame cases
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .changes({ includeInitial: true })
+      .getCursor();
     assert(stream);
     assert(stream instanceof Readable);
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      console.log('subscribing');
       stream.on('data', d => {
-        console.log(`stream data ${d.new_val.n}`);
+        if (!d.new_val.n) {
+          count++;
+          if (count === data.length) {
+            resolve();
+            stream.close();
+          }
+        }
+      });
+    });
+
+    await r
+      .db(dbName)
+      .table(tableName)
+      .insert(data)
+      .run();
+    await promise;
+  });
+
+  it('get().changes() should return a stream', async () => {
+    const id = uuid();
+    await r
+      .db(dbName)
+      .table(tableName)
+      .insert({ id })
+      .run();
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .get(id)
+      .changes()
+      .getCursor();
+    assert(stream);
+    assert(stream instanceof Readable);
+
+    const promise = new Promise((resolve, reject) => {
+      let count = 0;
+      stream.on('data', () => {
         count++;
-        if (count === data.length) {
+        if (count === 3) {
           resolve();
           stream.close();
         }
       });
     });
-    // tried include initial, still doesn't work
-    console.log('writing');
+    await new Promise(resolve => setTimeout(resolve, 200));
     await r
       .db(dbName)
       .table(tableName)
-      .insert(data)
-      .run(conn2)
-      .then(() => {
-        console.log('written');
-        console.log(
-          `r.db("${dbName}").table("${tableName}").insert(${inspect(data)})`
-        );
-      });
+      .get(id)
+      .update({ update: 1 })
+      .run();
+    await r
+      .db(dbName)
+      .table(tableName)
+      .get(id)
+      .update({ update: 2 })
+      .run();
+    await r
+      .db(dbName)
+      .table(tableName)
+      .get(id)
+      .update({ update: 3 })
+      .run();
     await promise;
-    conn1.close();
-    conn2.close();
   });
 
-  // it('get().changes() should return a stream', async () => {
-  //   const id = uuid();
-  //   await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .insert({ id })
-  //     .run();
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .get(id)
-  //     .changes()
-  //     .getCursor();
-  //   assert(stream);
-  //   assert(stream instanceof Readable);
+  it('`table` should return a stream - testing empty SUCCESS_COMPLETE', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const promise = new Promise((resolve, reject) => {
-  //     let count = 0;
-  //     stream.on('data', () => {
-  //       count++;
-  //       if (count === 3) {
-  //         resolve();
-  //         stream.close();
-  //       }
-  //     });
-  //   });
-  //   await new Promise(resolve => setTimeout(resolve, 200));
-  //   await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .get(id)
-  //     .update({ update: 1 })
-  //     .run();
-  //   await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .get(id)
-  //     .update({ update: 2 })
-  //     .run();
-  //   await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .get(id)
-  //     .update({ update: 3 })
-  //     .run();
-  //   await promise;
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor(connection, { maxBatchRows: 1 });
+    assert(stream);
+    assert(stream instanceof Readable);
+    await stream.close();
+    await connection.close();
+  });
 
-  // it('`table` should return a stream - testing empty SUCCESS_COMPLETE', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
+  it('Test flowing - event data', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   assert(stream);
-  //   assert(stream instanceof Readable);
-  //   await stream.close();
-  //   await connection.close();
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor(connection, { maxBatchRows: 1 });
+    await new Promise((resolve, reject) => {
+      let count = 0;
+      stream.on('data', () => {
+        count++;
+        if (count === numDocs) {
+          resolve();
+        }
+      });
+    });
+    await stream.close();
+    await connection.close();
+  });
 
-  // it('Test flowing - event data', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
+  it('Test read', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   await new Promise((resolve, reject) => {
-  //     let count = 0;
-  //     stream.on('data', () => {
-  //       count++;
-  //       if (count === numDocs) {
-  //         resolve();
-  //       }
-  //     });
-  //   });
-  //   await stream.close();
-  //   await connection.close();
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor(connection, { maxBatchRows: 1 });
+    await new Promise((resolve, reject) => {
+      stream.once('readable', () => {
+        const doc = stream.read();
+        if (doc === null) {
+          reject(
+            new Error(
+              'stream.read() should not return null when readable was emitted'
+            )
+          );
+        }
+        let count = 1;
+        stream.on('data', data => {
+          count++;
+          if (count === numDocs) {
+            resolve();
+          }
+        });
+      });
+    });
+    await stream.close();
+    await connection.close();
+  });
 
-  // it('Test read', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
+  it('Test flowing - event data', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   await new Promise((resolve, reject) => {
-  //     stream.once('readable', () => {
-  //       const doc = stream.read();
-  //       if (doc === null) {
-  //         reject(
-  //           new Error(
-  //             'stream.read() should not return null when readable was emitted'
-  //           )
-  //         );
-  //       }
-  //       let count = 1;
-  //       stream.on('data', data => {
-  //         count++;
-  //         if (count === numDocs) {
-  //           resolve();
-  //         }
-  //       });
-  //     });
-  //   });
-  //   await stream.close();
-  //   await connection.close();
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor(connection, { maxBatchRows: 1 });
+    await new Promise((resolve, reject) => {
+      let count = 0;
+      stream.on('data', () => {
+        count++;
+        if (count === numDocs) {
+          resolve();
+        }
+      });
+      stream.pause();
+      if (count > 0) {
+        reject(new Error('The stream should have been paused'));
+      }
+      stream.resume();
+    });
+    await stream.close();
+    await connection.close();
+  });
 
-  // it('Test flowing - event data', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
+  it('Test read with null value', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   await new Promise((resolve, reject) => {
-  //     let count = 0;
-  //     stream.on('data', () => {
-  //       count++;
-  //       if (count === numDocs) {
-  //         resolve();
-  //       }
-  //     });
-  //     stream.pause();
-  //     if (count > 0) {
-  //       reject(new Error('The stream should have been paused'));
-  //     }
-  //     stream.resume();
-  //   });
-  //   await stream.close();
-  //   await connection.close();
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .limit(10)
+      .union([null])
+      .union(
+        r
+          .db(dbName)
+          .table(tableName)
+          .limit(10)
+      )
+      .getCursor(connection, { maxBatchRows: 1 });
+    await new Promise((resolve, reject) => {
+      stream.once('readable', () => {
+        let count = 0;
+        stream.on('data', data => {
+          count++;
+          if (count === 20) {
+            resolve();
+          } else if (count > 20) {
+            reject(new Error('Should not get null'));
+          }
+        });
+      });
+    });
+    await stream.close();
+    await connection.close();
+  });
 
-  // it('Test read with null value', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
+  it('Test read', async () => {
+    const connection = await r.connect({
+      host: config.host,
+      port: config.port,
+      authKey: config.authKey
+    });
+    assert(connection);
 
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .limit(10)
-  //     .union([null])
-  //     .union(
-  //       r
-  //         .db(dbName)
-  //         .table(tableName)
-  //         .limit(10)
-  //     )
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   await new Promise((resolve, reject) => {
-  //     stream.once('readable', () => {
-  //       let count = 0;
-  //       stream.on('data', data => {
-  //         count++;
-  //         if (count === 20) {
-  //           resolve();
-  //         } else if (count > 20) {
-  //           reject(new Error('Should not get null'));
-  //         }
-  //       });
-  //     });
-  //   });
-  //   await stream.close();
-  //   await connection.close();
-  // });
-
-  // it('Test read', async () => {
-  //   const connection = await r.connect({
-  //     host: config.host,
-  //     port: config.port,
-  //     authKey: config.authKey
-  //   });
-  //   assert(connection);
-
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor(connection, { maxBatchRows: 1 });
-  //   await new Promise((resolve, reject) => {
-  //     stream.once('readable', () => {
-  //       stream.read() === null
-  //         ? reject(
-  //             new Error(
-  //               'stream.read() should not return null when readable was emitted'
-  //             )
-  //           )
-  //         : resolve();
-  //     });
-  //   });
-  //   await stream.close();
-  //   await connection.close();
-  // });
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor(connection, { maxBatchRows: 1 });
+    await new Promise((resolve, reject) => {
+      stream.once('readable', () => {
+        stream.read() === null
+          ? reject(
+              new Error(
+                'stream.read() should not return null when readable was emitted'
+              )
+            )
+          : resolve();
+      });
+    });
+    await stream.close();
+    await connection.close();
+  });
 
   // it('Import with stream as default', async () => {
   //   const r1 = rethinkdbdash({
@@ -384,62 +380,62 @@ describe('stream', () => {
   //   await r1.getPool().drain();
   // });
 
-  // it('toStream', async () => {
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .getCursor();
+  it('toStream', async () => {
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .getCursor();
 
-  //   await new Promise((resolve, reject) => {
-  //     stream.once('readable', () => {
-  //       const doc = stream.read();
-  //       if (doc === null) {
-  //         reject(
-  //           new Error(
-  //             'stream.read() should not return null when readable was emitted'
-  //           )
-  //         );
-  //       }
-  //       let count = 1;
-  //       stream.on('data', data => {
-  //         count++;
-  //         if (count === numDocs) {
-  //           resolve();
-  //         }
-  //       });
-  //     });
-  //   });
-  //   await stream.close();
-  // });
+    await new Promise((resolve, reject) => {
+      stream.once('readable', () => {
+        const doc = stream.read();
+        if (doc === null) {
+          reject(
+            new Error(
+              'stream.read() should not return null when readable was emitted'
+            )
+          );
+        }
+        let count = 1;
+        stream.on('data', data => {
+          count++;
+          if (count === numDocs) {
+            resolve();
+          }
+        });
+      });
+    });
+    await stream.close();
+  });
 
-  // it('toStream - with grouped data', async () => {
-  //   const stream = await r
-  //     .db(dbName)
-  //     .table(tableName)
-  //     .group({ index: 'id' })
-  //     .getCursor();
+  it('toStream - with grouped data', async () => {
+    const stream = await r
+      .db(dbName)
+      .table(tableName)
+      .group({ index: 'id' })
+      .getCursor();
 
-  //   await new Promise((resolve, reject) => {
-  //     stream.once('readable', () => {
-  //       const doc = stream.read();
-  //       if (doc === null) {
-  //         reject(
-  //           new Error(
-  //             'stream.read() should not return null when readable was emitted'
-  //           )
-  //         );
-  //       }
-  //       let count = 1;
-  //       stream.on('data', data => {
-  //         count++;
-  //         if (count === numDocs) {
-  //           resolve();
-  //         }
-  //       });
-  //     });
-  //   });
-  //   await stream.close();
-  // });
+    await new Promise((resolve, reject) => {
+      stream.once('readable', () => {
+        const doc = stream.read();
+        if (doc === null) {
+          reject(
+            new Error(
+              'stream.read() should not return null when readable was emitted'
+            )
+          );
+        }
+        let count = 1;
+        stream.on('data', data => {
+          count++;
+          if (count === numDocs) {
+            resolve();
+          }
+        });
+      });
+    });
+    await stream.close();
+  });
 
   // it('pipe should work with a writable stream - 200-200', function (done) {
   //   await r.connectPool({ buffer: 1, max: 2, discovery: false, silent: true })

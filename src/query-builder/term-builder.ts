@@ -151,7 +151,11 @@ export const getCursorQueryFunc = (term: TermJson) => {
         { term, type: RebirthDBErrorType.API_FAIL }
       );
     }
-    return c ? await c.query(term, opt) : await cpool.queue(term, opt);
+    const cursor = c ? await c.query(term, opt) : await cpool.queue(term, opt);
+    if (cursor) {
+      cursor.init();
+      return cursor;
+    }
   };
 };
 

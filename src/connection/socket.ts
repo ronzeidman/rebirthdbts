@@ -5,7 +5,7 @@ import { isError } from 'util';
 import { RServerConnectionOptions, RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
-import { QueryType } from '../proto/enums';
+import { QueryType, ResponseType } from '../proto/enums';
 import { DataQueue } from './data-queue';
 import {
   NULL_BUFFER,
@@ -154,7 +154,7 @@ export class RebirthDBSocket extends EventEmitter {
     const { query = newQuery, data = null } =
       this.runningQueries.get(token) || {};
     if (type === QueryType.STOP) {
-      console.log('STOP ' + token);
+      // console.log('STOP ' + token);
       this.socket.write(buffer);
       if (data) {
         // Resolving and not rejecting so there won't be "unhandled rejection" if nobody listens
@@ -169,13 +169,13 @@ export class RebirthDBSocket extends EventEmitter {
       }
       return token;
     } else if (!data) {
-      console.log('START ' + token);
+      // console.log('START ' + token);
       this.runningQueries.set(token, {
         data: new DataQueue(),
         query
       });
-    } else {
-      console.log('CONTINUE ' + token);
+      // } else {
+      // console.log('CONTINUE ' + token);
     }
     this.socket.write(buffer);
     this.emit('query', token);
@@ -189,7 +189,7 @@ export class RebirthDBSocket extends EventEmitter {
   }
   public continueQuery(token: number) {
     if (this.runningQueries.has(token)) {
-      console.log('CONTINUING ' + token);
+      // console.log('CONTINUING ' + token);
       return this.sendQuery([QueryType.CONTINUE], token);
     }
   }
@@ -215,21 +215,20 @@ export class RebirthDBSocket extends EventEmitter {
         type: RebirthDBErrorType.CURSOR
       });
     }
-    console.log('WAITING ' + token);
+    // console.log('WAITING ' + token);
     const res = await data.dequeue();
-    console.log('RESULT ' + token);
-    // console.dir(res);
+    // console.log('RESULT ' + token);
     if (isError(res)) {
       data.destroy(res);
       this.runningQueries.delete(token);
       throw res;
     } else if (this.status === 'handshake') {
       this.runningQueries.delete(token);
-    } else {
+    } else if (res.t !== ResponseType.SUCCESS_PARTIAL) {
       this.runningQueries.delete(token);
       this.emit('release', this.runningQueries.size);
     }
-    console.log('RETURNING ' + token);
+    // console.log('RETURNING ' + token);
     return res as any;
   }
 
@@ -338,13 +337,9 @@ export class RebirthDBSocket extends EventEmitter {
       this.buffer = this.buffer.slice(12 + responseLength);
       const { data = null } = this.runningQueries.get(token) || {};
       // console.dir(response, { depth: null });
-      console.log('GOT ' + token);
+      // console.log('GOT ' + token);
       if (data) {
-        if (response.r && response.r.length > 0) {
-          data.enqueue(response, () => this.continueQuery(token));
-        } else {
-          this.continueQuery(token);
-        }
+        data.enqueue(response);
       }
     }
   }

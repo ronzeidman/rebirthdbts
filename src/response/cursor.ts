@@ -18,6 +18,8 @@ export class Cursor extends Readable implements RCursor {
   private includeStates = false;
   private closed = false;
   private emitting = false;
+  private resolving: Promise<any> | undefined;
+  private lastError: Error | undefined;
   constructor(
     private conn: RebirthDBSocket,
     private token: number,
@@ -31,6 +33,11 @@ export class Cursor extends Readable implements RCursor {
   ) {
     super({ objectMode: true });
   }
+
+  public init() {
+    this.resolving = this.resolve().catch(err => (this.lastError = err));
+  }
+
   public _read() {
     if (this.closed) {
       this.push(null);
@@ -114,23 +121,18 @@ export class Cursor extends Readable implements RCursor {
         { type: RebirthDBErrorType.CURSOR }
       );
     }
-    if (!this.results) {
-      await this.resolve();
-      if (this.results && this.type === 'Atom') {
-        const [result] = this.results;
-        if (Array.isArray(result)) {
-          return result;
-        }
-        return [result];
-      }
-    }
-    if (this.type.endsWith('Feed')) {
-      throw new RebirthDBError('You cannot call `toArray` on a change Feed.', {
-        type: RebirthDBErrorType.CURSOR
-      });
-    }
     const all: any[] = [];
-    return this.eachAsync(async row => all.push(row)).then(() => all);
+    return this.eachAsync(async row => {
+      if (this.type.endsWith('Feed')) {
+        throw new RebirthDBError(
+          'You cannot call `toArray` on a change Feed.',
+          {
+            type: RebirthDBErrorType.CURSOR
+          }
+        );
+      }
+      all.push(row);
+    }).then(() => all);
   }
 
   public async each(
@@ -256,26 +258,40 @@ export class Cursor extends Readable implements RCursor {
   }
 
   private async _next() {
+    if (this.lastError) {
+      this.emitting = false;
+      this.closed = true;
+      this.results = undefined;
+      this.hasNextBatch = false;
+      throw this.lastError;
+    }
     try {
+      if (this.resolving) {
+        await this.resolving;
+        this.resolving = undefined;
+      }
       let results = this.getResults();
-      if (isUndefined(results) || isUndefined(results[this.position])) {
-        await this.resolve();
-        results = this.getResults();
-      }
-      if (isUndefined(results) || isUndefined(results[this.position])) {
-        if (!this.hasNextBatch) {
-          throw new RebirthDBError('No more rows in the cursor.', {
-            type: RebirthDBErrorType.CURSOR_END
-          });
-        } else {
-          throw new RebirthDBError('Unfinished query resolved', {
-            type: RebirthDBErrorType.CURSOR
-          });
+      let next = results && results[this.position];
+      while (isUndefined(next) && this.hasNextBatch) {
+        if (!this.resolving) {
+          this.resolving = this.resolve();
+          this.conn.continueQuery(this.token);
         }
+        await this.resolving;
+        this.resolving = undefined;
+        results = this.getResults();
+        next = results && results[this.position];
       }
-      return results[this.position++];
+      if (!this.hasNextBatch && isUndefined(next)) {
+        throw new RebirthDBError('No more rows in the cursor.', {
+          type: RebirthDBErrorType.CURSOR_END
+        });
+      }
+      this.position++;
+      return next;
     } catch (error) {
-      this.close();
+      this.emitting = false;
+      this.closed = true;
       throw error;
     }
   }
