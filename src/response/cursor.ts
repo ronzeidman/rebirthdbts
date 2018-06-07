@@ -51,15 +51,16 @@ export class Cursor extends Readable implements RCursor {
       .then(push)
       .catch(err => {
         if (
-          isRebirthDBError(err) &&
-          [RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
-            err.type
-          )
+          (!isRebirthDBError(err) ||
+            ![
+              RebirthDBErrorType.CURSOR_END,
+              RebirthDBErrorType.CANCEL
+            ].includes(err.type)) &&
+          this.listenerCount('error') > 0
         ) {
-          this.push(null);
-        } else if (this.listenerCount('error') > 0) {
           this.emit('error', err);
         }
+        this.push(null);
       });
   }
 
