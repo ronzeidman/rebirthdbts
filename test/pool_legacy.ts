@@ -167,9 +167,6 @@ describe('pool legacy', () => {
         silent: true
       })
       .catch(() => undefined);
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 1000);
-    });
     try {
       await r.expr(1).run();
       assert.fail('should throw');
@@ -184,9 +181,6 @@ describe('pool legacy', () => {
   });
 
   it('If the pool is drained, it should reject queries', async () => {
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 2000);
-    });
     await r
       .connectPool({
         buffer: 1,
@@ -212,9 +206,6 @@ describe('pool legacy', () => {
   });
 
   it('If the pool is draining, it should reject queries', async () => {
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 2000);
-    });
     await r.connectPool({ buffer: 1, max: 2, silent: true });
     r.getPoolMaster().drain();
     try {
@@ -250,9 +241,6 @@ describe('pool legacy', () => {
   // });
 
   it('The pool should remove a connection if it errored', async () => {
-    await new Promise(function(resolve, reject) {
-      setTimeout(resolve, 2000);
-    });
     await r.connectPool({ buffer: 1, max: 2, silent: true });
     r.getPoolMaster().setOptions({ timeoutGb: 60 * 60 * 1000 });
 
@@ -289,9 +277,6 @@ describe('pool legacy', () => {
     let tableName: string;
 
     before(async () => {
-      await new Promise(function(resolve, reject) {
-        setTimeout(resolve, 2000);
-      });
       await r.connectPool(options);
       dbName = uuid();
       tableName = uuid();

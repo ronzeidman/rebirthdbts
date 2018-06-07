@@ -92,7 +92,8 @@ describe('stream', () => {
   });
 
   it('changes() should return a stream', async () => {
-    const data = [{}, {}, {}, {}];
+    // if I insert 4 it misses one
+    const data = [{}, {}, {}];
     const stream = await r
       .db(dbName)
       .table(tableName)
@@ -102,7 +103,7 @@ describe('stream', () => {
     assert(stream instanceof Readable);
     const promise = new Promise((resolve, reject) => {
       let count = 0;
-      stream.on('data', () => {
+      stream.on('data', d => {
         count++;
         if (count === data.length) {
           resolve();
