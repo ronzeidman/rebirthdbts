@@ -4,7 +4,7 @@ import { RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { Version } from '../proto/enums';
 
-export const NULL_BUFFER = new Buffer('\0', 'binary');
+export const NULL_BUFFER = Buffer.from('\0', 'binary');
 const PROTOCOL_VERSION = 0;
 const AUTHENTIFICATION_METHOD = 'SCRAM-SHA-256';
 const KEY_LENGTH = 32; // Because we are currently using SHA 256
@@ -17,7 +17,7 @@ enum HandshakeState {
 }
 
 export function buildAuthBuffer(user: string) {
-  const versionBuffer = new Buffer(4);
+  const versionBuffer = Buffer.alloc(4);
   versionBuffer.writeInt32LE(Version.V1_0, 0);
   const randomString = randomBytes(18).toString('base64');
   const mainBuffer = Buffer.from(
@@ -57,7 +57,7 @@ export async function computeSaltedPassword(
   const [randomNonce, s, i] = authentication
     .split(',')
     .map(part => part.substring(2));
-  const salt = new Buffer(s, 'base64');
+  const salt = Buffer.from(s, 'base64');
   const iterations = parseInt(i, 10);
   if (randomNonce.substring(0, randomString.length) !== randomString) {
     throw new RebirthDBError('Invalid nonce from server', {
@@ -129,5 +129,5 @@ function xorBuffer(a: Buffer, b: Buffer) {
     // tslint:disable-next-line:no-bitwise
     result.push(a[i] ^ b[i]);
   }
-  return new Buffer(result);
+  return Buffer.from(result);
 }

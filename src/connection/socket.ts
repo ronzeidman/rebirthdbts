@@ -46,7 +46,7 @@ export class RebirthDBSocket extends EventEmitter {
   private mark = 0;
   private isOpen = false;
   private nextToken = 0;
-  private buffer = new Buffer(0);
+  private buffer = Buffer.alloc(0);
   private mode: 'handshake' | 'response' = 'handshake';
   private ca?: Buffer[];
 
@@ -138,7 +138,7 @@ export class RebirthDBSocket extends EventEmitter {
     }
     const encoded = JSON.stringify(newQuery);
     const querySize = Buffer.byteLength(encoded);
-    const buffer = new Buffer(8 + 4 + querySize);
+    const buffer = Buffer.alloc(8 + 4 + querySize);
     // tslint:disable-next-line:no-bitwise
     buffer.writeUInt32LE(token & 0xffffffff, 0);
     buffer.writeUInt32LE(Math.floor(token / 0xffffffff), 4);

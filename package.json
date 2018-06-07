@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "nyc --reporter=text ts-mocha -p ./tsconfig.test.json --check-leaks -t 60000 ./test/*.ts",
+    "test": "ts-mocha -p ./tsconfig.test.json --check-leaks -t 60000 ./test/*.ts",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "build": "tsc",
     "proto": "pbjs -t static-module -w commonjs -o src/proto/ql2.js src/proto/ql2.proto && pbts -o src/proto/ql2.d.ts src/proto/ql2.js && ts-node ./generate-enums"

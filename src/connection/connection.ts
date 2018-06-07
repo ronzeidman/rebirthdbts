@@ -63,7 +63,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       connectionOptions: this.options,
       user,
       password: password
-        ? Buffer.concat([new Buffer(password), NULL_BUFFER])
+        ? Buffer.concat([Buffer.from(password), NULL_BUFFER])
         : NULL_BUFFER
     });
   }
