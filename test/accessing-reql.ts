@@ -23,13 +23,16 @@ describe('accessing-reql', () => {
       assert(connection.open);
     }
     // remove any dbs created between each test case
-    for (dbName of await r.dbList().run(connection)) {
-      if (['rethinkdb', 'test', 'dealerrelay'].includes(dbName)) {
-        continue;
-      } else {
-        await r.dbDrop(dbName).run(connection);
-      }
-    }
+    await r
+      .dbList()
+      .filter(db =>
+        r
+          .expr(['rethinkdb', 'test', 'dealerrelay'])
+          .contains(db)
+          .not()
+      )
+      .forEach(db => r.dbDrop(db))
+      .run(connection);
     await connection.close();
     assert(!connection.open);
   });

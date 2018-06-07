@@ -33,17 +33,16 @@ describe('cursor', () => {
     tableName2 = uuid(); // small table to test success sequence
 
     // delete all but the system dbs
-    for (const db of await r.dbList().run()) {
-      if (db === 'rethinkdb' || db === 'test') {
-        continue;
-      } else {
-        try {
-          await r.dbDrop(db).run();
-        } catch (error) {
-          assert.fail(error);
-        }
-      }
-    }
+    await r
+      .dbList()
+      .filter(db =>
+        r
+          .expr(['rethinkdb', 'test', 'dealerrelay'])
+          .contains(db)
+          .not()
+      )
+      .forEach(db => r.dbDrop(db))
+      .run(connection);
 
     result = await r.dbCreate(dbName).run();
     assert.equal(result.dbs_created, 1);

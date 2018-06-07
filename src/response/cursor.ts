@@ -82,11 +82,13 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public async close() {
-    if (this.conn.status === 'open') {
-      this.conn.stopQuery(this.token);
+    if (!this.closed) {
+      if (this.conn.status === 'open') {
+        this.conn.stopQuery(this.token);
+      }
+      this.emitting = false;
+      this.closed = true;
     }
-    this.emitting = false;
-    this.closed = true;
   }
 
   public async next() {
@@ -245,14 +247,8 @@ export class Cursor extends Readable implements RCursor {
       this.hasNextBatch = type === ResponseType.SUCCESS_PARTIAL;
       return this.results;
     } catch (error) {
-      if (
-        [RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
-          error.type
-        )
-      ) {
-        this.emitting = false;
-        this.closed = true;
-      }
+      this.emitting = false;
+      this.closed = true;
       this.results = undefined;
       this.hasNextBatch = false;
       throw error;
@@ -272,8 +268,9 @@ export class Cursor extends Readable implements RCursor {
             type: RebirthDBErrorType.CURSOR_END
           });
         } else {
-          await this.resolve();
-          results = this.getResults();
+          throw new RebirthDBError('Unfinished query resolved', {
+            type: RebirthDBErrorType.CURSOR
+          });
         }
       }
       return results[this.position++];

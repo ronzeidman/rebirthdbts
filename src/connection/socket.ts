@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
 import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
 import { connect as tlsConnect } from 'tls';
-import { isError, isObject } from 'util';
+import { isError } from 'util';
 import { RServerConnectionOptions, RebirthDBErrorType } from '..';
 import { RebirthDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
-import { QueryType, ResponseType } from '../proto/enums';
+import { QueryType } from '../proto/enums';
+import { DataQueue } from './data-queue';
 import {
   NULL_BUFFER,
   buildAuthBuffer,
@@ -38,11 +39,11 @@ export class RebirthDBSocket extends EventEmitter {
   public runningQueries = new Map<
     number,
     {
-      resolve: (data: ResponseJson | Error) => void;
       query: QueryJson;
-      data: Promise<ResponseJson>;
+      data: DataQueue<ResponseJson | Error>;
     }
   >();
+  private mark = 0;
   private isOpen = false;
   private nextToken = 0;
   private buffer = new Buffer(0);
@@ -128,14 +129,14 @@ export class RebirthDBSocket extends EventEmitter {
     this.emit('connect');
   }
 
-  public sendQuery(query: QueryJson, token = this.nextToken++) {
+  public sendQuery(newQuery: QueryJson, token = this.nextToken++) {
     if (!this.socket || this.status !== 'open') {
       throw new RebirthDBError(
         '`run` was called with a closed connection after:',
-        { query, type: RebirthDBErrorType.CONNECTION }
+        { query: newQuery, type: RebirthDBErrorType.CONNECTION }
       );
     }
-    const encoded = JSON.stringify(query);
+    const encoded = JSON.stringify(newQuery);
     const querySize = Buffer.byteLength(encoded);
     const buffer = new Buffer(8 + 4 + querySize);
     // tslint:disable-next-line:no-bitwise
@@ -143,16 +144,23 @@ export class RebirthDBSocket extends EventEmitter {
     buffer.writeUInt32LE(Math.floor(token / 0xffffffff), 4);
     buffer.writeUInt32LE(querySize, 8);
     buffer.write(encoded, 12);
-    const [type] = query;
-    if (type === QueryType.STOP) {
+    const { noreply = false } = newQuery[2] || {};
+    if (noreply) {
       this.socket.write(buffer);
-      const { resolve = null, query: runningQuery = null } =
-        this.runningQueries.get(token) || {};
-      if (resolve && runningQuery) {
+      this.emit('query', token);
+      return token;
+    }
+    const [type] = newQuery;
+    const { query = newQuery, data = null } =
+      this.runningQueries.get(token) || {};
+    if (type === QueryType.STOP) {
+      console.log('STOP ' + token);
+      this.socket.write(buffer);
+      if (data) {
         // Resolving and not rejecting so there won't be "unhandled rejection" if nobody listens
-        resolve(
+        data.destroy(
           new RebirthDBError('Query cancelled', {
-            query: runningQuery,
+            query,
             type: RebirthDBErrorType.CANCEL
           })
         );
@@ -160,43 +168,30 @@ export class RebirthDBSocket extends EventEmitter {
         this.emit('release', this.runningQueries.size);
       }
       return token;
-    }
-    const { noreply = false } = query[2] || {};
-    if (noreply) {
-      this.socket.write(buffer);
-      this.emit('query', token);
-      return token;
+    } else if (!data) {
+      console.log('START ' + token);
+      this.runningQueries.set(token, {
+        data: new DataQueue(),
+        query
+      });
     } else {
-      let resolve: any;
-      const data = new Promise<ResponseJson>((res, rej) => (resolve = res));
-      const { query: runningQuery = query, data: oldData = null } =
-        this.runningQueries.get(token) || {};
-      if (oldData) {
-        oldData.then(() => {
-          if (this.socket) {
-            this.runningQueries.set(token, {
-              resolve,
-              data,
-              query: runningQuery
-            });
-            this.socket.write(buffer);
-          }
-        });
-      } else {
-        this.runningQueries.set(token, {
-          resolve,
-          data,
-          query: runningQuery
-        });
-        this.socket.write(buffer);
-        this.emit('query', token);
-      }
-      return token;
+      console.log('CONTINUE ' + token);
     }
+    this.socket.write(buffer);
+    this.emit('query', token);
+    return token;
   }
 
   public stopQuery(token: number) {
-    return this.sendQuery([QueryType.STOP], token);
+    if (this.runningQueries.has(token)) {
+      return this.sendQuery([QueryType.STOP], token);
+    }
+  }
+  public continueQuery(token: number) {
+    if (this.runningQueries.has(token)) {
+      console.log('CONTINUING ' + token);
+      return this.sendQuery([QueryType.CONTINUE], token);
+    }
   }
 
   public async readNext<T = ResponseJson>(token: number): Promise<T> {
@@ -215,27 +210,32 @@ export class RebirthDBSocket extends EventEmitter {
       });
     }
     const { data = null } = this.runningQueries.get(token) || {};
-    if (data) {
-      const res = await data;
-      if (isError(res)) {
-        this.runningQueries.delete(token);
-        throw res;
-      } else if (this.status === 'handshake') {
-        this.runningQueries.delete(token);
-      } else if (isObject(res) && res.t === ResponseType.SUCCESS_PARTIAL) {
-        this.sendQuery([QueryType.CONTINUE], token);
-      } else {
-        this.runningQueries.delete(token);
-        this.emit('release', this.runningQueries.size);
-      }
-      return res as any;
+    if (!data) {
+      throw new RebirthDBError('Query is not running.', {
+        type: RebirthDBErrorType.CURSOR
+      });
     }
-    return data as any;
+    console.log('WAITING ' + token);
+    const res = await data.dequeue();
+    console.log('RESULT ' + token);
+    // console.dir(res);
+    if (isError(res)) {
+      data.destroy(res);
+      this.runningQueries.delete(token);
+      throw res;
+    } else if (this.status === 'handshake') {
+      this.runningQueries.delete(token);
+    } else {
+      this.runningQueries.delete(token);
+      this.emit('release', this.runningQueries.size);
+    }
+    console.log('RETURNING ' + token);
+    return res as any;
   }
 
   public close() {
-    for (const { resolve, query } of this.runningQueries.values()) {
-      resolve(
+    for (const { data, query } of this.runningQueries.values()) {
+      data.destroy(
         new RebirthDBError(
           'The connection was closed before the query could be completed',
           {
@@ -261,11 +261,8 @@ export class RebirthDBSocket extends EventEmitter {
   private async performHandshake() {
     let token = 0;
     const generateRunningQuery = () => {
-      let resolve: any;
-      const data = new Promise<ResponseJson>((res, rej) => (resolve = res));
       this.runningQueries.set(token++, {
-        resolve,
-        data,
+        data: new DataQueue(),
         query: [QueryType.START]
       });
     };
@@ -297,14 +294,13 @@ export class RebirthDBSocket extends EventEmitter {
     let index: number = -1;
     while ((index = this.buffer.indexOf(0)) >= 0) {
       const strMsg = this.buffer.slice(0, index).toString('utf8');
-      const { resolve = null } =
-        this.runningQueries.get(this.nextToken++) || {};
+      const { data = null } = this.runningQueries.get(this.nextToken++) || {};
       let err: RebirthDBError | undefined;
       try {
         const jsonMsg = JSON.parse(strMsg);
         if (jsonMsg.success) {
-          if (resolve) {
-            resolve(jsonMsg as any);
+          if (data) {
+            data.enqueue(jsonMsg as any);
           }
         } else {
           err = new RebirthDBError(jsonMsg.error, {
@@ -315,8 +311,8 @@ export class RebirthDBSocket extends EventEmitter {
         err = new RebirthDBError(strMsg, { type: RebirthDBErrorType.AUTH });
       }
       if (err) {
-        if (resolve) {
-          resolve(err);
+        if (data) {
+          data.destroy(err);
         }
         this.handleError(err);
       }
@@ -340,11 +336,16 @@ export class RebirthDBSocket extends EventEmitter {
         responseBuffer.toString('utf8')
       );
       this.buffer = this.buffer.slice(12 + responseLength);
-      const { resolve = null } = this.runningQueries.get(token) || {};
-      if (resolve) {
-        resolve(response);
+      const { data = null } = this.runningQueries.get(token) || {};
+      // console.dir(response, { depth: null });
+      console.log('GOT ' + token);
+      if (data) {
+        if (response.r && response.r.length > 0) {
+          data.enqueue(response, () => this.continueQuery(token));
+        } else {
+          this.continueQuery(token);
+        }
       }
-      this.emit('data', response, token);
     }
   }
 
@@ -354,6 +355,18 @@ export class RebirthDBSocket extends EventEmitter {
     if (this.listenerCount('error') > 0) {
       this.emit('error', err);
     }
+  }
+
+  private createNextData() {
+    let resolve: any;
+    const promise = new Promise<ResponseJson | Error>(
+      (res, rej) => (resolve = res)
+    );
+    return {
+      promise,
+      resolve,
+      resolved: false
+    };
   }
 }
 
