@@ -39,25 +39,25 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public _read() {
-    if (this.closed) {
-      this.push(null);
-      this.emitting = false;
-    }
     this.emitting = true;
     const push = (row: any): any => {
       if (row === null) {
         this._next().then(push);
-      } else if (this.emitting) {
+      } else {
         this.push(row);
       }
     };
     this._next()
       .then(push)
       .catch(err => {
-        if (this.closed) {
+        if (
+          isRebirthDBError(err) &&
+          [RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
+            err.type
+          )
+        ) {
           this.push(null);
-          this.emitting = false;
-        } else {
+        } else if (this.listenerCount('error') > 0) {
           this.emit('error', err);
         }
       });
