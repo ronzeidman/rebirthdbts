@@ -123,7 +123,7 @@ describe('stream', () => {
     const promise = new Promise((resolve, reject) => {
       let count = 0;
       stream.on('data', d => {
-        if (!d.new_val.n) {
+        if (!!d.new_val.n) {
           count++;
           if (count === data.length) {
             resolve();
