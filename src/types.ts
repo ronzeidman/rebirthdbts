@@ -179,7 +179,7 @@ export interface ReconfigureResult {
 export interface TableChangeResult {
   tables_created?: number;
   tables_dropped?: number;
-  config_changes: ValueChange<TableConfig>;
+  config_changes: Array<ValueChange<TableConfig>>;
 }
 
 export interface TableShard {
@@ -363,15 +363,19 @@ export interface RQuery<T = any> {
     type: string;
   }>;
 
-  run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
+  run(options: RunOptions & { noreply: true }): Promise<undefined>;
   run(
-    connection?: Connection | (RunOptions & { noreply: true }),
-    options?: RunOptions & { noreply: true }
+    connection: Connection,
+    options: RunOptions & { noreply: true }
   ): Promise<undefined>;
   run(
-    connection?: Connection | (RunOptions & { profile: true }),
-    options?: RunOptions & { profile: true }
+    options: RunOptions & { profile: true }
   ): Promise<{ profile: any; result: T }>;
+  run(
+    connection: Connection,
+    options: RunOptions & { profile: true }
+  ): Promise<{ profile: any; result: T }>;
+  run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
   getCursor(
     connection?: Connection | RunOptions,
     options?: RunOptions
@@ -1023,7 +1027,7 @@ export interface R {
     options?: TableCreateOptions
   ): RDatum<TableChangeResult>;
   tableDrop(tableName: RValue<string>): RDatum<TableChangeResult>;
-  tableList(): RDatum<string>;
+  tableList(): RDatum<string[]>;
   table<T = any>(tableName: RValue<string>, options?: TableOptions): RTable<T>;
   // additional
   count<T>(

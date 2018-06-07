@@ -160,7 +160,7 @@ export interface ReconfigureResult {
 export interface TableChangeResult {
     tables_created?: number;
     tables_dropped?: number;
-    config_changes: ValueChange<TableConfig>;
+    config_changes: Array<ValueChange<TableConfig>>;
 }
 export interface TableShard {
     primary_replica: string;
@@ -321,20 +321,25 @@ export interface RQuery<T = any> {
         primary_key?: string;
         type: string;
     }>;
-    run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
-    run(connection?: Connection | (RunOptions & {
-        noreply: true;
-    }), options?: RunOptions & {
+    run(options: RunOptions & {
         noreply: true;
     }): Promise<undefined>;
-    run(connection?: Connection | (RunOptions & {
-        profile: true;
-    }), options?: RunOptions & {
+    run(connection: Connection, options: RunOptions & {
+        noreply: true;
+    }): Promise<undefined>;
+    run(options: RunOptions & {
         profile: true;
     }): Promise<{
         profile: any;
         result: T;
     }>;
+    run(connection: Connection, options: RunOptions & {
+        profile: true;
+    }): Promise<{
+        profile: any;
+        result: T;
+    }>;
+    run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
     getCursor(connection?: Connection | RunOptions, options?: RunOptions): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
 }
 export interface RDatum<T = any> extends RQuery<T> {
@@ -721,7 +726,7 @@ export interface R {
     db(dbName: string): RDatabase;
     tableCreate(tableName: RValue<string>, options?: TableCreateOptions): RDatum<TableChangeResult>;
     tableDrop(tableName: RValue<string>): RDatum<TableChangeResult>;
-    tableList(): RDatum<string>;
+    tableList(): RDatum<string[]>;
     table<T = any>(tableName: RValue<string>, options?: TableOptions): RTable<T>;
     count<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, boolean>): RDatum<number>;
     sum<T>(caller: T[] | RDatum<T[]> | RStream<T>, value?: FieldSelector<T, number | null>): RDatum<number>;

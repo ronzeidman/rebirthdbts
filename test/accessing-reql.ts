@@ -10,7 +10,6 @@ describe('accessing-reql', () => {
   let connection: Connection; // global connection
   let dbName: string;
   let tableName: string;
-  let result: any;
 
   beforeEach(async () => {
     connection = await r.connect(config);
@@ -70,54 +69,54 @@ describe('accessing-reql', () => {
     tableName = uuid();
 
     assert(connection.open);
-    result = await r.dbCreate(dbName).run(connection);
-    assert.equal(result.config_changes.length, 1);
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run(connection);
+    assert.equal(result1.config_changes.length, 1);
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run(connection);
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .insert(new Array(100).fill({}))
       .run(connection);
-    assert.equal(result.inserted, 100);
+    assert.equal(result3.inserted, 100);
 
-    result = await r
+    const result4 = await r
       .db(dbName)
       .table(tableName)
       .delete()
       .run(connection);
-    assert.equal(result.deleted, 100);
+    assert.equal(result4.deleted, 100);
 
-    result = await r
+    const result5 = await r
       .db(dbName)
       .tableDrop(tableName)
       .run(connection);
-    assert.equal(result.config_changes.length, 1);
-    assert.equal(result.tables_dropped, 1);
+    assert.equal(result5.config_changes.length, 1);
+    assert.equal(result5.tables_dropped, 1);
 
-    result = await r.dbDrop(dbName).run(connection);
-    assert.equal(result.config_changes.length, 1);
-    assert.equal(result.dbs_dropped, 1);
+    const result6 = await r.dbDrop(dbName).run(connection);
+    assert.equal(result6.config_changes.length, 1);
+    assert.equal(result6.dbs_dropped, 1);
   });
 
   it('`run` should use the default database', async () => {
     dbName = uuid();
     tableName = uuid();
 
-    result = await r.dbCreate(dbName).run(connection);
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run(connection);
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run(connection);
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
     await connection.close();
     assert(!connection.open);
@@ -130,7 +129,7 @@ describe('accessing-reql', () => {
     });
     assert(connection);
 
-    result = await r.tableList().run(connection);
+    const result = await r.tableList().run(connection);
     assert.deepEqual(result, [tableName]);
   });
 
@@ -138,19 +137,19 @@ describe('accessing-reql', () => {
     dbName = uuid();
     tableName = uuid();
 
-    result = await r.dbCreate(dbName).run(connection);
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run(connection);
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run(connection);
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
     connection.use(dbName);
 
-    result = await r.tableList().run(connection);
-    assert.deepEqual(result, [tableName]);
+    const result3 = await r.tableList().run(connection);
+    assert.deepEqual(result3, [tableName]);
   });
 
   it('`reconnect` should work', async () => {
@@ -166,20 +165,20 @@ describe('accessing-reql', () => {
     connection = await connection.reconnect({ noreplyWait: true });
     assert(connection.open);
 
-    result = await r.expr(1).run(connection);
-    assert.equal(result, 1);
+    const result1 = await r.expr(1).run(connection);
+    assert.equal(result1, 1);
 
     connection = await connection.reconnect({ noreplyWait: false });
     assert(connection.open);
 
-    result = await r.expr(1).run(connection);
-    assert.equal(result, 1);
+    const result2 = await r.expr(1).run(connection);
+    assert.equal(result2, 1);
 
     connection = await connection.reconnect();
     assert(connection);
 
-    result = await r.expr(1).run(connection);
-    assert.equal(result, 1);
+    const result3 = await r.expr(1).run(connection);
+    assert.equal(result3, 1);
   });
 
   it('`noReplyWait` should throw', async () => {
@@ -204,55 +203,55 @@ describe('accessing-reql', () => {
       .tableCreate(tableName)
       .run(connection);
 
-    result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName)
       .insert(largeishObject)
       .run(connection, { noreply: true });
-    assert.equal(result, undefined);
+    assert.equal(result1, undefined);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .count()
       .run(connection);
-    assert.equal(result, 0);
+    assert.equal(result2, 0);
 
-    result = await connection.noreplyWait();
-    assert.equal(result, undefined);
+    const result3 = await connection.noreplyWait();
+    assert.equal(result3, undefined);
 
-    result = await r
+    const result4 = await r
       .db(dbName)
       .table(tableName)
       .count()
       .run(connection);
-    assert.equal(result, 10000);
+    assert.equal(result4, 10000);
   });
 
   it('`run` should take an argument', async () => {
-    result = await r.expr(1).run(connection, { readMode: 'primary' });
-    assert.equal(result, 1);
+    const result1 = await r.expr(1).run(connection, { readMode: 'primary' });
+    assert.equal(result1, 1);
 
-    result = await r.expr(1).run(connection, { readMode: 'majority' });
-    assert.equal(result, 1);
+    const result2 = await r.expr(1).run(connection, { readMode: 'majority' });
+    assert.equal(result2, 1);
 
-    result = await r.expr(1).run(connection, { profile: false });
-    assert.equal(result, 1);
+    const result3 = await r.expr(1).run(connection, { profile: false });
+    assert.equal(result3, 1);
 
-    result = await r.expr(1).run(connection, { profile: true });
-    assert(result.profile);
-    assert.equal(result.result, 1);
+    const result4 = await r.expr(1).run(connection, { profile: true });
+    assert(result4.profile);
+    assert.equal(result4.result, 1);
 
-    result = await r.expr(1).run(connection, { durability: 'soft' });
-    assert.equal(result, 1);
+    const result5 = await r.expr(1).run(connection, { durability: 'soft' });
+    assert.equal(result5, 1);
 
-    result = await r.expr(1).run(connection, { durability: 'hard' });
-    assert.equal(result, 1);
+    const result6 = await r.expr(1).run(connection, { durability: 'hard' });
+    assert.equal(result6, 1);
   });
 
   it('`run` should throw on an unrecognized argument', async () => {
     try {
-      result = await r.expr(1).run(connection, { foo: 'bar' });
+      const result = await r.expr(1).run(connection, { foo: 'bar' });
       assert.fail('should throw an error');
     } catch (e) {
       assert.equal(
@@ -263,30 +262,30 @@ describe('accessing-reql', () => {
   });
 
   it('`r()` should be a shortcut for r.expr()', async () => {
-    result = await r(1).run(connection);
+    const result = await r(1).run(connection);
     assert.deepEqual(result, 1);
   });
 
   it('`timeFormat` should work', async () => {
-    result = await r.now().run(connection);
-    assert(result instanceof Date);
+    const result1 = await r.now().run(connection);
+    assert(result1 instanceof Date);
 
-    result = await r.now().run(connection, { timeFormat: 'native' });
-    assert(result instanceof Date);
+    const result2 = await r.now().run(connection, { timeFormat: 'native' });
+    assert(result2 instanceof Date);
 
-    result = await r.now().run(connection, { timeFormat: 'raw' });
-    assert.equal(result.$reql_type$, 'TIME');
+    const result3 = await r.now().run(connection, { timeFormat: 'raw' });
+    assert.equal(result3.$reql_type$, 'TIME');
   });
 
   it('`binaryFormat` should work', async () => {
-    result = await r
+    const result = await r
       .binary(Buffer.from([1, 2, 3]))
       .run(connection, { binaryFormat: 'raw' });
     assert.equal(result.$reql_type$, 'BINARY');
   });
 
   it('`groupFormat` should work', async () => {
-    result = await r
+    const result = await r
       .expr([
         { name: 'Michel', grownUp: true },
         { name: 'Laurent', grownUp: true },
@@ -317,15 +316,15 @@ describe('accessing-reql', () => {
   });
 
   it('`profile` should work', async () => {
-    result = await r.expr(true).run(connection, { profile: false });
-    assert(result);
+    const result1 = await r.expr(true).run(connection, { profile: false });
+    assert(result1);
 
-    result = await r.expr(true).run(connection, { profile: true });
-    assert(result.profile);
-    assert.equal(result.result, true);
+    const result2 = await r.expr(true).run(connection, { profile: true });
+    assert(result2.profile);
+    assert.equal(result2.result, true);
 
-    result = await r.expr(true).run(connection, { profile: false });
-    assert.equal(result, true);
+    const result3 = await r.expr(true).run(connection, { profile: false });
+    assert.equal(result3, true);
   });
 
   it('`timeout` option should work', async () => {
@@ -361,19 +360,19 @@ describe('accessing-reql', () => {
     const restrictedDbName = uuid();
     const restrictedTableName = uuid();
 
-    result = await r.dbCreate(restrictedDbName).run(connection);
-    assert.equal(result.config_changes.length, 1);
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(restrictedDbName).run(connection);
+    assert.equal(result1.config_changes.length, 1);
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(restrictedDbName)
       .tableCreate(restrictedTableName)
       .run(connection);
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
     const user = uuid();
     const password = uuid();
-    result = await r
+    const result3 = await r
       .db('rethinkdb')
       .table('users')
       .insert({
@@ -381,7 +380,7 @@ describe('accessing-reql', () => {
         password
       })
       .run(connection);
-    result = await r
+    const result4 = await r
       .db(restrictedDbName)
       .table(restrictedTableName)
       .grant(user, {
@@ -390,7 +389,7 @@ describe('accessing-reql', () => {
         config: true
       })
       .run(connection);
-    assert.deepEqual(result, {
+    assert.deepEqual(result4, {
       granted: 1,
       permissions_changes: [
         {
@@ -422,7 +421,7 @@ describe('accessing-reql', () => {
   // tslint:disable-next-line:max-line-length
   it('should not throw an error (since 1.13, the token is now stored outside the query): `connection` should extend events.Emitter and emit an error if the server failed to parse the protobuf message', async () => {
     connection.addListener('error', () => assert.fail('should not throw'));
-    result = await Array(687)
+    const result = await Array(687)
       .fill(1)
       .reduce((acc, curr) => acc.add(curr), r.expr(1))
       .run(connection);
