@@ -18,7 +18,10 @@ export declare class Cursor extends Readable implements RCursor {
     private includeStates;
     private closed;
     private emitting;
+    private resolving;
+    private lastError;
     constructor(conn: RebirthDBSocket, token: number, runOptions: Pick<RunOptions, 'binaryFormat' | 'groupFormat' | 'timeFormat'>, query: QueryJson, results?: any[] | undefined, hasNextBatch?: boolean | undefined);
+    init(): void;
     _read(): void;
     pause(): this;
     resume(): this;

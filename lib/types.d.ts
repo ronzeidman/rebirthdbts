@@ -94,6 +94,7 @@ export interface RunOptions {
     db?: string;
     arrayLimit?: number;
     minBatchRows?: number;
+    maxBatchRows?: number;
     maxBatchRow?: number;
     maxBatchBytes?: number;
     maxBatchSeconds?: number;

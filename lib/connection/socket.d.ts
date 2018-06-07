@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import { Socket } from 'net';
 import { RServerConnectionOptions } from '..';
 import { QueryJson, ResponseJson } from '../internal-types';
+import { DataQueue } from './data-queue';
 export declare type RNConnOpts = RServerConnectionOptions & {
     host: string;
     port: number;
@@ -15,10 +16,10 @@ export declare class RebirthDBSocket extends EventEmitter {
     readonly status: string;
     socket?: Socket;
     runningQueries: Map<number, {
-        resolve: (data: Error | ResponseJson) => void;
         query: QueryJson;
-        data: Promise<ResponseJson>;
+        data: DataQueue<Error | ResponseJson>;
     }>;
+    private mark;
     private isOpen;
     private nextToken;
     private buffer;
@@ -31,13 +32,15 @@ export declare class RebirthDBSocket extends EventEmitter {
     });
     eventNames(): string[];
     connect(): Promise<void>;
-    sendQuery(query: QueryJson, token?: number): number;
-    stopQuery(token: number): number;
+    sendQuery(newQuery: QueryJson, token?: number): number;
+    stopQuery(token: number): number | undefined;
+    continueQuery(token: number): number | undefined;
     readNext<T = ResponseJson>(token: number): Promise<T>;
     close(): void;
     private performHandshake();
     private handleHandshakeData();
     private handleData();
     private handleError(err);
+    private createNextData();
 }
 export declare function setConnectionDefaults(connectionOptions: RServerConnectionOptions): RNConnOpts;
