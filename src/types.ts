@@ -167,6 +167,11 @@ export interface DBChangeResult {
   dbs_created: number;
   dbs_dropped: number;
 }
+export interface IndexChangeResult {
+  created?: number;
+  renamed?: number;
+  dropped?: number;
+}
 export interface RebalanceResult {
   reconfigured: number;
   config_changes: Array<ValueChange<TableConfig>>;
@@ -435,9 +440,10 @@ export interface RDatum<T = any> extends RQuery<T> {
   forEach<
     U = any,
     ONE = T extends Array<infer T1> ? T1 : never,
-    RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<
-      WriteResult<U>
-    >
+    RES extends
+      | RDatum<WriteResult<U>>
+      | RDatum<DBChangeResult>
+      | RDatum<IndexChangeResult> = RDatum<WriteResult<U>>
   >(
     func: (res: RDatum<ONE>) => RES
   ): T extends any[] ? RES : never;
@@ -858,19 +864,19 @@ export interface RTable<T = any> extends RSelection<T> {
     indexName: RValue<string>,
     indexFunction?: RDatum | RDatum[] | ((row: RDatum) => any),
     options?: IndexOptions
-  ): RDatum<{ created: number }>;
+  ): RDatum<IndexChangeResult>;
   indexCreate(
     indexName: RValue<string>,
     options?: { multi: boolean; geo: boolean }
-  ): RDatum<{ created: number }>;
+  ): RDatum<IndexChangeResult>;
 
-  indexDrop(indexName: RValue<string>): RDatum<{ dropped: number }>;
+  indexDrop(indexName: RValue<string>): RDatum<IndexChangeResult>;
   indexList(): RDatum<string[]>;
   indexRename(
     oldName: RValue<string>,
     newName: RValue<string>,
     options?: { overwrite: boolean }
-  ): RDatum<{ renamed: number }>;
+  ): RDatum<IndexChangeResult>;
   indexStatus(...indexName: string[]): RDatum<IndexStatus>;
   indexWait(...indexName: string[]): RDatum<IndexStatus>;
 

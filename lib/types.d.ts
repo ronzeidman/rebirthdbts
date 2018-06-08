@@ -148,6 +148,11 @@ export interface DBChangeResult {
     dbs_created: number;
     dbs_dropped: number;
 }
+export interface IndexChangeResult {
+    created?: number;
+    renamed?: number;
+    dropped?: number;
+}
 export interface RebalanceResult {
     reconfigured: number;
     config_changes: Array<ValueChange<TableConfig>>;
@@ -366,7 +371,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     }>): T extends any[] ? RDatum<U[]> : never;
     map<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     concatMap<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
-    forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never, RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> = RDatum<WriteResult<U>>>(func: (res: RDatum<ONE>) => RES): T extends any[] ? RES : never;
+    forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never, RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> | RDatum<IndexChangeResult> = RDatum<WriteResult<U>>>(func: (res: RDatum<ONE>) => RES): T extends any[] ? RES : never;
     withFields(...fields: MultiFieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
     filter<U = T extends Array<infer T1> ? T1 : never>(predicate: (doc: RDatum<U>) => RValue<boolean>, options?: {
         default: boolean;
@@ -583,24 +588,16 @@ export interface RTable<T = any> extends RSelection<T> {
             config: boolean;
         }>>;
     }>;
-    indexCreate(indexName: RValue<string>, indexFunction?: RDatum | RDatum[] | ((row: RDatum) => any), options?: IndexOptions): RDatum<{
-        created: number;
-    }>;
+    indexCreate(indexName: RValue<string>, indexFunction?: RDatum | RDatum[] | ((row: RDatum) => any), options?: IndexOptions): RDatum<IndexChangeResult>;
     indexCreate(indexName: RValue<string>, options?: {
         multi: boolean;
         geo: boolean;
-    }): RDatum<{
-        created: number;
-    }>;
-    indexDrop(indexName: RValue<string>): RDatum<{
-        dropped: number;
-    }>;
+    }): RDatum<IndexChangeResult>;
+    indexDrop(indexName: RValue<string>): RDatum<IndexChangeResult>;
     indexList(): RDatum<string[]>;
     indexRename(oldName: RValue<string>, newName: RValue<string>, options?: {
         overwrite: boolean;
-    }): RDatum<{
-        renamed: number;
-    }>;
+    }): RDatum<IndexChangeResult>;
     indexStatus(...indexName: string[]): RDatum<IndexStatus>;
     indexWait(...indexName: string[]): RDatum<IndexStatus>;
     insert(obj: any, options?: InsertOptions): RDatum<WriteResult<T>>;

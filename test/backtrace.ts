@@ -114,9 +114,7 @@ describe('backtraces', () => {
       globals.nextVarId = 1;
       await r
         .dbList()
-        .do(function(x) {
-          return x.add('a');
-        })
+        .do(x => x.add('a'))
         .run();
       assert.fail('should throw');
     } catch (e) {
@@ -239,9 +237,7 @@ describe('backtraces', () => {
       await r
         .db(dbName)
         .tableList()
-        .do(function(x) {
-          return x.add('a');
-        })
+        .do(x => x.add('a'))
         .run();
       assert.fail('should throw');
     } catch (e) {
@@ -272,12 +268,12 @@ describe('backtraces', () => {
       globals.nextVarId = 1;
       await r
         .expr(['zoo', 'zoo'])
-        .forEach(function(index) {
-          return r
+        .forEach(index =>
+          r
             .db(dbName)
             .table(tableName)
-            .indexCreate(index);
-        })
+            .indexCreate(index)
+        )
         .run();
       assert.fail('should throw');
     } catch (e) {
