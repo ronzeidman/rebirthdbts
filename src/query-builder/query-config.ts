@@ -10,7 +10,6 @@ export type TermConfig = [
   number,
   // must exist as the last parameter
 
-
     | 'required'
     // can exist as the replacement of last parameter if it's an object
     | 'optional'
@@ -163,37 +162,37 @@ export const termConfig: TermConfig[] = [
 ];
 
 export const rConfig: TermConfig[] = [
-  [TermType.DB, 'db', 1, 1, false],
-  [TermType.DB_CREATE, 'dbCreate', 1, 1, false],
-  [TermType.DB_DROP, 'dbDrop', 1, 1, false],
-  [TermType.GRANT, 'grant', 2, 2, false],
-  [TermType.DB_LIST, 'dbList', 0, 0, false],
-  [TermType.TABLE, 'table', 1, 2, 'last'],
-  [TermType.TABLE_CREATE, 'tableCreate', 1, 2, 'last'],
-  [TermType.TABLE_DROP, 'tableDrop', 1, 1, false],
-  [TermType.TABLE_LIST, 'tableList', 0, 0, false],
   [TermType.ASC, 'asc', 1, 1, false],
   [TermType.DESC, 'desc', 1, 1, false],
   [TermType.EPOCH_TIME, 'epochTime', 1, 1, false],
   [TermType.NOW, 'now', 0, 0, false],
-  [TermType.BINARY, 'binary', 1, 1, false],
-  [TermType.ARGS, 'args', 1, 1, false],
   [TermType.TIME, 'time', 4, 7, false],
   [TermType.ISO8601, 'ISO8601', 1, 2, 'last'],
-  [TermType.ERROR, 'error', 0, 1, false],
-  [TermType.JAVASCRIPT, 'js', 1, 2, 'last'],
+  [TermType.BINARY, 'binary', 1, 1, false],
   [TermType.JSON, 'json', 1, 1, false],
+  [TermType.OBJECT, 'object', 1, -1, false],
   [TermType.POINT, 'point', 2, 2, false],
   [TermType.LINE, 'line', 2, -1, false],
   [TermType.POLYGON, 'polygon', 3, -1, false],
   [TermType.CIRCLE, 'circle', 2, 3, 'last'],
+  [TermType.GEOJSON, 'geojson', 1, 1, false],
+  [TermType.ARGS, 'args', 1, 1, false],
+  [TermType.ERROR, 'error', 0, 1, false],
+  [TermType.JAVASCRIPT, 'js', 1, 2, 'last'],
   [TermType.LITERAL, 'literal', 0, 1, false],
-  [TermType.OBJECT, 'object', 1, -1, false],
   [TermType.RANDOM, 'random', 0, 3, 'last-optional'],
-  [TermType.UUID, 'uuid', 0, 1, false],
   [TermType.RANGE, 'range', 1, 2, false],
+  [TermType.UUID, 'uuid', 0, 1, false],
   [TermType.HTTP, 'http', 1, 2, 'last'],
-  [TermType.GEOJSON, 'geojson', 1, 1, false]
+  [TermType.GRANT, 'grant', 2, 2, false],
+  [TermType.DB, 'db', 1, 1, false],
+  [TermType.DB_CREATE, 'dbCreate', 1, 1, false],
+  [TermType.DB_DROP, 'dbDrop', 1, 1, false],
+  [TermType.DB_LIST, 'dbList', 0, 0, false],
+  [TermType.TABLE, 'table', 1, 2, 'last'],
+  [TermType.TABLE_CREATE, 'tableCreate', 1, 2, 'last'],
+  [TermType.TABLE_DROP, 'tableDrop', 1, 1, false],
+  [TermType.TABLE_LIST, 'tableList', 0, 0, false]
 ];
 
 export const rConsts: Array<[TermType, string]> = [

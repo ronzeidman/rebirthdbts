@@ -6,6 +6,18 @@ import { ConnectionOptions } from 'tls';
 export type Primitives = null | string | boolean | number;
 export type Format = 'native' | 'raw';
 export type Durability = 'hard' | 'soft';
+export type RValue<T = any> = RDatum<T> | T;
+// TODO: Add recursive type when option available
+// type RValue<T = any> = T extends RDatum
+// ? T
+// : T extends null | string | number | boolean
+// ? RDatum<T>
+// : T extends Array<infer T1>
+// ? RArray<T1> : T extends Function ? never : T extends object ? { [P in keyof T]: RValue<any> } : never;
+// type RObject<T> =  {
+//     [x: keyof T]: RValue<T[keyof T]>;
+// } | RDatum<T>;
+interface RArray<T> extends Array<RValue<T>> {}
 export type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
 export type MultiFieldSelector = object | any[] | string;
 export type FieldSelector<T, U = any> = string | Func<T, U>;
@@ -293,8 +305,6 @@ export interface ConnectionPool extends EventEmitter {
   getAvailableLength(): number;
   getConnections(): Connection[];
 }
-
-export type RValue<T = any> = RDatum<T> | T;
 
 export interface RServer {
   host: string;
@@ -995,11 +1005,101 @@ export interface R {
   october: RValue;
   november: RValue;
   december: RValue;
+  // Global
+  connect(options: RConnectionOptions): Promise<Connection>;
+  connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
+  getPoolMaster(): MasterPool | undefined;
+  setNestingLevel(level: number): void;
+  setArrayLimit(limit: number): void;
+  // send to DB
+  expr<T>(val: T): RDatum<T>;
+  <T>(val: T): RDatum<T>;
+  // indexes
   desc(indexName: RValue<string>): any;
   asc(indexName: RValue<string>): any;
+  // Object creation
+  // Time
+  epochTime(epochTime: RValue<number>): RDatum<Date>;
+  now(): RDatum<Date>;
+  time(
+    year: RValue<number>,
+    month: RValue<number>,
+    day: RValue<number>,
+    hour: RValue<number>,
+    minute: RValue<number>,
+    second: RValue<number>,
+    timezone: RValue<string>
+  ): RDatum<Date>;
+  time(
+    year: RValue<number>,
+    month: RValue<number>,
+    day: RValue<number>,
+    timezone: RValue<string>
+  ): RDatum<Date>;
+  ISO8601(
+    time: RValue<string>,
+    options?: { defaultTimezone: string }
+  ): RDatum<Date>;
+  // Binary
+  binary(data: any): RDatum<Buffer>;
+  // Object
+  json(json: RValue<string>): RDatum;
+  // should be (key: string, value: any...)
+  object<T = any>(
+    key1: RValue<string>,
+    value1: RValue,
+    keyOrValue: RValue[]
+  ): RDatum<T>;
+  // Geo
+  point(longitude: RValue<string>, latitude: RValue<string>): RDatum;
+  line(
+    point1: [string, string],
+    point2: [string, string],
+    ...points: Array<[string, string]>
+  ): RDatum;
+  line(point1: RDatum, point2: RDatum, ...points: RDatum[]): RDatum;
+  polygon(
+    point1: RDatum,
+    point2: RDatum,
+    point3: RDatum,
+    ...points: RDatum[]
+  ): RDatum;
+  polygon(
+    ll1: [string, string],
+    ll2: [string, string],
+    ll3: [string, string],
+    ...longitudeLatitudes: Array<[string, string]>
+  ): RDatum;
+  circle(
+    longitudeLatitude: [string, string] | RDatum,
+    radius: RValue<number>,
+    options?: {
+      numVertices?: number;
+      geoSystem?: 'WGS84' | 'unit_sphere';
+      unit?: 'm' | 'km' | 'mi' | 'nm' | 'ft';
+      fill?: boolean;
+    }
+  ): RDatum;
+  geojson(geoJSON: any): RDatum;
+  // special
+  args(arg: Array<RValue<Primitives | object | any[]>>): any;
+  error(message?: RValue<string>): any;
+  js(js: RValue<string>, options?: { timeout: number }): RDatum;
+  literal<T>(obj: T): RDatum<T>;
+  random(
+    lowBound?: RValue<number>,
+    highBound?: RValue<number> | { float: boolean },
+    options?: { float: boolean }
+  ): RDatum<number>;
+  range(startValue: RValue<number>, endValue?: RValue<number>): RStream<number>;
+  uuid(val?: RValue<string>): RDatum<string>;
+  http(url: RValue<string>, options?: HttpRequestOptions): RDatum;
+  http(url: RValue<string>, options?: HTTPStreamRequestOptions): RStream;
+
+  // top level permissions
   grant(
     userName: string,
-    options?: {
+    options: {
       read?: boolean;
       write?: boolean;
       connect?: boolean;
@@ -1016,26 +1116,27 @@ export interface R {
       }>
     >;
   }>;
-  reconfigure(
-    tableOrDatabase: RTable | RDatabase,
-    options: TableReconfigureOptions
-  ): RDatum<ReconfigureResult>;
-  rebalance(tableOrDatabase: RTable | RDatabase): RDatum<RebalanceResult>;
-
+  // Database management
+  db(dbName: string): RDatabase;
   dbCreate(dbName: RValue<string>): RDatum<DBChangeResult>;
   dbDrop(dbName: RValue<string>): RDatum<DBChangeResult>;
   dbList(): RDatum<string[]>;
-  db(dbName: string): RDatabase;
-
-  // For default database
+  // Table management for default database
+  table<T = any>(tableName: RValue<string>, options?: TableOptions): RTable<T>;
   tableCreate(
     tableName: RValue<string>,
     options?: TableCreateOptions
   ): RDatum<TableChangeResult>;
   tableDrop(tableName: RValue<string>): RDatum<TableChangeResult>;
   tableList(): RDatum<string[]>;
-  table<T = any>(tableName: RValue<string>, options?: TableOptions): RTable<T>;
-  // additional
+
+  // Additional -
+  // TODO: should add complete list of RTable, RDatabase, RStream, RDatum...Functions
+  rebalance(tableOrDatabase: RTable | RDatabase): RDatum<RebalanceResult>;
+  reconfigure(
+    tableOrDatabase: RTable | RDatabase,
+    options: TableReconfigureOptions
+  ): RDatum<ReconfigureResult>;
   count<T>(
     caller: T[] | RDatum<T[]> | RStream<T>,
     value?: FieldSelector<T, boolean>
@@ -1073,89 +1174,27 @@ export interface R {
     mapFunction: (doc1: RDatum, doc2: RDatum, doc3: RDatum) => any
   ): RStream;
 
-  literal<T>(obj: T): RDatum<T>;
-  object<T = any>(...keyValue: any[]): RDatum<T>; // should be (key: string, value: any...)
   and(...bool: Array<boolean | RDatum>): RDatum<boolean>;
   or(...bool: Array<boolean | RDatum>): RDatum<boolean>;
   not(bool: boolean | RDatum): RDatum<boolean>;
-  random(
-    lowBound?: RValue<number>,
-    highBound?: RValue<number> | { float: boolean },
-    options?: { float: boolean }
-  ): RDatum<number>;
+
   round(num: RValue<number>): RDatum<number>;
   ceil(bool: RValue<number>): RDatum<number>;
   floor(bool: RValue<number>): RDatum<number>;
-  now(): RDatum<Date>;
-  time(
-    year: RValue<number>,
-    month: RValue<number>,
-    day: RValue<number>,
-    hour: RValue<number>,
-    minute: RValue<number>,
-    second: RValue<number>,
-    timezone: RValue<string>
-  ): RDatum<Date>;
-  time(
-    year: RValue<number>,
-    month: RValue<number>,
-    day: RValue<number>,
-    timezone: RValue<string>
-  ): RDatum<Date>;
-  epochTime(epochTime: RValue<number>): RDatum<Date>;
-  ISO8601(
-    time: RValue<string>,
-    options?: { defaultTimezone: string }
-  ): RDatum<Date>;
-  args(arg: Array<RValue<Primitives | object | any[]>>): any;
-  binary(data: any): RDatum<Buffer>;
+
   branch<T>(
     test: RValue<boolean>,
     trueBranch: T,
     falseBranchOrTest: any,
     ...branches: any[]
   ): T extends RStream ? RStream : RDatum;
-  range(startValue: RValue<number>, endValue?: RValue<number>): RStream<number>;
-  error(message?: RValue<string>): any;
-  expr<T>(val: T): RDatum<T>;
-  <T>(val: T): RDatum<T>;
-  js(js: RValue<string>, options?: { timeout: number }): RDatum;
-  json(json: RValue<string>): RDatum;
-  http(url: RValue<string>, options?: HttpRequestOptions): RDatum;
-  http(url: RValue<string>, options?: HTTPStreamRequestOptions): RStream;
-  uuid(val?: RValue<string>): RDatum<string>;
-  circle(
-    longitudeLatitude: [string, string] | RDatum,
-    radius: RValue<number>,
-    options?: {
-      numVertices?: number;
-      geoSystem?: 'WGS84' | 'unit_sphere';
-      unit?: 'm' | 'km' | 'mi' | 'nm' | 'ft';
-      fill?: boolean;
-    }
-  ): RDatum;
-  line(...points: Array<[string, string]>): RDatum;
-  line(...points: RDatum[]): RDatum;
-  point(longitude: string, latitude: string): RDatum;
-  polygon(
-    point1: RDatum,
-    point2: RDatum,
-    point3: RDatum,
-    ...points: RDatum[]
-  ): RDatum;
-  polygon(
-    ll1: [string, string],
-    ll2: [string, string],
-    ll3: [string, string],
-    ...longitudeLatitudes: Array<[string, string]>
-  ): RDatum;
+
   add(...args: Array<RValue<string>>): RValue<string>;
   add(...args: Array<RValue<number>>): RValue<number>;
   add(...args: Array<RValue<any[]>>): RValue<any[]>;
   union(...args: RStream[]): RStream;
   union(...args: Array<RValue<any[]>>): RValue<any[]>;
 
-  geojson(geoJSON: any): RDatum;
   distance(
     geo1: RDatum,
     geo2: RDatum,
@@ -1166,7 +1205,7 @@ export interface R {
   ): RStream;
   intersects<T>(stream: RStream<T>, geometry: RDatum): RStream<T>;
   intersects(geometry1: RDatum, geometry2: RDatum): RDatum<boolean>;
-  wait(options?: WaitOptions): RStream;
+  wait(tableOrDatabase: RTable | RDatabase, options?: WaitOptions): RStream;
 
   do<T>(arg: RDatum, func: (arg: RDatum) => T): T extends RStream ? T : RDatum;
   do<T>(
@@ -1187,12 +1226,6 @@ export interface R {
     arg4: RDatum,
     func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T
   ): T extends RStream ? T : RDatum;
-
-  connect(options: RConnectionOptions): Promise<Connection>;
-  connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
-  getPoolMaster(): MasterPool | undefined;
-  setNestingLevel(level: number): void;
-  setArrayLimit(limit: number): void;
 }
 
 //#endregion operations

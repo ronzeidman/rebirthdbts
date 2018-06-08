@@ -26,7 +26,7 @@ describe('accessing-reql', () => {
       .dbList()
       .filter(db =>
         r
-          .expr(['rethinkdb', 'test', 'dealerrelay'])
+          .expr(['rethinkdb', 'test'])
           .contains(db)
           .not()
       )

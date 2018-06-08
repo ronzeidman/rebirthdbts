@@ -19,10 +19,10 @@ describe('stream', () => {
     tableName2 = uuid(); // small table to test success sequence
     dumpTable = uuid(); // dump table
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
-    // await r.db(dbName).wait().run()
-    result = await Promise.all([
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
+
+    const result2 = await Promise.all([
       r
         .db(dbName)
         .tableCreate(tableName)('tables_created')
@@ -36,28 +36,28 @@ describe('stream', () => {
         .tableCreate(dumpTable)('tables_created')
         .run()
     ]);
-    assert.deepEqual(result, [1, 1, 1]);
+    assert.deepEqual(result2, [1, 1, 1]);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .insert(Array(numDocs).fill({}))
       .run();
-    assert.equal(result.inserted, numDocs);
+    assert.equal(result3.inserted, numDocs);
 
-    result = await r
+    const result4 = await r
       .db(dbName)
       .table(tableName2)
       .insert(Array(smallNumDocs).fill({}))
       .run();
-    assert.equal(result.inserted, smallNumDocs);
+    assert.equal(result4.inserted, smallNumDocs);
 
-    result = await r
+    const result5 = await r
       .db(dbName)
       .table(tableName)
       .update({ date: r.now() })
       .run();
-    assert.equal(result.replaced, numDocs);
+    assert.equal(result5.replaced, numDocs);
   });
 
   after(async () => {
@@ -66,7 +66,7 @@ describe('stream', () => {
       .dbList()
       .filter(db =>
         r
-          .expr(['rethinkdb', 'test', 'dealerrelay'])
+          .expr(['rethinkdb', 'test'])
           .contains(db)
           .not()
       )

@@ -5,10 +5,10 @@ import * as iterall from 'iterall';
 import { satisfies } from 'semver';
 import {
   Connection,
-  RCursor,
-  RebirthDBErrorType,
   isRebirthDBError,
-  r
+  r,
+  RCursor,
+  RebirthDBErrorType
 } from '../src';
 import config from './config';
 import { uuid } from './util/common';
@@ -37,7 +37,7 @@ describe('cursor', () => {
       .dbList()
       .filter(db =>
         r
-          .expr(['rethinkdb', 'test', 'dealerrelay'])
+          .expr(['rethinkdb', 'test'])
           .contains(db)
           .not()
       )
