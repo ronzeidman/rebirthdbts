@@ -1,7 +1,7 @@
 {
-  "name": "rebirthdbts",
+  "name": "rebirthdb-ts",
   "version": "2.4.0-beta.1",
-  "description": "Experimental RebirthDB TypeScript driver",
+  "description": "RebirthDB TypeScript driver",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "directories": {
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ronzeidman/rebirthdbts.git"
+    "url": "git+https://github.com/rebirthdb/rebirthdb-ts.git"
   },
   "author": "Ron Zeidman",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ronzeidman/rebirthdbts/issues"
+    "url": "https://github.com/rebirthdb/rebirthdb-tsissues"
   },
-  "homepage": "https://github.com/ronzeidman/rebirthdbts#readme",
+  "homepage": "https://github.com/rebirthdb/rebirthdb-ts#readme",
   "devDependencies": {
     "@types/mocha": "^5.2.0",
     "@types/node": "^10.3.1",

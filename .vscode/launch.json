@@ -7,7 +7,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Mocha Agg",
+      "name": "Current Mocha File",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": [
         "-r",
@@ -15,7 +15,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/test/stream.ts"
+        "${relativeFile}"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
@@ -26,10 +26,12 @@
       "name": "Mocha All",
       "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": [
+        "-r",
+        "ts-node/register/transpile-only",
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/test/*.js"
+        "${workspaceFolder}/test/*.ts"
       ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"

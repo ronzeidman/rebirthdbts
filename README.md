@@ -1,10 +1,10 @@
 ## Install
 
-`npm i ronzeidman/rebirthdbts`
+`npm i rebirthdb/rebirthdb-ts`
 
 or
 
-`yarn add https://github.com/ronzeidman/rebirthdbts.git`
+`yarn add https://github.com/rebirthdb/rebirthdb-ts.git`
 
 ## Import
 
@@ -60,7 +60,6 @@ const conn = await r.connect(options);
 
 ## Priority - medium
 
-- Get forked into RebirthDB org
 - Publish in NPM
 - Go through all type definitions and fix according to config (maybe use https://github.com/rethinkdb/rethinkdb/blob/3edaeceb71c2caf1203025a752f61786364528ed/drivers/java/term_info.json)
 
