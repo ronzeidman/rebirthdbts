@@ -2,12 +2,18 @@ import { RebirthDBError } from '../error/error';
 import { backtraceTerm } from '../error/term-backtrace';
 import { TermJson } from '../internal-types';
 import { bracket, termConfig } from './query-config';
-import { doTermFunc, getCursorQueryFunc, runQueryFunc, termBuilder } from './term-builder';
+import {
+  doTermFunc,
+  getCursorQueryFunc,
+  runQueryFunc,
+  termBuilder
+} from './term-builder';
 
 export const querySymbol = Symbol('RebirthDBQuery');
 
 export const isQuery = (query: any) =>
-  (query !== null && typeof query === 'object' || typeof query === 'function') &&
+  ((query !== null && typeof query === 'object') ||
+    typeof query === 'function') &&
   querySymbol in query;
 
 export function toQuery(term: TermJson) {
@@ -33,20 +39,21 @@ const queryProxyHandler: ProxyHandler<any> = {
   get(target, p, receiver) {
     // tslint:disable-next-line:no-shadowed-variable
     const { term } = target;
-    if (p === 'then') {
-      throw new RebirthDBError('Cannot `await` a query, did you forget `run` or `getCursor`?');
-    }
-    if (p === 'toString') {
-      return () => backtraceTerm(term)[0];
-    }
-    if (p === 'run') {
-      return runQueryFunc(term);
-    }
-    if (p === 'getCursor') {
-      return getCursorQueryFunc(term);
-    }
-    if (p === 'do') {
-      return doTermFunc(receiver);
+    switch (p) {
+      case 'then':
+        throw new RebirthDBError(
+          'Cannot `await` a query, did you forget `run` or `getCursor`?'
+        );
+      case 'toString':
+        return () => backtraceTerm(term)[0];
+      case 'serialize':
+        return () => JSON.stringify(term);
+      case 'run':
+        return runQueryFunc(term);
+      case 'getCursor':
+        return getCursorQueryFunc(term);
+      case 'do':
+        return doTermFunc(receiver);
     }
     const config = termConfig.find(t => t[1] === p);
     if (config) {

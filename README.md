@@ -43,6 +43,10 @@ const conn = await r.connect(options);
 - In connction pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded.
 - Integrated fully encompasing type definitions
 
+# NEW FEATURES
+
+- serialize / deserialize. You can store the query as a string like this `const serializedQuery = r.table(...).filter(...).map(...).serialize()` and get it like this `r.deserialize(serializedQuery).run()` or even `r.deserialize<RStream>(serializedQuery).reduce(...).run()` the serialized query is a normal string so you can store it in the DB. No need for ugly workarounds like `.toString` and `eval` anymore. Also the serialized query is the actual JSON that gets sent to the server so it should be cross-language compatible if any other driver cares to implement it.
+
 # DROPPING SUPPORT:
 
 - Support node < 8

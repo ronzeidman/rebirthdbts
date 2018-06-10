@@ -1,6 +1,8 @@
+import { isUndefined } from 'util';
 import { RebirthDBConnection } from '../connection/connection';
 import { MasterConnectionPool } from '../connection/master-pool';
 import { RebirthDBError } from '../error/error';
+import { TermType } from '../proto/enums';
 import {
   R,
   RConnectionOptions,
@@ -78,6 +80,7 @@ export const r: R = expr as any;
 r.getPoolMaster = () => (r as any).pool;
 r.setNestingLevel = (level: number) => (globals.nestingLevel = level);
 r.setArrayLimit = (limit?: number) => (globals.arrayLimit = limit);
+r.deserialize = (termStr: string) => toQuery(validateTerm(JSON.parse(termStr)));
 r.expr = expr;
 r.do = (...args: any[]) => {
   const last = args.pop();
@@ -97,3 +100,40 @@ termConfig
         optArgs
       ]))
   );
+
+function validateTerm(term: any): any {
+  if (isUndefined(term)) {
+    throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+  }
+  if (typeof term === 'function') {
+    throw new RebirthDBError(`Invalid term:\n${term.toString()}\n`);
+  }
+  if (typeof term === 'object') {
+    if (Array.isArray(term)) {
+      if (term.length > 3) {
+        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+      }
+      const [func, args, options] = term;
+      if (typeof func !== 'number' || isUndefined(TermType[func])) {
+        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+      }
+      if (!isUndefined(args)) {
+        if (!Array.isArray(args)) {
+          throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+        }
+        if (!args.every(arg => validateTerm(arg))) {
+          throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+        }
+      }
+      if (
+        !isUndefined(options) &&
+        !Object.values(term).every(value => validateTerm(value))
+      ) {
+        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+      }
+    } else if (!Object.values(term).every(value => validateTerm(value))) {
+      throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+    }
+  }
+  return term;
+}

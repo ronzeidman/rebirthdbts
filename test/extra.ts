@@ -1,7 +1,6 @@
-// 2 passing (1s)
-// 3 failing
 import assert from 'assert';
 import { r } from '../src';
+import { globals } from '../src/query-builder/globals';
 import config from './config';
 import { uuid } from './util/common';
 
@@ -10,18 +9,19 @@ describe('extra', () => {
   let tableName: string;
 
   before(async () => {
+    globals.backtraceType = 'function';
     await r.connectPool(config);
     dbName = uuid();
     tableName = uuid(); // Big table to test partial sequence
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)('tables_created')
       .run();
-    assert.deepEqual(result, 1);
+    assert.deepEqual(result2, 1);
   });
 
   after(async () => {
@@ -35,6 +35,7 @@ describe('extra', () => {
 
   it('Anonymous function should throw if they return undefined', async () => {
     try {
+      // tslint:disable-next-line
       r.expr(1).do(function() {});
       assert.fail('should throw');
     } catch (e) {
@@ -54,6 +55,16 @@ describe('extra', () => {
 
     result = r.expr(1).toString();
     assert.equal(result, 'r.expr(1)');
+  });
+
+  it('serialize and derialize should work', async () => {
+    const result = r
+      .expr(1)
+      .add(2)
+      .serialize();
+    assert.equal(typeof result, 'string');
+    const three = await r.deserialize(result).run();
+    assert.equal(three, 3);
   });
 
   // it('await a query should work - 1', async () => {
