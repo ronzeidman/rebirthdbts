@@ -573,16 +573,16 @@ export interface RDatum<T = any> extends RQuery<T> {
   ): T extends string | number | Date ? RDatum<T> : never;
   gt(
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<T> : never;
+  ): T extends string | number | Date ? RDatum<boolean> : never;
   ge(
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<T> : never;
+  ): T extends string | number | Date ? RDatum<boolean> : never;
   lt(
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<T> : never;
+  ): T extends string | number | Date ? RDatum<boolean> : never;
   le(
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<T> : never;
+  ): T extends string | number | Date ? RDatum<boolean> : never;
   // Works only for numbers
   sub(
     ...num: Array<RValue<number>>

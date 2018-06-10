@@ -346,6 +346,7 @@ export interface RQuery<T = any> {
     }>;
     run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
     getCursor(connection?: Connection | RunOptions, options?: RunOptions): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
+    serialize(): string;
 }
 export interface RDatum<T = any> extends RQuery<T> {
     do<U>(...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>): U extends RStream ? RStream : RDatum;
@@ -415,10 +416,10 @@ export interface RDatum<T = any> extends RQuery<T> {
     upcase(): T extends string ? RDatum<string> : never;
     downcase(): T extends string ? RDatum<string> : never;
     add(...str: Array<RValue<string> | RValue<number>>): T extends string | number | Date ? RDatum<T> : never;
-    gt(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<T> : never;
-    ge(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<T> : never;
-    lt(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<T> : never;
-    le(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<T> : never;
+    gt(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<boolean> : never;
+    ge(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<boolean> : never;
+    lt(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<boolean> : never;
+    le(...value: Array<RValue<string> | RValue<number> | RValue<Date>>): T extends string | number | Date ? RDatum<boolean> : never;
     sub(...num: Array<RValue<number>>): T extends number ? RDatum<number> : T extends Date ? RDatum<Date> : never;
     sub(date: RValue<Date>): T extends Date ? RDatum<number> : never;
     mul(...num: Array<RValue<number>>): T extends number ? RDatum<number> : never;
@@ -704,6 +705,7 @@ export interface R {
     getPoolMaster(): MasterPool | undefined;
     setNestingLevel(level: number): void;
     setArrayLimit(limit: number): void;
+    deserialize<T extends RQuery = RQuery>(query: string): T;
     expr<T>(val: T): RDatum<T>;
     <T>(val: T): RDatum<T>;
     desc(indexName: RValue<string>): any;
