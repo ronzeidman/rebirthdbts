@@ -411,7 +411,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     coerceTo(type: 'array'): RDatum<any[]>;
     coerceTo(type: 'number'): T extends string ? RDatum<number> : never;
     coerceTo(type: 'binary'): T extends string ? RDatum<Buffer> : never;
-    match(regexp: RValue<string>): T extends string ? RDatum<MatchResults> : never;
+    match(regexp: RValue<string>): T extends string ? RDatum<MatchResults | null> : never;
     split(seperator?: RValue<string>, maxSplits?: RValue<number>): T extends string ? RDatum<string[]> : never;
     upcase(): T extends string ? RDatum<string> : never;
     downcase(): T extends string ? RDatum<string> : never;

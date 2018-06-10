@@ -1134,6 +1134,100 @@ export interface R {
 
   // Additional -
   // TODO: should add complete list of RTable, RDatabase, RStream, RDatum...Functions
+  rebalance(tableOrDatabase: RTable | RDatabase): RDatum<RebalanceResult>;
+  reconfigure(
+    tableOrDatabase: RTable | RDatabase,
+    options: TableReconfigureOptions
+  ): RDatum<ReconfigureResult>;
+  count<T>(
+    caller: T[] | RDatum<T[]> | RStream<T>,
+    value?: FieldSelector<T, boolean>
+  ): RDatum<number>;
+  sum<T>(
+    caller: T[] | RDatum<T[]> | RStream<T>,
+    value?: FieldSelector<T, number | null>
+  ): RDatum<number>;
+  avg<T>(
+    caller: T[] | RDatum<T[]> | RStream<T>,
+    value?: FieldSelector<T, number | null>
+  ): RDatum<number>;
+  min<T>(
+    caller: T[] | RDatum<T[]> | RStream<T>,
+    value?: FieldSelector<T, number | null> | { index: string }
+  ): RDatum<number>;
+  max<T>(
+    caller: T[] | RDatum<T[]> | RStream<T>,
+    value?: FieldSelector<T, number | null> | { index: string }
+  ): RDatum<number>;
+  distinct<T>(caller: T[] | RDatum<T[]>): RDatum<T[]>;
+  map<T = any>(
+    stream1: RStream,
+    mapFunction: (doc1: RDatum) => any
+  ): RStream<T>;
+  map<T = any, U1 = any, U2 = any>(
+    stream1: RStream<U1>,
+    stream2: RStream<U2>,
+    mapFunction: (doc1: RDatum<U1>, doc2: RDatum<U2>) => any
+  ): RStream<T>;
+  map(
+    stream1: RStream,
+    stream2: RStream,
+    stream3: RStream,
+    mapFunction: (doc1: RDatum, doc2: RDatum, doc3: RDatum) => any
+  ): RStream;
+
+  and(...bool: Array<boolean | RDatum>): RDatum<boolean>;
+  or(...bool: Array<boolean | RDatum>): RDatum<boolean>;
+  not(bool: boolean | RDatum): RDatum<boolean>;
+
+  round(num: RValue<number>): RDatum<number>;
+  ceil(bool: RValue<number>): RDatum<number>;
+  floor(bool: RValue<number>): RDatum<number>;
+
+  branch<T>(
+    test: RValue<boolean>,
+    trueBranch: T,
+    falseBranchOrTest: any,
+    ...branches: any[]
+  ): T extends RStream ? RStream : RDatum;
+
+  add(...args: Array<RValue<string>>): RValue<string>;
+  add(...args: Array<RValue<number>>): RValue<number>;
+  add(...args: Array<RValue<any[]>>): RValue<any[]>;
+  union(...args: RStream[]): RStream;
+  union(...args: Array<RValue<any[]>>): RValue<any[]>;
+
+  distance(
+    geo1: RDatum,
+    geo2: RDatum,
+    options?: {
+      geoSystem?: 'WGS84' | 'unit_sphere';
+      unit?: 'm' | 'km' | 'mi' | 'nm' | 'ft';
+    }
+  ): RStream;
+  intersects<T>(stream: RStream<T>, geometry: RDatum): RStream<T>;
+  intersects(geometry1: RDatum, geometry2: RDatum): RDatum<boolean>;
+  wait(tableOrDatabase: RTable | RDatabase, options?: WaitOptions): RStream;
+
+  do<T>(arg: RDatum, func: (arg: RDatum) => T): T extends RStream ? T : RDatum;
+  do<T>(
+    arg1: RDatum,
+    arg2: RDatum,
+    func: (arg1: RDatum, arg2: RDatum) => T
+  ): T extends RStream ? T : RDatum;
+  do<T>(
+    arg1: RDatum,
+    arg2: RDatum,
+    arg3: RDatum,
+    func: (arg1: RDatum, arg2: RDatum, arg3: RDatum) => T
+  ): T extends RStream ? T : RDatum;
+  do<T>(
+    arg1: RDatum,
+    arg2: RDatum,
+    arg3: RDatum,
+    arg4: RDatum,
+    func: (arg1: RDatum, arg2: RDatum, arg3: RDatum, arg4: RDatum) => T
+  ): T extends RStream ? T : RDatum;
 }
 
 //#endregion operations
