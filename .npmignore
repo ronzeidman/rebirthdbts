@@ -1,6 +1,7 @@
 src
 test
 .vscode
+.travis.yml
 generate-enums.ts
 tsconfig.json
 tsconfig.test.json
