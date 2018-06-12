@@ -118,7 +118,14 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (timer) {
         clearTimeout(timer);
       }
-    } catch (error) {
+    } catch (cause) {
+      const error = new RebirthDBError(
+        'Unable to establish connection, see cause for more info.',
+        {
+          cause,
+          type: RebirthDBErrorType.CONNECTION
+        }
+      );
       this.reportError(error);
       this.emit('close');
       this.close();

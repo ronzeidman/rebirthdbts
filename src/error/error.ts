@@ -5,6 +5,7 @@ import { globals } from '../query-builder/globals';
 import { backtraceTerm } from './term-backtrace';
 
 export interface RebirthDBErrorArgs {
+  cause?: Error;
   type?: RebirthDBErrorType;
   errorCode?: number;
   term?: TermJson;
@@ -19,6 +20,7 @@ export function isRebirthDBError(error: any): error is RebirthDBError {
 }
 
 export class RebirthDBError extends Error {
+  public readonly cause: Error | undefined;
   public get type() {
     return this._type;
   }
@@ -31,6 +33,7 @@ export class RebirthDBError extends Error {
   constructor(
     public msg: string,
     {
+      cause,
       type,
       term,
       query,
@@ -41,6 +44,7 @@ export class RebirthDBError extends Error {
     }: RebirthDBErrorArgs = {}
   ) {
     super(buildMessage(msg, query, term, backtrace));
+    this.cause = cause;
     this.name = 'ReqlDriverError';
     this.msg = msg;
     this.term = query ? query[1] : term;

@@ -306,8 +306,11 @@ export class RebirthDBSocket extends EventEmitter {
             errorCode: jsonMsg.error_code
           });
         }
-      } catch {
-        err = new RebirthDBError(strMsg, { type: RebirthDBErrorType.AUTH });
+      } catch (cause) {
+        err = new RebirthDBError(strMsg, {
+          cause,
+          type: RebirthDBErrorType.AUTH
+        });
       }
       if (err) {
         if (data) {
