@@ -625,13 +625,13 @@ export interface RDatum<T = any> extends RQuery<T> {
     trueBranch: T,
     falseBranchOrTest: any,
     ...branches: any[]
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<any> : never;
   and(
     ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<boolean> : never;
   or(
     ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<boolean> : never;
   not(): T extends boolean ? RDatum<boolean> : never;
   // Works only for Date
   inTimezone(timezone: string): T extends Date ? RDatum<Date> : never;
@@ -1786,15 +1786,15 @@ export interface R {
     trueBranch: T,
     falseBranchOrTest: any,
     ...branches: any[]
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<any> : never;
   and<T>(
     datum: RDatum<T>,
     ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<boolean> : never;
   or<T>(
     datum: RDatum<T>,
     ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<number> : never;
+  ): T extends boolean ? RDatum<boolean> : never;
   not<T>(datum: RDatum<T>): T extends boolean ? RDatum<boolean> : never;
   // Works only for Date
   inTimezone<T>(
