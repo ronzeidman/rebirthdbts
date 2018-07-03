@@ -58,10 +58,7 @@ describe('extra', () => {
   });
 
   it('serialize and derialize should work', async () => {
-    const result = r
-      .expr(1)
-      .add(2)
-      .serialize();
+    const result = r.serialize(r.expr(1).add(2));
     assert.equal(typeof result, 'string');
     const three = await r.deserialize(result).run();
     assert.equal(three, 3);

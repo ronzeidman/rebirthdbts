@@ -46,8 +46,6 @@ const queryProxyHandler: ProxyHandler<any> = {
         );
       case 'toString':
         return () => backtraceTerm(term)[0];
-      case 'serialize':
-        return () => JSON.stringify(term);
       case 'run':
         return runQueryFunc(term);
       case 'getCursor':

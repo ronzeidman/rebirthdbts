@@ -7,6 +7,7 @@ import {
   R,
   RConnectionOptions,
   RPoolConnectionOptions,
+  RQuery,
   RebirthDBErrorType
 } from '../types';
 import { globals } from './globals';
@@ -80,6 +81,7 @@ export const r: R = expr as any;
 r.getPoolMaster = () => (r as any).pool;
 r.setNestingLevel = (level: number) => (globals.nestingLevel = level);
 r.setArrayLimit = (limit?: number) => (globals.arrayLimit = limit);
+r.serialize = (termStr: RQuery) => JSON.stringify((termStr as any).term);
 r.deserialize = (termStr: string) => toQuery(validateTerm(JSON.parse(termStr)));
 r.expr = expr;
 r.do = (...args: any[]) => {

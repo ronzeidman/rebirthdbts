@@ -346,7 +346,6 @@ export interface RQuery<T = any> {
     }>;
     run(connection?: Connection | RunOptions, options?: RunOptions): Promise<T>;
     getCursor(connection?: Connection | RunOptions, options?: RunOptions): T extends Array<infer T1> ? Promise<RCursor<T1>> : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
-    serialize(): string;
 }
 export interface RDatum<T = any> extends RQuery<T> {
     do<U>(...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>): U extends RStream ? RStream : RDatum;
@@ -704,6 +703,7 @@ export interface R {
     getPoolMaster(): MasterPool | undefined;
     setNestingLevel(level: number): void;
     setArrayLimit(limit: number): void;
+    serialize(query: RQuery): string;
     deserialize<T extends RQuery = RQuery>(query: string): T;
     expr<T>(val: T): RDatum<T>;
     <T>(val: T): RDatum<T>;
