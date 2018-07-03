@@ -436,9 +436,9 @@ export interface RDatum<T = any> extends RQuery<T> {
     round(): T extends number ? RDatum<number> : never;
     ceil(): T extends number ? RDatum<number> : never;
     floor(): T extends number ? RDatum<number> : never;
-    branch(trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends boolean ? RDatum<number> : never;
-    and(...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<number> : never;
-    or(...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<number> : never;
+    branch(trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends boolean ? RDatum<any> : never;
+    and(...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<boolean> : never;
+    or(...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<boolean> : never;
     not(): T extends boolean ? RDatum<boolean> : never;
     inTimezone(timezone: string): T extends Date ? RDatum<Date> : never;
     timezone(): T extends Date ? RDatum<string> : never;
@@ -1002,9 +1002,9 @@ export interface R {
     round<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
     ceil<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
     floor<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
-    branch<T>(datum: RDatum<T>, trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends boolean ? RDatum<number> : never;
-    and<T>(datum: RDatum<T>, ...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<number> : never;
-    or<T>(datum: RDatum<T>, ...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<number> : never;
+    branch<T>(datum: RDatum<T>, trueBranch: T, falseBranchOrTest: any, ...branches: any[]): T extends boolean ? RDatum<any> : never;
+    and<T>(datum: RDatum<T>, ...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<boolean> : never;
+    or<T>(datum: RDatum<T>, ...bool: Array<RDatum<boolean>>): T extends boolean ? RDatum<boolean> : never;
     not<T>(datum: RDatum<T>): T extends boolean ? RDatum<boolean> : never;
     inTimezone<T>(datum: RDatum<T>, timezone: string): T extends Date ? RDatum<Date> : never;
     timezone<T>(datum: RDatum<T>): T extends Date ? RDatum<string> : never;

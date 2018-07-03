@@ -129,14 +129,14 @@ describe('dates and times', () => {
 
   it('`ISO8601` should work', async () => {
     const result = await r.ISO8601('1986-11-03T08:30:00-08:00').run();
-    assert(result, new Date(1986, 11, 3, 8, 30, 0, -8));
+    assert.equal(result.getTime(), Date.UTC(1986, 10, 3, 8 + 8, 30, 0));
   });
 
   it('`ISO8601` should work with a timezone', async () => {
     const result = await r
       .ISO8601('1986-11-03T08:30:00', { defaultTimezone: '-08:00' })
       .run();
-    assert(result, new Date(1986, 11, 3, 8, 30, 0, -8));
+    assert.equal(result.getTime(), Date.UTC(1986, 10, 3, 8 + 8, 30, 0));
   });
 
   it('`r.ISO8601` should throw if no argument has been given', async () => {
@@ -453,5 +453,11 @@ describe('dates and times', () => {
       .run({ timeFormat: 'ISO8601' });
     assert.equal(typeof result, 'string');
     assert.equal(result, '2018-05-02T13:00:00.000-03:00');
+  });
+
+  it('Date should be parsed correctly', async () => {
+    const date = new Date();
+    const result = await r.expr({ date }).run();
+    assert.equal(result.date.getTime(), date.getTime());
   });
 });
