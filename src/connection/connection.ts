@@ -198,25 +198,33 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
   }
 
   private findTableTermAndAddDb(term: TermJson | undefined, db: any) {
-    while (term) {
-      if (!Array.isArray(term)) {
+    if (!Array.isArray(term)) {
+      if (term !== null && typeof term === 'object') {
+        Object.values(term).forEach(value =>
+          this.findTableTermAndAddDb(value, db)
+        );
+        return;
+      } else {
         return;
       }
-      const termParam = term[1];
-      if (tableQueries.includes(term[0])) {
-        if (!termParam) {
-          term[1] = [[TermType.DB, [db]]];
-          return;
-        }
-        const innerTerm = termParam[0];
-        if (Array.isArray(innerTerm) && innerTerm[0] === TermType.DB) {
-          return;
-        }
-        termParam.unshift([TermType.DB, [db]]);
-        return;
-      }
-      term = termParam && termParam[0];
     }
+    const termParam = term[1];
+    if (tableQueries.includes(term[0])) {
+      if (!termParam) {
+        term[1] = [[TermType.DB, [db]]];
+        return;
+      }
+      const innerTerm = termParam[0];
+      if (Array.isArray(innerTerm) && innerTerm[0] === TermType.DB) {
+        return;
+      }
+      termParam.unshift([TermType.DB, [db]]);
+      return;
+    }
+    if (termParam) {
+      termParam.forEach(value => this.findTableTermAndAddDb(value, db));
+    }
+    return;
   }
 
   private startPinging() {
