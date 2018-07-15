@@ -373,7 +373,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     concatMap<Res = any, U = T extends Array<infer T1> ? T1 : never>(...args: Array<RStream | ((arg: RDatum<U>, ...args: RDatum[]) => any)>): T extends any[] ? RDatum<Res[]> : never;
     forEach<U = any, ONE = T extends Array<infer T1> ? T1 : never, RES extends RDatum<WriteResult<U>> | RDatum<DBChangeResult> | RDatum<IndexChangeResult> = RDatum<WriteResult<U>>>(func: (res: RDatum<ONE>) => RES): T extends any[] ? RES : never;
     withFields(...fields: MultiFieldSelector[]): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
-    filter<U = T extends Array<infer T1> ? T1 : never>(predicate: (doc: RDatum<U>) => RValue<boolean>, options?: {
+    filter<U = T extends Array<infer T1> ? T1 : never>(predicate: Partial<U> | ((doc: RDatum<U>) => RValue<boolean>), options?: {
         default: boolean;
     }): this;
     includes(geometry: RDatum): T extends Array<infer T1> ? RDatum<T> : never;
@@ -493,7 +493,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
     concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RStream<U>;
     withFields(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
     hasFields(...fields: MultiFieldSelector[]): RStream<T>;
-    filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
+    filter(predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>), options?: {
         default: boolean;
     }): this;
     includes(geometry: RDatum): RStream<T>;
@@ -550,7 +550,7 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
     concatMap<U = any>(...args: Array<RStream | ((arg: RDatum<T>, ...args: RDatum[]) => any)>): RFeed<U>;
     withFields(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
     hasFields(...fields: MultiFieldSelector[]): RFeed<T>;
-    filter(predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
+    filter(predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>), options?: {
         default: boolean;
     }): this;
     includes(geometry: RDatum): RFeed<T>;
@@ -869,13 +869,13 @@ export interface R {
     hasFields<T>(feed: RFeed<T>, ...fields: MultiFieldSelector[]): RFeed<T>;
     hasFields<T>(stream: RStream<T>, ...fields: MultiFieldSelector[]): RStream<T>;
     hasFields<T>(datum: RDatum<T>, ...fields: string[]): T extends Array<infer T1> ? RDatum<T> : RDatum<boolean>;
-    filter<T>(feed: RFeed<T>, predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
+    filter<T>(feed: RFeed<T>, predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>), options?: {
         default: boolean;
     }): RFeed<T>;
-    filter<T>(stream: RStream<T>, predicate: (doc: RDatum<T>) => RValue<boolean>, options?: {
+    filter<T>(stream: RStream<T>, predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>), options?: {
         default: boolean;
     }): RStream<T>;
-    filter<T, U = T extends Array<infer T1> ? T1 : never>(datum: RDatum<T>, predicate: (doc: RDatum<U>) => RValue<boolean>, options?: {
+    filter<T, U = T extends Array<infer T1> ? T1 : never>(datum: RDatum<T>, predicate: Partial<T> | ((doc: RDatum<U>) => RValue<boolean>), options?: {
         default: boolean;
     }): RDatum<T>;
     includes<T>(datum: RDatum<T>, geometry: RDatum): T extends Array<infer T1> ? RDatum<T> : never;
