@@ -1,5 +1,5 @@
 {
-  "name": "rebirthdb-ts",
+  "name": "@rebirthdb/rebirthdb-ts",
   "version": "2.4.0-rc.1",
   "description": "RebirthDB TypeScript driver",
   "main": "lib/index.js",
