@@ -1,10 +1,10 @@
 ## Install
 
-`npm i rebirthdb/rebirthdb-ts`
+`npm i @rebirthdb/rebirthdb-ts`
 
 or
 
-`yarn add https://github.com/rebirthdb/rebirthdb-ts.git`
+`yarn add @rebirthdb/rebirthdb-ts`
 
 ## Import
 
