@@ -21,6 +21,7 @@ jobs:
     - npm run build
     deploy:
       provider: npm
+      email: "ron.zeidman@gmail.com"
       api_key: "$NPM_API_KEY"
       skip_cleanup: true
       on:
