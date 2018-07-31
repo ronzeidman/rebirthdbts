@@ -10,9 +10,9 @@ or
 
 ```ts
 // if you support import
-import { r } from 'rebirthdbts';
+import { r } from '@rebirthdb/rebirthdb-ts';
 // if you dont
-const { r } = require('rebirthdbts');
+const { r } = require('@rebirthdb/rebirthdb-ts');
 ```
 
 ## Initialize
