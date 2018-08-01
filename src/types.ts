@@ -402,11 +402,12 @@ export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
     ...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>
   ): U extends RStream ? RStream : RDatum;
-  <U extends T extends Array<infer T1> ? keyof T1 : keyof T>(
+  <U extends string | number>(
     attribute: RValue<U>
-  ): T extends Array<infer T1> ? RDatum<Array<T[U]>> : RDatum<T[U]>;
-  (attribute: RValue<number>): T extends Array<infer T1> ? RDatum<T1> : never;
-  getField<U extends keyof T>(attribute: RValue<U>): RDatum<T[U]>;
+  ): U extends keyof T ? RDatum<T[U]> : RDatum<any>;
+  getField<U extends string | number>(
+    attribute: RValue<U>
+  ): U extends keyof T ? RDatum<T[U]> : RDatum<any>;
   nth(
     attribute: RValue<number>
   ): T extends Array<infer T1> ? RDatum<T1> : never;
@@ -917,8 +918,8 @@ export interface RTable<T = any> extends RSelection<T> {
     highKey: any,
     options?: {
       index?: string;
-      leftBound: 'open' | 'closed';
-      rightBound: 'open' | 'closed';
+      leftBound?: 'open' | 'closed';
+      rightBound?: 'open' | 'closed';
     }
   ): RSelection<T>;
   getIntersecting(geometry: RDatum, index: { index: string }): RStream<T>;
@@ -1217,8 +1218,8 @@ export interface R {
     highKey: any,
     options?: {
       index?: string;
-      leftBound: 'open' | 'closed';
-      rightBound: 'open' | 'closed';
+      leftBound?: 'open' | 'closed';
+      rightBound?: 'open' | 'closed';
     }
   ): RSelection<T>;
   getIntersecting<T>(
@@ -1779,9 +1780,9 @@ export interface R {
   ceil<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
   floor<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
   // Works only for bool
-  branch<T>(
-    datum: RDatum<T>,
-    trueBranch: T,
+  branch<T = any>(
+    datum: RValue<boolean>,
+    trueBranch: RValue<T>,
     falseBranchOrTest: any,
     ...branches: any[]
   ): T extends boolean ? RDatum<any> : never;
