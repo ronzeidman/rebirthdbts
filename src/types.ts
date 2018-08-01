@@ -533,7 +533,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
 
   merge<U = any>(
-    ...objects: object[]
+    ...objects: Array<object | RDatum>
   ): T extends Array<infer T1> ? RDatum<U[]> : RDatum<U>;
 
   skip(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
@@ -778,7 +778,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
   pluck(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
   without(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
 
-  merge<U = any>(...objects: any[]): RStream<U>;
+  merge<U = any>(...objects: Array<object | RDatum>): RStream<U>;
 
   skip(n: RValue<number>): RStream<T>;
   limit(n: RValue<number>): RStream<T>;
@@ -1559,9 +1559,9 @@ export interface R {
   ): RStream<Partial<T>>;
   merge<T, U = any>(
     datum: RDatum<T>,
-    ...objects: any[]
+    ...objects: Array<object | RDatum>
   ): T extends Array<infer T1> ? RDatum<U[]> : RDatum<U>;
-  merge<U = any>(stream: RStream, ...objects: any[]): RStream<U>;
+  merge<U = any>(stream: RStream, ...objects: Array<object | RDatum>): RStream<U>;
   skip<T>(
     datum: RDatum<T>,
     n: RValue<number>
