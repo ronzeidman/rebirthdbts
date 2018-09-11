@@ -1,10 +1,10 @@
 import { isUndefined } from 'util';
-import { RebirthDBConnection } from '../connection/connection';
+import { RethinkDBConnection } from '../connection/connection';
 import { MasterConnectionPool } from '../connection/master-pool';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { ComplexTermJson, TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
-import { RCursor, RebirthDBErrorType, RunOptions } from '../types';
+import { RCursor, RethinkDBErrorType, RunOptions } from '../types';
 import { globals } from './globals';
 import { parseOptarg, parseParam } from './param-parser';
 import { isQuery, toQuery } from './query';
@@ -24,34 +24,34 @@ export function termBuilder(
     } else {
       const argsLength = args.length;
       if (minArgs === maxArgs && argsLength !== minArgs) {
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
           }\` takes ${minArgs} argument${
             minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RebirthDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY }
         );
       }
       if (argsLength < minArgs) {
         const termConf = termConfig.find(c => c[0] === termType);
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
           }\` takes at least ${minArgs} argument${
             minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RebirthDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY }
         );
       }
       if (maxArgs !== -1 && argsLength > maxArgs) {
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
           }\` takes at most ${maxArgs} argument${
             maxArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RebirthDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY }
         );
       }
       switch (optargType) {
@@ -69,11 +69,11 @@ export function termBuilder(
           (argsLength === maxArgs &&
             ['last', 'last-optional'].includes(optargType as any)))
       ) {
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           `${numToString(
             argsLength
           )} argument of \`${termName}\` must be an object.`,
-          { term: currentTerm, type: RebirthDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY }
         );
       }
       params.push(
@@ -103,16 +103,16 @@ export const doTermFunc = (termQuery: any) => {
 
 export const runQueryFunc = (term: TermJson) => {
   return async (
-    conn?: RebirthDBConnection | RunOptions,
+    conn?: RethinkDBConnection | RunOptions,
     options?: RunOptions
   ): Promise<any> => {
-    const c = conn instanceof RebirthDBConnection ? conn : undefined;
+    const c = conn instanceof RethinkDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
-    const opt = conn instanceof RebirthDBConnection ? options : conn;
+    const opt = conn instanceof RethinkDBConnection ? options : conn;
     if (!c && (!cpool || cpool.draining)) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         '`run` was called without a connection and no pool has been created after:',
-        { term, type: RebirthDBErrorType.API_FAIL }
+        { term, type: RethinkDBErrorType.API_FAIL }
       );
     }
     const noreply = opt && opt.noreply;
@@ -139,16 +139,16 @@ export const runQueryFunc = (term: TermJson) => {
 };
 export const getCursorQueryFunc = (term: TermJson) => {
   return async (
-    conn?: RebirthDBConnection | RunOptions,
+    conn?: RethinkDBConnection | RunOptions,
     options?: RunOptions
   ): Promise<RCursor | undefined> => {
-    const c = conn instanceof RebirthDBConnection ? conn : undefined;
+    const c = conn instanceof RethinkDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
-    const opt = conn instanceof RebirthDBConnection ? options : conn;
+    const opt = conn instanceof RethinkDBConnection ? options : conn;
     if (!c && (!cpool || cpool.draining)) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         '`getCursor` was called without a connection and no pool has been created after:',
-        { term, type: RebirthDBErrorType.API_FAIL }
+        { term, type: RethinkDBErrorType.API_FAIL }
       );
     }
     const cursor = c ? await c.query(term, opt) : await cpool.queue(term, opt);

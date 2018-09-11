@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { isUndefined } from 'util';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
@@ -9,12 +9,12 @@ import { Cursor } from '../response/cursor';
 import {
   Connection,
   RServerConnectionOptions,
-  RebirthDBErrorType,
+  RethinkDBErrorType,
   RunOptions,
   ServerInfo
 } from '../types';
 import { NULL_BUFFER } from './handshake-utils';
-import { RNConnOpts, RebirthDBSocket, setConnectionDefaults } from './socket';
+import { RNConnOpts, RethinkDBSocket, setConnectionDefaults } from './socket';
 
 const tableQueries = [
   TermType.TABLE_CREATE,
@@ -23,10 +23,10 @@ const tableQueries = [
   TermType.TABLE
 ];
 
-export class RebirthDBConnection extends EventEmitter implements Connection {
+export class RethinkDBConnection extends EventEmitter implements Connection {
   public clientPort: number;
   public clientAddress: string;
-  public readonly socket: RebirthDBSocket;
+  public readonly socket: RethinkDBSocket;
   private options: RNConnOpts;
   private timeout: number;
   private pingInterval: number;
@@ -59,7 +59,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
     this.log = log;
     this.use(db);
 
-    this.socket = new RebirthDBSocket({
+    this.socket = new RethinkDBSocket({
       connectionOptions: this.options,
       user,
       password: password
@@ -119,11 +119,11 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
         clearTimeout(timer);
       }
     } catch (cause) {
-      const error = new RebirthDBError(
+      const error = new RethinkDBError(
         'Unable to establish connection, see cause for more info.',
         {
           cause,
-          type: RebirthDBErrorType.CONNECTION
+          type: RethinkDBErrorType.CONNECTION
         }
       );
       this.reportError(error);
@@ -141,11 +141,11 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       this.emit('timeout');
       this.emit('close');
       this.close().catch(() => undefined);
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
           this.connectionOptions.port
         } in less than ${this.timeout}s.`,
-        { type: RebirthDBErrorType.TIMEOUT }
+        { type: RethinkDBErrorType.TIMEOUT }
       );
     }
     this.startPinging();
@@ -161,7 +161,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      const err = new RebirthDBError('Unexpected return value');
+      const err = new RethinkDBError('Unexpected return value');
       this.reportError(err);
       throw err;
     }
@@ -173,7 +173,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
       if (this.socket.status === 'errored') {
         throw this.socket.lastError;
       }
-      const err = new RebirthDBError('Unexpected return value');
+      const err = new RethinkDBError('Unexpected return value');
       this.reportError(err);
       throw err;
     }
@@ -241,7 +241,7 @@ export class RebirthDBConnection extends EventEmitter implements Connection {
           result.r[0] !== 'ping'
         ) {
           this.reportError(
-            new RebirthDBError('Ping error', { responseType: result.t })
+            new RethinkDBError('Ping error', { responseType: result.t })
           );
         }
         if (this.pingTimer) {

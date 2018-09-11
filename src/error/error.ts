@@ -1,12 +1,12 @@
-import { RebirthDBErrorType } from '..';
+import { RethinkDBErrorType } from '..';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, ResponseType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
 import { backtraceTerm } from './term-backtrace';
 
-export interface RebirthDBErrorArgs {
+export interface RethinkDBErrorArgs {
   cause?: Error;
-  type?: RebirthDBErrorType;
+  type?: RethinkDBErrorType;
   errorCode?: number;
   term?: TermJson;
   query?: QueryJson;
@@ -15,17 +15,17 @@ export interface RebirthDBErrorArgs {
   responseErrorType?: ErrorType;
 }
 
-export function isRebirthDBError(error: any): error is RebirthDBError {
-  return error instanceof RebirthDBError;
+export function isRethinkDBError(error: any): error is RethinkDBError {
+  return error instanceof RethinkDBError;
 }
 
-export class RebirthDBError extends Error {
+export class RethinkDBError extends Error {
   public readonly cause: Error | undefined;
   public get type() {
     return this._type;
   }
   // tslint:disable-next-line:variable-name
-  private _type: RebirthDBErrorType = RebirthDBErrorType.UNKNOWN;
+  private _type: RethinkDBErrorType = RethinkDBErrorType.UNKNOWN;
   private term?: TermJson;
   private query?: QueryJson;
   private backtrace?: Array<number | string>;
@@ -41,7 +41,7 @@ export class RebirthDBError extends Error {
       backtrace,
       responseType,
       responseErrorType
-    }: RebirthDBErrorArgs = {}
+    }: RethinkDBErrorArgs = {}
   ) {
     super(buildMessage(msg, query, term, backtrace));
     this.cause = cause;
@@ -50,7 +50,7 @@ export class RebirthDBError extends Error {
     this.term = query ? query[1] : term;
     this.backtrace = backtrace;
     this.setErrorType({ errorCode, type, responseErrorType });
-    Error.captureStackTrace(this, RebirthDBError);
+    Error.captureStackTrace(this, RethinkDBError);
   }
 
   public addBacktrace({
@@ -71,7 +71,7 @@ export class RebirthDBError extends Error {
     responseErrorType
   }: {
     errorCode?: number;
-    type?: RebirthDBErrorType;
+    type?: RethinkDBErrorType;
     responseErrorType?: ErrorType;
   }) {
     if (type) {
@@ -82,40 +82,40 @@ export class RebirthDBError extends Error {
       // A ReqlAuthError should be thrown if the error code is between 10 and 20 (inclusive)
       // what about other error codes?
       this.name = 'ReqlAuthError';
-      this._type = RebirthDBErrorType.AUTH;
+      this._type = RethinkDBErrorType.AUTH;
     } else if (responseErrorType) {
       switch (responseErrorType) {
         case ErrorType.INTERNAL:
           this.name = 'ReqlInternalError';
-          this._type = RebirthDBErrorType.INTERNAL;
+          this._type = RethinkDBErrorType.INTERNAL;
           break;
         case ErrorType.NON_EXISTENCE:
           this.name = 'ReqlNonExistanceError';
-          this._type = RebirthDBErrorType.NON_EXISTENCE;
+          this._type = RethinkDBErrorType.NON_EXISTENCE;
           break;
         case ErrorType.OP_FAILED:
           this.name = 'ReqlOpFailedError';
-          this._type = RebirthDBErrorType.OP_FAILED;
+          this._type = RethinkDBErrorType.OP_FAILED;
           break;
         case ErrorType.OP_INDETERMINATE:
           this.name = 'ReqlOpIndeterminateError';
-          this._type = RebirthDBErrorType.OP_INDETERMINATE;
+          this._type = RethinkDBErrorType.OP_INDETERMINATE;
           break;
         case ErrorType.PERMISSION_ERROR:
           this.name = 'ReqlPermissionError';
-          this._type = RebirthDBErrorType.PERMISSION_ERROR;
+          this._type = RethinkDBErrorType.PERMISSION_ERROR;
           break;
         case ErrorType.QUERY_LOGIC:
           this.name = 'ReqlLogicError';
-          this._type = RebirthDBErrorType.QUERY_LOGIC;
+          this._type = RethinkDBErrorType.QUERY_LOGIC;
           break;
         case ErrorType.RESOURCE_LIMIT:
           this.name = 'ReqlResourceError';
-          this._type = RebirthDBErrorType.RESOURCE_LIMIT;
+          this._type = RethinkDBErrorType.RESOURCE_LIMIT;
           break;
         case ErrorType.USER:
           this.name = 'ReqlUserError';
-          this._type = RebirthDBErrorType.USER;
+          this._type = RethinkDBErrorType.USER;
           break;
       }
     } else {

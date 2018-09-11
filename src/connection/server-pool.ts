@@ -1,16 +1,16 @@
 import { EventEmitter } from 'events';
 import { isUndefined } from 'util';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
 import {
   ConnectionPool,
   RConnectionOptions,
   RServerConnectionOptions,
-  RebirthDBErrorType,
+  RethinkDBErrorType,
   RunOptions
 } from '../types';
-import { RebirthDBConnection } from './connection';
+import { RethinkDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
 
 const REBALANCE_EVERY = 30 * 1000;
@@ -30,8 +30,8 @@ export class ServerConnectionPool extends EventEmitter
 
   private connParam: any;
 
-  private connections: RebirthDBConnection[] = [];
-  private timers = new Map<RebirthDBConnection, NodeJS.Timer>();
+  private connections: RethinkDBConnection[] = [];
+  private timers = new Map<RethinkDBConnection, NodeJS.Timer>();
 
   constructor(
     connectionOptions: RServerConnectionOptions,
@@ -94,8 +94,8 @@ export class ServerConnectionPool extends EventEmitter
             resolve(this);
           } else {
             reject(
-              new RebirthDBError('Error initializing pool', {
-                type: RebirthDBErrorType.POOL_FAIL
+              new RethinkDBError('Error initializing pool', {
+                type: RethinkDBErrorType.POOL_FAIL
               })
             );
           }
@@ -173,8 +173,8 @@ export class ServerConnectionPool extends EventEmitter
     const openConnections = this.getOpenConnections();
     if (!openConnections) {
       throw this.reportError(
-        new RebirthDBError('No connections available', {
-          type: RebirthDBErrorType.POOL_FAIL
+        new RethinkDBError('No connections available', {
+          type: RethinkDBErrorType.POOL_FAIL
         }),
         true
       );
@@ -198,12 +198,12 @@ export class ServerConnectionPool extends EventEmitter
   }
 
   private async createConnection() {
-    const conn = new RebirthDBConnection(this.server, this.connParam);
+    const conn = new RethinkDBConnection(this.server, this.connParam);
     this.connections = [...this.connections, conn];
     return await this.persistConnection(conn);
   }
 
-  private subscribeToConnection(conn: RebirthDBConnection) {
+  private subscribeToConnection(conn: RethinkDBConnection) {
     if (conn.open && !this.draining) {
       const size = this.getOpenConnections().length;
       this.emit('size', size);
@@ -227,7 +227,7 @@ export class ServerConnectionPool extends EventEmitter
     }
   }
 
-  private async closeConnection(conn: RebirthDBConnection) {
+  private async closeConnection(conn: RethinkDBConnection) {
     this.removeIdleTimer(conn);
     conn.removeAllListeners();
     this.connections = this.connections.filter(c => c !== conn);
@@ -235,7 +235,7 @@ export class ServerConnectionPool extends EventEmitter
     this.emit('size', this.getOpenConnections().length);
   }
 
-  private checkIdle(conn: RebirthDBConnection) {
+  private checkIdle(conn: RethinkDBConnection) {
     this.removeIdleTimer(conn);
     if (!conn.numOfQueries) {
       this.emit('available-size', this.getIdleConnections().length);
@@ -253,7 +253,7 @@ export class ServerConnectionPool extends EventEmitter
     }
   }
 
-  private removeIdleTimer(conn: RebirthDBConnection) {
+  private removeIdleTimer(conn: RethinkDBConnection) {
     const timer = this.timers.get(conn);
     if (timer) {
       clearTimeout(timer);
@@ -261,7 +261,7 @@ export class ServerConnectionPool extends EventEmitter
     this.timers.delete(conn);
   }
 
-  private async persistConnection(conn: RebirthDBConnection) {
+  private async persistConnection(conn: RethinkDBConnection) {
     let exp = 0;
     while (this.connections.includes(conn) && !conn.open && !this.draining) {
       try {
@@ -314,8 +314,8 @@ export class ServerConnectionPool extends EventEmitter
 }
 
 function minQueriesRunning(
-  acc: RebirthDBConnection,
-  next: RebirthDBConnection
+  acc: RethinkDBConnection,
+  next: RethinkDBConnection
 ) {
   return acc.numOfQueries <= next.numOfQueries ? acc : next;
 }

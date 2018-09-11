@@ -5,10 +5,10 @@ import * as iterall from 'iterall';
 import { satisfies } from 'semver';
 import {
   Connection,
-  isRebirthDBError,
+  isRethinkDBError,
   r,
   RCursor,
-  RebirthDBErrorType
+  RethinkDBErrorType
 } from '../src';
 import config from './config';
 import { uuid } from './util/common';
@@ -619,8 +619,8 @@ describe('cursor', () => {
           .then(assert)
           .catch(err => {
             if (
-              isRebirthDBError(err) &&
-              err.type === RebirthDBErrorType.CANCEL
+              isRethinkDBError(err) &&
+              err.type === RethinkDBErrorType.CANCEL
             ) {
               resolve();
             }

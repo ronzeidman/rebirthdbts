@@ -1,6 +1,6 @@
 import { isBuffer, isDate, isFunction, isObject, isUndefined } from 'util';
-import { RebirthDBErrorType } from '..';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBErrorType } from '..';
+import { RethinkDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { TermType } from '../proto/enums';
 import { globals } from './globals';
@@ -11,9 +11,9 @@ export function parseParam(
   nestingLevel = globals.nestingLevel
 ): TermJson {
   if (nestingLevel === 0) {
-    throw new RebirthDBError(
+    throw new RethinkDBError(
       'Nesting depth limit exceeded.\nYou probably have a circular reference somewhere.',
-      { type: RebirthDBErrorType.PARSE }
+      { type: RethinkDBErrorType.PARSE }
     );
   }
   if (param === null) {
@@ -21,8 +21,8 @@ export function parseParam(
   }
   if (isQuery(param)) {
     if (isUndefined(param.term)) {
-      throw new RebirthDBError("'r' cannot be an argument", {
-        type: RebirthDBErrorType.PARSE
+      throw new RethinkDBError("'r' cannot be an argument", {
+        type: RethinkDBErrorType.PARSE
       });
     }
     return param.term;
@@ -56,9 +56,9 @@ export function parseParam(
           .map((_, i) => toQuery([TermType.VAR, [i + nextVarId]]))
       );
       if (isUndefined(funcResult)) {
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           `Anonymous function returned \`undefined\`. Did you forget a \`return\`? in:\n${param.toString()}`,
-          { type: RebirthDBErrorType.PARSE }
+          { type: RethinkDBErrorType.PARSE }
         );
       }
       const term = [
@@ -88,8 +88,8 @@ export function parseParam(
     );
   }
   if (typeof param === 'number' && (isNaN(param) || !isFinite(param))) {
-    throw new RebirthDBError(`Cannot convert \`${param}\` to JSON`, {
-      type: RebirthDBErrorType.PARSE
+    throw new RethinkDBError(`Cannot convert \`${param}\` to JSON`, {
+      type: RethinkDBErrorType.PARSE
     });
   }
   return param;

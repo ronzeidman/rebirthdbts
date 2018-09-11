@@ -1,14 +1,14 @@
 import { isUndefined } from 'util';
-import { RebirthDBConnection } from '../connection/connection';
+import { RethinkDBConnection } from '../connection/connection';
 import { MasterConnectionPool } from '../connection/master-pool';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { TermType } from '../proto/enums';
 import {
   R,
   RConnectionOptions,
   RPoolConnectionOptions,
   RQuery,
-  RebirthDBErrorType
+  RethinkDBErrorType
 } from '../types';
 import { globals } from './globals';
 import { toQuery } from './query';
@@ -26,26 +26,26 @@ export const r: R = expr as any;
   } = options;
   if (host || port) {
     if ((options as any).server) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'If `host` or `port` are defined `server` must not be.',
-        { type: RebirthDBErrorType.API_FAIL }
+        { type: RethinkDBErrorType.API_FAIL }
       );
     } else if ((options as any).servers) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'If `host` or `port` are defined `servers` must not be.',
-        { type: RebirthDBErrorType.API_FAIL }
+        { type: RethinkDBErrorType.API_FAIL }
       );
     }
   }
   if ((options as any).server && (options as any).servers) {
-    throw new RebirthDBError('If `server` is defined `servers` must not be.', {
-      type: RebirthDBErrorType.API_FAIL
+    throw new RethinkDBError('If `server` is defined `servers` must not be.', {
+      type: RethinkDBErrorType.API_FAIL
     });
   }
   if (!servers.length) {
-    throw new RebirthDBError(
+    throw new RethinkDBError(
       'If `servers` is an array, it must contain at least one server.',
-      { type: RebirthDBErrorType.API_FAIL }
+      { type: RethinkDBErrorType.API_FAIL }
     );
   }
   if ((r as any).pool) {
@@ -69,12 +69,12 @@ export const r: R = expr as any;
     ...optsWithoutHostPort
   } = options;
   if ((host || port) && (options as any).server) {
-    throw new RebirthDBError(
+    throw new RethinkDBError(
       'If `host` or `port` are defined `server` must not be.',
-      { type: RebirthDBErrorType.API_FAIL }
+      { type: RethinkDBErrorType.API_FAIL }
     );
   }
-  const c = new RebirthDBConnection(server, options as any);
+  const c = new RethinkDBConnection(server, options as any);
   await c.reconnect();
   return c;
 };
@@ -105,36 +105,36 @@ termConfig
 
 function validateTerm(term: any): any {
   if (isUndefined(term)) {
-    throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+    throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
   }
   if (typeof term === 'function') {
-    throw new RebirthDBError(`Invalid term:\n${term.toString()}\n`);
+    throw new RethinkDBError(`Invalid term:\n${term.toString()}\n`);
   }
   if (typeof term === 'object') {
     if (Array.isArray(term)) {
       if (term.length > 3) {
-        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+        throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
       }
       const [func, args, options] = term;
       if (typeof func !== 'number' || isUndefined(TermType[func])) {
-        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+        throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
       }
       if (!isUndefined(args)) {
         if (!Array.isArray(args)) {
-          throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+          throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
         }
         if (!args.every(arg => validateTerm(arg))) {
-          throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+          throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
         }
       }
       if (
         !isUndefined(options) &&
         !Object.values(term).every(value => validateTerm(value))
       ) {
-        throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+        throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
       }
     } else if (!Object.values(term).every(value => validateTerm(value))) {
-      throw new RebirthDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
+      throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
     }
   }
   return term;
