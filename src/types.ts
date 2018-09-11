@@ -325,7 +325,7 @@ export interface RCursor<T = any> extends NodeJS.ReadableStream {
   toArray(): Promise<T[]>;
   close(): Promise<void>;
   each(
-    callback: (err: RebirthDBError | undefined, row: any) => any,
+    callback: (err: RethinkDBError | undefined, row: any) => any,
     onFinishedCallback?: () => any
   ): Promise<any>;
   eachAsync(
@@ -334,11 +334,11 @@ export interface RCursor<T = any> extends NodeJS.ReadableStream {
   ): Promise<void>;
 }
 
-export interface RebirthDBError extends Error {
-  readonly type: RebirthDBErrorType;
+export interface RethinkDBError extends Error {
+  readonly type: RethinkDBErrorType;
 }
 
-export enum RebirthDBErrorType {
+export enum RethinkDBErrorType {
   UNKNOWN,
   // driver
   API_FAIL,

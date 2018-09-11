@@ -1,18 +1,18 @@
 ## Install
 
-`npm i @rebirthdb/rebirthdb-ts`
+`npm i @rethinkdb/rethinkdb-ts`
 
 or
 
-`yarn add @rebirthdb/rebirthdb-ts`
+`yarn add @rethinkdb/rethinkdb-ts`
 
 ## Import
 
 ```ts
 // if you support import
-import { r } from '@rebirthdb/rebirthdb-ts';
+import { r } from '@rethinkdb/rethinkdb-ts';
 // if you dont
-const { r } = require('@rebirthdb/rebirthdb-ts');
+const { r } = require('@rethinkdb/rethinkdb-ts');
 ```
 
 ## Initialize
@@ -33,7 +33,7 @@ const conn = await r.connect(options);
 
 # CHANGES FROM RETHINKDBDASH
 
-- Importing property instead of entire library: `const {r} = require('rebirthdbts')` or `import {r} from 'rebirthdbts'` instead of `const r = require('rethinkdbdash')(options)`
+- Importing property instead of entire library: `const {r} = require('rethinkdbts')` or `import {r} from 'rethinkdbts'` instead of `const r = require('rethinkdbdash')(options)`
 - No top level initialization, initializing a pool is done by `await r.connectPool()`
 - No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
   - `.run()` will coerce streams to array by default feeds will return a cursor like rethinkdbdash

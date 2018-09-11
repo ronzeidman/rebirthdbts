@@ -1,10 +1,10 @@
 import { Readable } from 'stream';
 import { isUndefined } from 'util';
-import { RebirthDBSocket } from '../connection/socket';
-import { RebirthDBError, isRebirthDBError } from '../error/error';
+import { RethinkDBSocket } from '../connection/socket';
+import { RethinkDBError, isRethinkDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { ResponseNote, ResponseType } from '../proto/enums';
-import { RCursor, RCursorType, RebirthDBErrorType, RunOptions } from '../types';
+import { RCursor, RCursorType, RethinkDBErrorType, RunOptions } from '../types';
 import { getNativeTypes } from './response-parser';
 
 export class Cursor extends Readable implements RCursor {
@@ -21,7 +21,7 @@ export class Cursor extends Readable implements RCursor {
   private resolving: Promise<any> | undefined;
   private lastError: Error | undefined;
   constructor(
-    private conn: RebirthDBSocket,
+    private conn: RethinkDBSocket,
     private token: number,
     private runOptions: Pick<
       RunOptions,
@@ -51,10 +51,10 @@ export class Cursor extends Readable implements RCursor {
       .then(push)
       .catch(err => {
         if (
-          (!isRebirthDBError(err) ||
+          (!isRethinkDBError(err) ||
             ![
-              RebirthDBErrorType.CURSOR_END,
-              RebirthDBErrorType.CANCEL
+              RethinkDBErrorType.CURSOR_END,
+              RethinkDBErrorType.CANCEL
             ].includes(err.type)) &&
           this.listenerCount('error') > 0
         ) {
@@ -98,15 +98,15 @@ export class Cursor extends Readable implements RCursor {
 
   public async next() {
     if (this.emitting) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'You cannot call `next` once you have bound listeners on the Feed.',
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         `You cannot call \`next\` on a closed ${this.type}`,
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     return await this._next();
@@ -114,18 +114,18 @@ export class Cursor extends Readable implements RCursor {
 
   public async toArray() {
     if (this.emitting) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'You cannot call `toArray` once you have bound listeners on the Feed.',
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     const all: any[] = [];
     return this.eachAsync(async row => {
       if (this.type.endsWith('Feed')) {
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           'You cannot call `toArray` on a change Feed.',
           {
-            type: RebirthDBErrorType.CURSOR
+            type: RethinkDBErrorType.CURSOR
           }
         );
       }
@@ -134,20 +134,20 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public async each(
-    callback: (err: RebirthDBError | undefined, row?: any) => boolean,
+    callback: (err: RethinkDBError | undefined, row?: any) => boolean,
     onFinishedCallback?: () => any
   ) {
     if (this.emitting) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'You cannot call `each` once you have bound listeners on the Feed.',
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
       callback(
-        new RebirthDBError(
+        new RethinkDBError(
           'You cannot retrieve data from a cursor that is closed',
-          { type: RebirthDBErrorType.CURSOR }
+          { type: RethinkDBErrorType.CURSOR }
         )
       );
       if (onFinishedCallback) {
@@ -156,7 +156,7 @@ export class Cursor extends Readable implements RCursor {
       return;
     }
     let resume = true;
-    let err: RebirthDBError | undefined;
+    let err: RethinkDBError | undefined;
     let next: any;
     while (resume !== false && !this.closed) {
       err = undefined;
@@ -165,7 +165,7 @@ export class Cursor extends Readable implements RCursor {
       } catch (error) {
         err = error;
       }
-      if (err && err.type === RebirthDBErrorType.CURSOR_END) {
+      if (err && err.type === RethinkDBErrorType.CURSOR_END) {
         break;
       }
       resume = callback(err, next);
@@ -180,15 +180,15 @@ export class Cursor extends Readable implements RCursor {
     final?: (error: any) => any
   ) {
     if (this.emitting) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'You cannot call `eachAsync` once you have bound listeners on the Feed.',
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     if (this.closed) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'You cannot retrieve data from a cursor that is closed',
-        { type: RebirthDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR }
       );
     }
     let nextRow: any;
@@ -202,7 +202,7 @@ export class Cursor extends Readable implements RCursor {
               err =>
                 err
                   ? reject(
-                      new RebirthDBError(err, { type: RebirthDBErrorType.USER })
+                      new RethinkDBError(err, { type: RethinkDBErrorType.USER })
                     )
                   : resolve()
             );
@@ -225,8 +225,8 @@ export class Cursor extends Readable implements RCursor {
         }
       }
       if (
-        !isRebirthDBError(error) ||
-        ![RebirthDBErrorType.CURSOR_END, RebirthDBErrorType.CANCEL].includes(
+        !isRethinkDBError(error) ||
+        ![RethinkDBErrorType.CURSOR_END, RethinkDBErrorType.CANCEL].includes(
           error.type
         )
       ) {
@@ -281,8 +281,8 @@ export class Cursor extends Readable implements RCursor {
         next = results && results[this.position];
       }
       if (!this.hasNextBatch && isUndefined(next)) {
-        throw new RebirthDBError('No more rows in the cursor.', {
-          type: RebirthDBErrorType.CURSOR_END
+        throw new RethinkDBError('No more rows in the cursor.', {
+          type: RethinkDBErrorType.CURSOR_END
         });
       }
       this.position++;
@@ -307,7 +307,7 @@ export class Cursor extends Readable implements RCursor {
       case ResponseType.CLIENT_ERROR:
       case ResponseType.COMPILE_ERROR:
       case ResponseType.RUNTIME_ERROR:
-        throw new RebirthDBError(results[0], {
+        throw new RethinkDBError(results[0], {
           responseErrorType: error,
           responseType: type,
           query: this.query,
@@ -318,7 +318,7 @@ export class Cursor extends Readable implements RCursor {
       case ResponseType.SUCCESS_SEQUENCE:
         break;
       default:
-        throw new RebirthDBError('Unexpected return value');
+        throw new RethinkDBError('Unexpected return value');
     }
   }
 

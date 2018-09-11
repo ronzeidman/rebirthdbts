@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { isIPv6 } from 'net';
 import { isUndefined } from 'util';
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { r } from '../query-builder/r';
 import { Cursor } from '../response/cursor';
@@ -12,10 +12,10 @@ import {
   RCursor,
   RPoolConnectionOptions,
   RServer,
-  RebirthDBErrorType,
+  RethinkDBErrorType,
   RunOptions
 } from '../types';
-import { RebirthDBConnection } from './connection';
+import { RethinkDBConnection } from './connection';
 import { ServerConnectionPool } from './server-pool';
 import { setConnectionDefaults } from './socket';
 
@@ -136,8 +136,8 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
             resolve();
           } else {
             reject(
-              new RebirthDBError('Error initializing pool', {
-                type: RebirthDBErrorType.POOL_FAIL
+              new RethinkDBError('Error initializing pool', {
+                type: RethinkDBErrorType.POOL_FAIL
               })
             );
           }
@@ -178,9 +178,9 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
     globalArgs: RunOptions = {}
   ): Promise<Cursor | undefined> {
     if (!this.isHealthy) {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         'None of the pools have an opened connection and failed to open a new one.',
-        { type: RebirthDBErrorType.POOL_FAIL }
+        { type: RethinkDBErrorType.POOL_FAIL }
       );
     }
     this.emit('queueing');
@@ -379,7 +379,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
 
   private getIdleConnections() {
     return this.getOpenConnections().filter(
-      conn => !(conn as RebirthDBConnection).numOfQueries
+      conn => !(conn as RethinkDBConnection).numOfQueries
     );
   }
 }

@@ -1,4 +1,4 @@
-import { RebirthDBError } from '../error/error';
+import { RethinkDBError } from '../error/error';
 import { backtraceTerm } from '../error/term-backtrace';
 import { TermJson } from '../internal-types';
 import { bracket, termConfig } from './query-config';
@@ -9,7 +9,7 @@ import {
   termBuilder
 } from './term-builder';
 
-export const querySymbol = Symbol('RebirthDBQuery');
+export const querySymbol = Symbol('RethinkDBQuery');
 
 export const isQuery = (query: any) =>
   ((query !== null && typeof query === 'object') ||
@@ -41,7 +41,7 @@ const queryProxyHandler: ProxyHandler<any> = {
     const { term } = target;
     switch (p) {
       case 'then':
-        throw new RebirthDBError(
+        throw new RethinkDBError(
           'Cannot `await` a query, did you forget `run` or `getCursor`?'
         );
       case 'toString':

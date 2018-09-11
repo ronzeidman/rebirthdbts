@@ -2,8 +2,8 @@ import { EventEmitter } from 'events';
 import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
 import { connect as tlsConnect } from 'tls';
 import { isError } from 'util';
-import { RServerConnectionOptions, RebirthDBErrorType } from '..';
-import { RebirthDBError } from '../error/error';
+import { RServerConnectionOptions, RethinkDBErrorType } from '..';
+import { RethinkDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
 import { DataQueue } from './data-queue';
@@ -20,7 +20,7 @@ export type RNConnOpts = RServerConnectionOptions & {
   port: number;
 };
 
-export class RebirthDBSocket extends EventEmitter {
+export class RethinkDBSocket extends EventEmitter {
   public connectionOptions: RNConnOpts;
   public readonly user: string;
   public readonly password: Buffer;
@@ -71,8 +71,8 @@ export class RebirthDBSocket extends EventEmitter {
 
   public async connect() {
     if (this.socket) {
-      throw new RebirthDBError('Socket already connected', {
-        type: RebirthDBErrorType.CONNECTION
+      throw new RethinkDBError('Socket already connected', {
+        type: RethinkDBErrorType.CONNECTION
       });
     }
     const { tls = false, ...options } = this.connectionOptions;
@@ -131,9 +131,9 @@ export class RebirthDBSocket extends EventEmitter {
 
   public sendQuery(newQuery: QueryJson, token = this.nextToken++) {
     if (!this.socket || this.status !== 'open') {
-      throw new RebirthDBError(
+      throw new RethinkDBError(
         '`run` was called with a closed connection after:',
-        { query: newQuery, type: RebirthDBErrorType.CONNECTION }
+        { query: newQuery, type: RethinkDBErrorType.CONNECTION }
       );
     }
     const encoded = JSON.stringify(newQuery);
@@ -159,9 +159,9 @@ export class RebirthDBSocket extends EventEmitter {
       if (data) {
         // Resolving and not rejecting so there won't be "unhandled rejection" if nobody listens
         data.destroy(
-          new RebirthDBError('Query cancelled', {
+          new RethinkDBError('Query cancelled', {
             query,
-            type: RebirthDBErrorType.CANCEL
+            type: RethinkDBErrorType.CANCEL
           })
         );
         this.runningQueries.delete(token);
@@ -197,22 +197,22 @@ export class RebirthDBSocket extends EventEmitter {
   public async readNext<T = ResponseJson>(token: number): Promise<T> {
     if (!this.isOpen) {
       throw this.lastError ||
-        new RebirthDBError(
+        new RethinkDBError(
           'The connection was closed before the query could be completed',
           {
-            type: RebirthDBErrorType.CONNECTION
+            type: RethinkDBErrorType.CONNECTION
           }
         );
     }
     if (!this.runningQueries.has(token)) {
-      throw new RebirthDBError('No more rows in the cursor.', {
-        type: RebirthDBErrorType.CURSOR_END
+      throw new RethinkDBError('No more rows in the cursor.', {
+        type: RethinkDBErrorType.CURSOR_END
       });
     }
     const { data = null } = this.runningQueries.get(token) || {};
     if (!data) {
-      throw new RebirthDBError('Query is not running.', {
-        type: RebirthDBErrorType.CURSOR
+      throw new RethinkDBError('Query is not running.', {
+        type: RethinkDBErrorType.CURSOR
       });
     }
     // console.log('WAITING ' + token);
@@ -235,11 +235,11 @@ export class RebirthDBSocket extends EventEmitter {
   public close() {
     for (const { data, query } of this.runningQueries.values()) {
       data.destroy(
-        new RebirthDBError(
+        new RethinkDBError(
           'The connection was closed before the query could be completed',
           {
             query,
-            type: RebirthDBErrorType.CONNECTION
+            type: RethinkDBErrorType.CONNECTION
           }
         )
       );
@@ -266,8 +266,8 @@ export class RebirthDBSocket extends EventEmitter {
       });
     };
     if (!this.socket || this.status !== 'handshake') {
-      throw new RebirthDBError('Connection is not open', {
-        type: RebirthDBErrorType.CONNECTION
+      throw new RethinkDBError('Connection is not open', {
+        type: RethinkDBErrorType.CONNECTION
       });
     }
     const { randomString, authBuffer } = buildAuthBuffer(this.user);
@@ -294,7 +294,7 @@ export class RebirthDBSocket extends EventEmitter {
     while ((index = this.buffer.indexOf(0)) >= 0) {
       const strMsg = this.buffer.slice(0, index).toString('utf8');
       const { data = null } = this.runningQueries.get(this.nextToken++) || {};
-      let err: RebirthDBError | undefined;
+      let err: RethinkDBError | undefined;
       try {
         const jsonMsg = JSON.parse(strMsg);
         if (jsonMsg.success) {
@@ -302,14 +302,14 @@ export class RebirthDBSocket extends EventEmitter {
             data.enqueue(jsonMsg as any);
           }
         } else {
-          err = new RebirthDBError(jsonMsg.error, {
+          err = new RethinkDBError(jsonMsg.error, {
             errorCode: jsonMsg.error_code
           });
         }
       } catch (cause) {
-        err = new RebirthDBError(strMsg, {
+        err = new RethinkDBError(strMsg, {
           cause,
-          type: RebirthDBErrorType.AUTH
+          type: RethinkDBErrorType.AUTH
         });
       }
       if (err) {

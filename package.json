@@ -1,7 +1,7 @@
 {
-  "name": "@rebirthdb/rebirthdb-ts",
+  "name": "@rethinkdb/rethinkdb-ts",
   "version": "2.4.0-rc.5",
-  "description": "RebirthDB TypeScript driver",
+  "description": "RethinkDB TypeScript driver",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "directories": {
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rebirthdb/rebirthdb-ts.git"
+    "url": "git+https://github.com/rethinkdb/rethinkdb-ts.git"
   },
   "author": "Ron Zeidman",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rebirthdb/rebirthdb-tsissues"
+    "url": "https://github.com/rethinkdb/rethinkdb-tsissues"
   },
-  "homepage": "https://github.com/rebirthdb/rebirthdb-ts#readme",
+  "homepage": "https://github.com/rethinkdb/rethinkdb-ts#readme",
   "devDependencies": {
     "@types/mocha": "^5.2.0",
     "@types/node": "^10.3.1",
