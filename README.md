@@ -1,10 +1,10 @@
 ## Install
 
-`npm i @rethinkdb/rethinkdb-ts`
+`npm i rethinkdb-ts`
 
 or
 
-`yarn add @rethinkdb/rethinkdb-ts`
+`yarn add rethinkdb-ts`
 
 ## Import
 
