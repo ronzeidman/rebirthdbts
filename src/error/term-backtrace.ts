@@ -1,7 +1,8 @@
-import { isUndefined } from 'util';
+import { isArray, isUndefined } from 'util';
 import { QueryJson, TermJson } from '../internal-types';
 import { QueryType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
+import { hasImplicitVar } from '../query-builder/param-parser';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
 export function backtraceTerm(
@@ -57,7 +58,12 @@ export function backtraceTerm(
         backtrace
       );
     }
+    case TermType.IMPLICIT_VAR:
+      return getMarked('r.row', backtrace);
     case TermType.FUNC: {
+      if (!!args && isArray(args) && hasImplicitVar(term)) {
+        return backtraceTerm(args[1], false, nextBacktrace(1, backtrace));
+      }
       const paramsBacktrace = nextBacktrace(0, backtrace);
       const params = (args as any)[0][1].map((i: number) =>
         getMarked(`var_${i}`, nextBacktrace(i, paramsBacktrace))

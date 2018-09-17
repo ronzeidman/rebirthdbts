@@ -25,13 +25,23 @@ export function parseParam(
         type: RethinkDBErrorType.PARSE
       });
     }
+    if (
+      globals.nextVarId === 1 &&
+      nestingLevel === globals.nestingLevel &&
+      hasImplicitVar(param.term)
+    ) {
+      return [TermType.FUNC, [[TermType.MAKE_ARRAY, [1]], param.term]];
+    }
     return param.term;
   }
   if (Array.isArray(param)) {
-    return [
+    const arrTerm = [
       TermType.MAKE_ARRAY,
       param.map(p => parseParam(p, nestingLevel - 1))
     ];
+    return hasImplicitVar(arrTerm)
+      ? [TermType.FUNC, [[TermType.MAKE_ARRAY, [1]], arrTerm]]
+      : arrTerm;
   }
   if (isDate(param)) {
     return {
@@ -79,13 +89,16 @@ export function parseParam(
     }
   }
   if (typeof param === 'object') {
-    return Object.entries(param).reduce(
+    const objTerm = Object.entries(param).reduce(
       (acc, [key, value]) => ({
         ...acc,
         [key]: parseParam(value, nestingLevel - 1)
       }),
       {}
     );
+    return hasImplicitVar(objTerm)
+      ? [TermType.FUNC, [[TermType.MAKE_ARRAY, [1]], objTerm]]
+      : objTerm;
   }
   if (typeof param === 'number' && (isNaN(param) || !isFinite(param))) {
     throw new RethinkDBError(`Cannot convert \`${param}\` to JSON`, {
@@ -106,6 +119,24 @@ export function parseOptarg(obj?: any) {
     }),
     {}
   );
+}
+
+export function hasImplicitVar(term: TermJson | undefined): boolean {
+  if (!Array.isArray(term)) {
+    if (term !== null && typeof term === 'object') {
+      return Object.values(term).some(value => hasImplicitVar(value));
+    } else {
+      return false;
+    }
+  }
+  if (term[0] === TermType.IMPLICIT_VAR) {
+    return true;
+  }
+  const termParam = term[1];
+  if (termParam) {
+    return termParam.some(value => hasImplicitVar(value));
+  }
+  return false;
 }
 
 function camelToSnake(name: string) {

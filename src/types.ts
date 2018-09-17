@@ -402,9 +402,9 @@ export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
     ...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>
   ): U extends RStream ? RStream : RDatum;
-  <U extends string | number>(
-    attribute: RValue<U>
-  ): U extends keyof T ? RDatum<T[U]> : RDatum<any>;
+  <U extends string | number>(attribute: RValue<U>): U extends keyof T
+    ? RDatum<T[U]>
+    : RDatum<any>;
   getField<U extends string | number>(
     attribute: RValue<U>
   ): U extends keyof T ? RDatum<T[U]> : RDatum<any>;
@@ -436,8 +436,8 @@ export interface RDatum<T = any> extends RQuery<T> {
     value: RValue<U>
   ): T extends U[] ? RDatum<T> : never;
   deleteAt<U>(
-    index: RValue<number>,
-    value: RValue<U>
+    offset: RValue<number>,
+    endOffset?: RValue<number>
   ): T extends U[] ? RDatum<T> : never;
   union<U = T extends Array<infer T1> ? T1 : never>(
     ...other: Array<RStream<U> | RValue<U[]> | { interleave: boolean | string }>
@@ -527,13 +527,19 @@ export interface RDatum<T = any> extends RQuery<T> {
 
   pluck(
     ...fields: MultiFieldSelector[]
-  ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+  ): T extends Array<infer T1>
+    ? RDatum<Array<Partial<T1>>>
+    : RDatum<Partial<T>>;
 
   without(
     ...fields: MultiFieldSelector[]
-  ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
+  ): T extends Array<infer T1>
+    ? RDatum<Array<Partial<T1>>>
+    : RDatum<Partial<T>>;
 
-  merge<U = any>(...objects: Array<object | RDatum>): RDatum<U>;
+  merge<U = any>(
+    ...objects: Array<object | RDatum | ((arg: RDatum<T>) => any)>
+  ): RDatum<U>;
 
   skip(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
   limit(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
@@ -777,7 +783,9 @@ export interface RStream<T = any> extends RQuery<T[]> {
   pluck(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
   without(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
 
-  merge<U = any>(...objects: Array<object | RDatum>): RStream<U>;
+  merge<U = any>(
+    ...objects: Array<object | RDatum | ((arg: RDatum<T>) => any)>
+  ): RStream<U>;
 
   skip(n: RValue<number>): RStream<T>;
   limit(n: RValue<number>): RStream<T>;
@@ -837,20 +845,26 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
 
 export interface RSingleSelection<T = any> extends RDatum<T> {
   update(
-    obj: RValue<Partial<T>>,
+    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
-  replace(obj: RValue<T>, options?: UpdateOptions): RDatum<WriteResult<T>>;
+  replace(
+    obj: RValue<T> | ((arg: RDatum<T>) => any),
+    options?: UpdateOptions
+  ): RDatum<WriteResult<T>>;
   delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
   changes(options?: ChangesOptions): RFeed<Changes<T>>;
 }
 
 export interface RSelection<T = any> extends RStream<T> {
   update(
-    obj: RValue<Partial<T>>,
+    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
-  replace(obj: RValue<T>, options?: UpdateOptions): RDatum<WriteResult<T>>;
+  replace(
+    obj: RValue<T> | ((arg: RDatum<T>) => any),
+    options?: UpdateOptions
+  ): RDatum<WriteResult<T>>;
   delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
 }
 export interface RTable<T = any> extends RSelection<T> {
@@ -988,7 +1002,7 @@ export interface RDatabase {
 export interface R {
   minval: RValue;
   maxval: RValue;
-  // row: RDatum;
+  row: RDatum;
   monday: RValue;
   tuesday: RValue;
   wednesday: RValue;
@@ -1053,7 +1067,7 @@ export interface R {
   object<T = any>(
     key1: RValue<string>,
     value1: RValue,
-    keyOrValue: RValue[]
+    ...keyOrValue: RValue[]
   ): RDatum<T>;
   // Geo
   point(longitude: RValue<string>, latitude: RValue<string>): RDatum;
@@ -1090,6 +1104,7 @@ export interface R {
   args(arg: Array<RValue<Primitives | object | any[]>>): any;
   error(message?: RValue<string>): any;
   js(js: RValue<string>, options?: { timeout: number }): RDatum;
+  literal(): RDatum;
   literal<T>(obj: T): RDatum<T>;
   random(
     lowBound?: RValue<number>,
@@ -1258,12 +1273,12 @@ export interface R {
   // SELECTION / SINGLE SELECTION
   update<T>(
     selection: RSelection<T> | RSingleSelection<T>,
-    obj: RValue<Partial<T>>,
+    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   replace<T>(
     selection: RSelection<T> | RSingleSelection<T>,
-    obj: RValue<T>,
+    obj: RValue<T> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   delete<T>(
@@ -1556,10 +1571,13 @@ export interface R {
     stream: RStream<T>,
     ...fields: MultiFieldSelector[]
   ): RStream<Partial<T>>;
-  merge<U = any>(...objects: Array<object | RDatum>): RDatum<U>;
+  merge<U = any>(
+    obj: object | RDatum,
+    ...objects: Array<object | RDatum | ((arg: RDatum) => any)>
+  ): RDatum<U>;
   merge<U = any>(
     stream: RStream,
-    ...objects: Array<object | RDatum>
+    ...objects: Array<object | RDatum | ((arg: RDatum) => any)>
   ): RStream<U>;
   skip<T>(
     datum: RDatum<T>,

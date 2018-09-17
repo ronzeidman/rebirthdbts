@@ -10,9 +10,9 @@ or
 
 ```ts
 // if you support import
-import { r } from '@rethinkdb/rethinkdb-ts';
+import { r } from 'rethinkdb-ts';
 // if you dont
-const { r } = require('@rethinkdb/rethinkdb-ts');
+const { r } = require('rethinkdb-ts');
 ```
 
 ## Initialize
@@ -56,40 +56,5 @@ const conn = await r.connect(options);
     - `.run()` as many times as you want (promises run only once and return the same value without running other times)
     - be stored for future evaluation (promises run as you create them)
 - Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
-- support for `r.row` you can use `row => row` instead. (may add support in the future)
 - Support write streams (Does anyone uses it? will add it if its a popular demand)
 - Multiple connection pools (if someone has a good usecase I'll support it)
-
-# TASKS REMAINING BEFORE RELEASE:
-
-## Priority - medium
-
-- Publish in NPM
-- Go through all type definitions and fix according to config (maybe use https://github.com/rethinkdb/rethinkdb/blob/3edaeceb71c2caf1203025a752f61786364528ed/drivers/java/term_info.json)
-
-## Priority - low
-
-- New API tests (write hooks and bit ops)
-- Supporting implicit var (`r.row`)
-  - Use a lambda expression instead (row => row)
-
-## Priority - none
-
-- Don't throw on `r.expr(NaN)` (only on `r.expr(NaN).run()`). Why? (test: `r.expr` should not NaN if not run)
-- Client backtraces - because of the above NaN values throw in the right callstack (line + col) so backtraces are not nessesary
-- Function suggestions fails ("`noReplyWait` should throw")
-  - Typescript can help users better understand the right function names
-- Suggesting optional arguments available options fails ("`run` should throw on an unrecognized argument")
-  - still showing wrong argument exception + backtrace
-  - Typescript can help users better understand the right params
-- Not supporting certain top-level functions ("`r.wait` should throw")
-  - Every not top level function can be translated to top level function by adding the query-term as the first arg: `r.table('test').reconfigure({...})` -> `r.reconfigure(r.table('test'), { ... })`
-  - This support will help make use of the future `|>` functional operator:
-    - this.table('test') |> r.reconfigure(#, {})
-- Throw special error if a top-level function is not defined on a term ("`js` is not defined after a term")
-  - Throwing the standard `TypeError: xxx is not a function`
-- Supporting `.asyncIterator()`
-  - Cursor is a stream reader which is an async iterator by default in node 10
-- Special r.time arity check (the current check is enough)
-- Error message mismatch
-- `r.and()` `r.or()` with no arguments

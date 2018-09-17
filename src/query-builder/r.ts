@@ -6,9 +6,9 @@ import { TermType } from '../proto/enums';
 import {
   R,
   RConnectionOptions,
+  RethinkDBErrorType,
   RPoolConnectionOptions,
-  RQuery,
-  RethinkDBErrorType
+  RQuery
 } from '../types';
 import { globals } from './globals';
 import { toQuery } from './query';
@@ -17,15 +17,9 @@ import { expr, termBuilder } from './term-builder';
 
 export const r: R = expr as any;
 (r as any).connectPool = async (options: RPoolConnectionOptions = {}) => {
-  const {
-    host,
-    port,
-    server = { host, port },
-    servers = [server],
-    ...optsWithoutHostPort
-  } = options;
+  const { host, port, server = { host, port }, servers = [server] } = options;
   if (host || port) {
-    if ((options as any).server) {
+    if (options.server) {
       throw new RethinkDBError(
         'If `host` or `port` are defined `server` must not be.',
         { type: RethinkDBErrorType.API_FAIL }
@@ -62,13 +56,8 @@ export const r: R = expr as any;
 };
 
 (r as any).connect = async (options: RConnectionOptions = {}) => {
-  const {
-    host,
-    port,
-    server = { host, port },
-    ...optsWithoutHostPort
-  } = options;
-  if ((host || port) && (options as any).server) {
+  const { host, port, server = { host, port } } = options;
+  if ((host || port) && options.server) {
     throw new RethinkDBError(
       'If `host` or `port` are defined `server` must not be.',
       { type: RethinkDBErrorType.API_FAIL }

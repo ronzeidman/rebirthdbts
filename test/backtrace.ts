@@ -1551,22 +1551,22 @@ describe('backtraces', () => {
   r.expr([1, 2, 3]).update(r.row("foo")).add("Hello")
   ^^^^^^^^^^^^^^^^^
   */
-  // it('Test backtrace for r.expr([1,2,3]).update(r.row("foo")).add("Hello")', async () => {
-  //   try {
-  //     globals.nextVarId = 1;
-  //     await r
-  //       .expr([1, 2, 3])
-  //       .update(r.row('foo'))
-  //       .add('Hello')
-  //       .run();
-  //     assert.fail('should throw');
-  //   } catch (e) {
-  //     assert.equal(
-  //       e.message,
-  //       'Expected type SELECTION but found DATUM:\n[\n\t1,\n\t2,\n\t3\n] in:\nr.expr([1, 2, 3]).update(r.row("foo")).add("Hello")\n^^^^^^^^^^^^^^^^^                                  \n'
-  //     );
-  //   }
-  // });
+  it('Test backtrace for r.expr([1,2,3]).update(r.row("foo")).add("Hello")', async () => {
+    try {
+      globals.nextVarId = 1;
+      await r
+        .expr([1, 2, 3])
+        .update(r.row('foo'))
+        .add('Hello')
+        .run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert.equal(
+        e.message,
+        'Expected type SELECTION but found DATUM:\n[\n\t1,\n\t2,\n\t3\n] in:\nr.expr([1, 2, 3]).update(r.row("foo")).add("Hello")\n^^^^^^^^^^^^^^^^^                                  \n'
+      );
+    }
+  });
 
   /*
   Frames:

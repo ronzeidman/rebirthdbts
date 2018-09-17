@@ -8,7 +8,7 @@ import { RCursor, RethinkDBErrorType, RunOptions } from '../types';
 import { globals } from './globals';
 import { parseOptarg, parseParam } from './param-parser';
 import { isQuery, toQuery } from './query';
-import { TermConfig, funcall, termConfig } from './query-config';
+import { funcall, TermConfig } from './query-config';
 import { r } from './r';
 
 export function termBuilder(
@@ -34,7 +34,6 @@ export function termBuilder(
         );
       }
       if (argsLength < minArgs) {
-        const termConf = termConfig.find(c => c[0] === termType);
         throw new RethinkDBError(
           `\`${
             !currentTerm ? `r.${termName}` : termName
@@ -115,7 +114,6 @@ export const runQueryFunc = (term: TermJson) => {
         { term, type: RethinkDBErrorType.API_FAIL }
       );
     }
-    const noreply = opt && opt.noreply;
     const cursor = c ? await c.query(term, opt) : await cpool.queue(term, opt);
     if (cursor) {
       const results = await cursor.resolve();

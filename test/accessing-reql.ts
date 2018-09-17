@@ -251,7 +251,7 @@ describe('accessing-reql', () => {
 
   it('`run` should throw on an unrecognized argument', async () => {
     try {
-      const result = await r.expr(1).run(connection, { foo: 'bar' });
+      await r.expr(1).run(connection, { foo: 'bar' });
       assert.fail('should throw an error');
     } catch (e) {
       assert.equal(

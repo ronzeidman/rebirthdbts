@@ -1,5 +1,3 @@
-// 42 passing (2s)
-// 5 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -14,14 +12,14 @@ describe('document manipulation', () => {
     dbName = uuid();
     tableName = uuid();
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
   });
 
   after(async () => {
@@ -65,9 +63,7 @@ describe('document manipulation', () => {
     const result = await r
       .db(dbName)
       .table(tableName)
-      .replace(function(doc) {
-        return doc.merge({ idCopyReplace: doc('id') });
-      })
+      .replace(doc => doc.merge({ idCopyReplace: doc('id') }))
       .run();
     assert.equal(result.replaced, 1);
   });
@@ -81,18 +77,69 @@ describe('document manipulation', () => {
     assert.equal(result.deleted, 1);
   });
 
+  it('`r.row` should work - 1', async () => {
+    const result = await r
+      .expr([1, 2, 3])
+      .map(r.row)
+      .run();
+    assert.deepEqual(result, [1, 2, 3]);
+  });
+
+  it('`r.row` should work - 2', async () => {
+    const result1 = await r
+      .db(dbName)
+      .table(tableName)
+      .insert({})
+      .run();
+    assert.equal(result1.inserted, 1);
+
+    const result2 = await r
+      .db(dbName)
+      .table(tableName)
+      .update({ idCopyUpdate: r.row('id') })
+      .run();
+    console.dir(result2);
+    assert.equal(result2.replaced, 1);
+  });
+
+  it('`r.row` should work - 3', async () => {
+    const result = await r
+      .db(dbName)
+      .table(tableName)
+      .replace(r.row)
+      .run();
+    assert.equal(result.replaced, 0);
+  });
+  it('`r.row` should work - 4', async () => {
+    const result = await r
+      .db(dbName)
+      .table(tableName)
+      .replace(doc => doc.merge({ idCopyReplace: doc('id') }))
+      .run();
+    assert.equal(result.replaced, 1);
+  });
+
+  it('`r.row` should work - 5', async () => {
+    const result = await r
+      .db(dbName)
+      .table(tableName)
+      .delete()
+      .run();
+    assert.equal(result.deleted, 1);
+  });
+
   it('`pluck` should work', async () => {
-    let result = await r
+    const result1 = await r
       .expr({ a: 0, b: 1, c: 2 })
       .pluck('a', 'b')
       .run();
-    assert.deepEqual(result, { a: 0, b: 1 });
+    assert.deepEqual(result1, { a: 0, b: 1 });
 
-    result = await r
+    const result2 = await r
       .expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }])
       .pluck('a', 'b')
       .run();
-    assert.deepEqual(result, [{ a: 0, b: 1 }, { a: 0, b: 10 }]);
+    assert.deepEqual(result2, [{ a: 0, b: 1 }, { a: 0, b: 10 }]);
   });
 
   it('`pluck` should throw if no argument has been passed', async () => {
@@ -116,17 +163,17 @@ describe('document manipulation', () => {
   });
 
   it('`without` should work', async () => {
-    let result = await r
+    const result1 = await r
       .expr({ a: 0, b: 1, c: 2 })
       .without('c')
       .run();
-    assert.deepEqual(result, { a: 0, b: 1 });
+    assert.deepEqual(result1, { a: 0, b: 1 });
 
-    result = await r
+    const result2 = await r
       .expr([{ a: 0, b: 1, c: 2 }, { a: 0, b: 10, c: 20 }])
       .without('a', 'c')
       .run();
-    assert.deepEqual(result, [{ b: 1 }, { b: 10 }]);
+    assert.deepEqual(result2, [{ b: 1 }, { b: 10 }]);
   });
 
   it('`without` should throw if no argument has been passed', async () => {
@@ -188,9 +235,7 @@ describe('document manipulation', () => {
   it('`merge` should take an anonymous function', async () => {
     let result = await r
       .expr({ a: 0 })
-      .merge(function(doc) {
-        return { b: doc('a').add(1) };
-      })
+      .merge(doc => ({ b: doc('a').add(1) }))
       .run();
     assert.deepEqual(result, { a: 0, b: 1 });
 

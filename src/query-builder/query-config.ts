@@ -10,6 +10,7 @@ export type TermConfig = [
   number,
   // must exist as the last parameter
 
+
     | 'required'
     // can exist as the replacement of last parameter if it's an object
     | 'optional'
@@ -196,6 +197,7 @@ export const rConfig: TermConfig[] = [
 ];
 
 export const rConsts: Array<[TermType, string]> = [
+  [TermType.IMPLICIT_VAR, 'row'],
   [TermType.MINVAL, 'minval'],
   [TermType.MAXVAL, 'maxval'],
   [TermType.MONDAY, 'monday'],
