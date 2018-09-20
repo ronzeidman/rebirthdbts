@@ -1029,20 +1029,20 @@ describe('cursor', () => {
     });
 
     it('`asyncIterator` should work', async () => {
-      const feed1: AsyncIterableIterator<Changes<any>> = await r
+      const feed1 = await r
         .db(dbName)
         .table(tableName2)
         .changes()
         .run();
-      assert(feed);
+      assert(feed1);
 
       const value = 1;
 
       const promise = (async () => {
         let res: any;
-        for await (const row of feed1) {
+        for await (const row of feed1 as AsyncIterableIterator<Changes<any>>) {
           res = row;
-          feed.close();
+          feed1.close();
         }
         return res;
       })();
