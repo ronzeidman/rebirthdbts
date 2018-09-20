@@ -54,7 +54,7 @@ describe('errors', () => {
   });
 
   describe('Missing tests', () => {
-    it('ReqlInternalError no easy way to trigger', () => {});
-    it('ReqlOpIndeterminateError no easy way to trigger', () => {});
+    it('ReqlInternalError no easy way to trigger', () => undefined);
+    it('ReqlOpIndeterminateError no easy way to trigger', () => undefined);
   });
 });

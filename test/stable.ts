@@ -1,4 +1,3 @@
-// 7 passing (1s)
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -47,7 +46,7 @@ describe('stable', () => {
       .db(dbName)
       .table(tableName)
       .run());
-    assert(result.length, 2);
+    assert.equal(result.length, 2);
   });
 
   it('get', async () => {

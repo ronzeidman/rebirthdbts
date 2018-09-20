@@ -1,5 +1,3 @@
-// 50 passing (71ms)
-// 2 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -54,6 +52,7 @@ describe('math and logic', () => {
 
   it('`add` should throw if no argument has been passed -- r.add', async () => {
     try {
+      // @ts-ignore
       await r.add().run();
       assert.fail('should throw');
     } catch (e) {
@@ -104,6 +103,7 @@ describe('math and logic', () => {
 
   it('`sub` should throw if no argument has been passed -- r.sub', async () => {
     try {
+      // @ts-ignore;
       await r.sub().run();
       assert.fail('should throw');
     } catch (e) {
@@ -154,6 +154,7 @@ describe('math and logic', () => {
 
   it('`mul` should throw if no argument has been passed -- r.mul', async () => {
     try {
+      // @ts-ignore
       await r.mul().run();
       assert.fail('should throw');
     } catch (e) {
@@ -204,6 +205,7 @@ describe('math and logic', () => {
 
   it('`div` should throw if no argument has been passed -- r.div', async () => {
     try {
+      // @ts-ignore
       await r.div().run();
       assert.fail('should throw');
     } catch (e) {
@@ -354,6 +356,7 @@ describe('math and logic', () => {
 
   it('`eq` should throw if no argument has been passed -- r.eq', async () => {
     try {
+      // @ts-ignore
       await r.eq().run();
       assert.fail('should throw');
     } catch (e) {
@@ -407,6 +410,7 @@ describe('math and logic', () => {
 
   it('`ne` should throw if no argument has been passed -- r.ne', async () => {
     try {
+      // @ts-ignore
       await r.ne().run();
       assert.fail('should throw');
     } catch (e) {
@@ -464,6 +468,7 @@ describe('math and logic', () => {
 
   it('`gt` should throw if no argument has been passed -- r.gt', async () => {
     try {
+      // @ts-ignore
       await r.gt().run();
       assert.fail('should throw');
     } catch (e) {
@@ -523,6 +528,7 @@ describe('math and logic', () => {
 
   it('`ge` should throw if no argument has been passed -- r.ge', async () => {
     try {
+      // @ts-ignore
       await r.ge().run();
       assert.fail('should throw');
     } catch (e) {
@@ -583,6 +589,7 @@ describe('math and logic', () => {
 
   it('`lt` should throw if no argument has been passed -- r.lt', async () => {
     try {
+      // @ts-ignore
       await r.lt().run();
       assert.fail('should throw');
     } catch (e) {
@@ -643,6 +650,7 @@ describe('math and logic', () => {
 
   it('`le` should throw if no argument has been passed -- r.le', async () => {
     try {
+      // @ts-ignore
       await r.le().run();
       assert.fail('should throw');
     } catch (e) {

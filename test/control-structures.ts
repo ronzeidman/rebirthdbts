@@ -1,5 +1,3 @@
-// 30 passing (3s)
-// 4 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -85,6 +83,7 @@ describe('control structures', () => {
 
   it('`branch` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r.branch().run();
       assert.fail('should throw');
     } catch (e) {
@@ -96,6 +95,7 @@ describe('control structures', () => {
 
   it('`branch` should throw if just one argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r.branch(true).run();
       assert.fail('should throw');
     } catch (e) {
@@ -107,6 +107,7 @@ describe('control structures', () => {
 
   it('`branch` should throw if just two arguments have been given', async () => {
     try {
+      // @ts-ignore
       result = await r.branch(true, true).run();
     } catch (e) {
       assert(
@@ -155,6 +156,7 @@ describe('control structures', () => {
 
   it('`forEach` should throw if not given a function', async () => {
     try {
+      // @ts-ignore
       result = await r
         .expr([{ foo: 'bar' }, { foo: 'foo' }])
         .forEach()
@@ -177,6 +179,7 @@ describe('control structures', () => {
 
   it('`r.range(1,2,3)` should throw - arity', async () => {
     try {
+      // @ts-ignore
       result = await r.range(1, 2, 3).run();
       assert.fail('should throw');
     } catch (e) {
@@ -189,6 +192,7 @@ describe('control structures', () => {
 
   it('`r.range()` should throw - arity', async () => {
     try {
+      // @ts-ignore
       result = await r.range().run();
       assert.fail('should throw');
     } catch (e) {
@@ -208,6 +212,7 @@ describe('control structures', () => {
   });
   it('`default` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r
         .expr({})('')
         .default()
@@ -227,6 +232,7 @@ describe('control structures', () => {
     try {
       result = await r
         .expr(1)
+        // @ts-ignore
         .js('foo')
         .run();
       assert.fail('should throw');
@@ -237,6 +243,7 @@ describe('control structures', () => {
 
   it('`js` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r.js().run();
       assert.fail('should throw');
     } catch (e) {
@@ -254,6 +261,7 @@ describe('control structures', () => {
 
   it('`coerceTo` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r
         .expr(1)
         .coerceTo()
@@ -287,6 +295,7 @@ describe('control structures', () => {
 
   it('`json` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       result = await r.json().run();
       assert.fail('throw');
     } catch (e) {
@@ -298,6 +307,7 @@ describe('control structures', () => {
     try {
       result = await r
         .expr(1)
+        // @ts-ignore
         .json('1')
         .run();
     } catch (e) {
@@ -321,6 +331,7 @@ describe('control structures', () => {
 
   it('`toJSON` should throw if an argument is provided', async () => {
     try {
+      // @ts-ignore
       result = await r
         .expr({ a: 1 })
         .toJSON('foo')
@@ -344,20 +355,18 @@ describe('control structures', () => {
     assert.deepEqual(result, { foo: 1, buzz: 3 });
   });
 
-  // it('`args` should throw if an implicit var is passed inside', async () => {
-  //   try {
-  //     await r
-  //       .table('foo')
-  //       .eqJoin(r.args([row => row, r.table('bar')]))
-  //       .run();
-  //     assert.fail('should throw');
-  //   } catch (e) {
-  //     assert(
-  //       e.message ===
-  //         'Implicit variable `row => row` cannot be used inside `r.args`.'
-  //     );
-  //   }
-  // });
+  it('`args` should throw if an implicit var is passed inside', async () => {
+    try {
+      // @ts-ignore
+      await r
+        .table('foo')
+        .eqJoin(r.args([r.row, r.table('bar')]))
+        .run();
+      assert.fail('should throw');
+    } catch (e) {
+      assert(e.message.startsWith('Cannot use r.row in nested queries.'));
+    }
+  });
 
   it('`http` should work', async () => {
     result = await r.http('http://google.com').run();
@@ -371,6 +380,7 @@ describe('control structures', () => {
 
   it('`http` should throw with an unrecognized option', async () => {
     try {
+      // @ts-ignore
       result = await r.http('http://google.com', { foo: 60 }).run();
       assert.fail('should throw');
     } catch (e) {

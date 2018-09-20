@@ -1,5 +1,3 @@
-// 21 passing (4s)
-// 3 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -8,7 +6,7 @@ import { uuid } from './util/common';
 describe('pool legacy', () => {
   let dbName: string;
   let tableName: string;
-  let pks: string;
+  let pks: string[];
 
   before(async () => {
     await r.connectPool(config);
@@ -16,22 +14,22 @@ describe('pool legacy', () => {
     dbName = uuid();
     tableName = uuid();
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .insert(Array(100).fill({}))
       .run();
-    assert.equal(result.inserted, 100);
-    pks = result.generated_keys;
+    assert.equal(result3.inserted, 100);
+    pks = result3.generated_keys;
   });
 
   after(async () => {
@@ -48,41 +46,42 @@ describe('pool legacy', () => {
   });
 
   it('`table` should work', async () => {
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName)
       .info()
       .run();
-    assert.equal(result.name, tableName);
-    assert.equal(result.type, 'TABLE');
-    assert.equal(result.primary_key, 'id');
-    assert.equal(result.db.name, dbName);
+    assert.equal(result1.name, tableName);
+    assert.equal(result1.type, 'TABLE');
+    assert.equal(result1.primary_key, 'id');
+    assert.equal(result1.db.name, dbName);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .run();
-    assert.equal(result.length, 100);
+    assert.equal(result2.length, 100);
   });
 
   it('`table` should work with readMode', async () => {
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName, { readMode: 'majority' })
       .run();
-    assert.equal(result.length, 100);
+    assert.equal(result1.length, 100);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName, { readMode: 'majority' })
       .run();
-    assert.equal(result.length, 100);
+    assert.equal(result2.length, 100);
   });
 
   it('`table` should throw with non valid otpions', async () => {
     try {
       await r
         .db(dbName)
+        // @ts-ignore
         .table(tableName, { nonValidKey: false })
         .run();
       assert.fail('should throw');
@@ -106,6 +105,7 @@ describe('pool legacy', () => {
 
   it('`get` should throw if no argument is passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -139,6 +139,7 @@ describe('pool legacy', () => {
   });
 
   it('`getAll` should work with no argument - primary key', async () => {
+    // @ts-ignore
     const result = await r
       .db(dbName)
       .table(tableName)
@@ -157,58 +158,58 @@ describe('pool legacy', () => {
   });
 
   it('`getAll` should work with multiple values - secondary index 1', async () => {
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName)
       .update({ field: 0 })
       .run();
-    assert.equal(result.replaced, 100);
-    result = await r
+    assert.equal(result1.replaced, 100);
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .sample(20)
       .update({ field: 10 })
       .run();
-    assert.equal(result.replaced, 20);
+    assert.equal(result2.replaced, 20);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .indexCreate('field')
       .run();
-    assert.deepEqual(result, { created: 1 });
+    assert.deepEqual(result3, { created: 1 });
 
-    result = await r
+    const result4 = await r
       .db(dbName)
       .table(tableName)
       .indexWait('field')
       .pluck('index', 'ready')
       .run();
-    assert.deepEqual(result, [{ index: 'field', ready: true }]);
+    assert.deepEqual(result4, [{ index: 'field', ready: true }]);
 
-    result = await r
+    const result5 = await r
       .db(dbName)
       .table(tableName)
       .getAll(10, { index: 'field' })
       .run();
-    assert(result);
-    assert.equal(result.length, 20);
+    assert(result5);
+    assert.equal(result5.length, 20);
   });
 
   it('`getAll` should return native dates (and cursor should handle them)', async () => {
-    let result = await r
+    await r
       .db(dbName)
       .table(tableName)
       .insert({ field: -1, date: r.now() })
       .run();
-    result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName)
       .getAll(-1, { index: 'field' })
       .run();
-    assert(result[0].date instanceof Date);
+    assert(result1[0].date instanceof Date);
     // Clean for later
-    result = await r
+    await r
       .db(dbName)
       .table(tableName)
       .getAll(-1, { index: 'field' })
@@ -217,30 +218,28 @@ describe('pool legacy', () => {
   });
 
   it('`getAll` should work with multiple values - secondary index 2', async () => {
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .table(tableName)
-      .indexCreate('fieldAddOne', function(doc) {
-        return doc('field').add(1);
-      })
+      .indexCreate('fieldAddOne', doc => doc('field').add(1))
       .run();
-    assert.deepEqual(result, { created: 1 });
+    assert.deepEqual(result1, { created: 1 });
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .indexWait('fieldAddOne')
       .pluck('index', 'ready')
       .run();
-    assert.deepEqual(result, [{ index: 'fieldAddOne', ready: true }]);
+    assert.deepEqual(result2, [{ index: 'fieldAddOne', ready: true }]);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .getAll(11, { index: 'fieldAddOne' })
       .run();
-    assert(result);
-    assert.equal(result.length, 20);
+    assert(result3);
+    assert.equal(result3.length, 20);
   });
 
   it('`between` should wrok -- secondary index', async () => {
@@ -269,6 +268,7 @@ describe('pool legacy', () => {
 
   it('`between` should throw if no argument is passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -294,6 +294,7 @@ describe('pool legacy', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .between(1, 2, { nonValidKey: true })
         .run();
       assert.fail('should throw');
@@ -332,9 +333,7 @@ describe('pool legacy', () => {
     const result = await r
       .db(dbName)
       .table(tableName)
-      .filter(function(doc) {
-        return doc('field').eq(10);
-      })
+      .filter(doc => doc('field').eq(10))
       .run();
     assert(result);
     assert.equal(result.length, 20);
@@ -364,7 +363,7 @@ describe('pool legacy', () => {
     try {
       await r
         .expr([{ a: 1 }, {}])
-        .filter(row => row('a'), { default: r.error() })
+        .filter(r.row('a'), { default: r.error() })
         .run();
       assert.fail('should throw');
     } catch (e) {
@@ -374,6 +373,7 @@ describe('pool legacy', () => {
 
   it('`filter` should throw if no argument is passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -399,7 +399,8 @@ describe('pool legacy', () => {
       await r
         .db(dbName)
         .table(tableName)
-        .filter(true, { nonValidKey: false })
+        // @ts-ignore
+        .filter(() => true, { nonValidKey: false })
         .run();
       assert.fail('should throw');
     } catch (e) {

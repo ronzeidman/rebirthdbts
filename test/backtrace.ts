@@ -1,5 +1,4 @@
-// 90 passing (2s)
-// 87 failing
+// tslint:disable
 import assert from 'assert';
 import { r } from '../src';
 import { globals } from '../src/query-builder/globals';
@@ -65,6 +64,7 @@ describe('backtraces', () => {
   it('Test backtrace for r.dbDrop(1)', async () => {
     try {
       globals.nextVarId = 1;
+      // @ts-ignore
       await r.dbDrop(1).run();
       assert.fail('should throw');
     } catch (e) {
@@ -87,6 +87,7 @@ describe('backtraces', () => {
   it('Test backtrace for r.dbCreate(1)', async () => {
     try {
       globals.nextVarId = 1;
+      // @ts-ignore
       await r.dbCreate(1).run();
       assert.fail('should throw');
     } catch (e) {

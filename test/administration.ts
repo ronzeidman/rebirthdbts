@@ -1,5 +1,3 @@
-// 12 passing (2s)
-// 4 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -55,6 +53,7 @@ describe('administration', () => {
 
   it('`config` should throw if called with an argument', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .config('hello')
@@ -77,6 +76,7 @@ describe('administration', () => {
 
   it('`status` should throw if called with an argument', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -115,6 +115,7 @@ describe('administration', () => {
 
   it('`r.wait` should throw', async () => {
     try {
+      // @ts-ignore
       await r.wait().run();
       assert.fail('should throw');
     } catch (e) {
@@ -127,6 +128,7 @@ describe('administration', () => {
 
   it('`wait` should throw if called with 2 arguments', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -160,6 +162,7 @@ describe('administration', () => {
 
   it('`r.reconfigure` should throw', async () => {
     try {
+      // @ts-ignore
       result = await r.reconfigure().run();
       assert.fail('should throw');
     } catch (e) {
@@ -172,6 +175,7 @@ describe('administration', () => {
       result = await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .reconfigure({ foo: 1 })
         .run();
       assert.fail('should throw');
@@ -185,6 +189,7 @@ describe('administration', () => {
       result = await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .reconfigure(1)
         .run();
       assert.fail('should throw');
@@ -206,6 +211,7 @@ describe('administration', () => {
 
   it('`r.rebalance` should throw', async () => {
     try {
+      // @ts-ignore
       result = await r.rebalance().run();
       assert.fail('should throw');
     } catch (e) {
@@ -215,6 +221,7 @@ describe('administration', () => {
 
   it('`rebalance` should throw if an argument is provided', async () => {
     try {
+      // @ts-ignore
       result = await r
         .db(dbName)
         .table(tableName)

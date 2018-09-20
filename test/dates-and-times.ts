@@ -1,5 +1,3 @@
-// 29 passing (69ms)
-// 6 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -14,26 +12,27 @@ describe('dates and times', () => {
   });
 
   it('`r.now` should return a date', async () => {
-    let result = await r.now().run();
-    assert(result instanceof Date);
+    const result1 = await r.now().run();
+    assert(result1 instanceof Date);
 
-    result = await r.expr({ a: r.now() }).run();
-    assert(result.a instanceof Date);
+    const result2 = await r.expr({ a: r.now() }).run();
+    assert(result2.a instanceof Date);
 
-    result = await r.expr([r.now()]).run();
-    assert(result[0] instanceof Date);
+    const result3 = await r.expr([r.now()]).run();
+    assert(result3[0] instanceof Date);
 
-    result = await r.expr([{}, { a: r.now() }]).run();
-    assert(result[1].a instanceof Date);
+    const result4 = await r.expr([{}, { a: r.now() }]).run();
+    assert(result4[1].a instanceof Date);
 
-    result = await r.expr({ b: [{}, { a: r.now() }] }).run();
-    assert(result.b[1].a instanceof Date);
+    const result5 = await r.expr({ b: [{}, { a: r.now() }] }).run();
+    assert(result5.b[1].a instanceof Date);
   });
 
   it('`now` is not defined after a term', async () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .now('foo')
         .run();
       assert.fail('should throw');
@@ -43,17 +42,18 @@ describe('dates and times', () => {
   });
 
   it('`r.time` should return a date -- with date and time', async () => {
-    let result = await r.time(1986, 11, 3, 12, 0, 0, 'Z').run();
-    assert.equal(result instanceof Date, true);
+    const result1 = await r.time(1986, 11, 3, 12, 0, 0, 'Z').run();
+    assert.equal(result1 instanceof Date, true);
 
-    result = await r
+    const result2 = await r
       .time(1986, 11, 3, 12, 20, 0, 'Z')
       .minutes()
       .run();
-    assert.equal(result, 20);
+    assert.equal(result2, 20);
   });
 
   it('`r.time` should work with r.args', async () => {
+    // @ts-ignore
     const result = await r.time(r.args([1986, 11, 3, 12, 0, 0, 'Z'])).run();
     assert.equal(result instanceof Date, true);
   });
@@ -67,6 +67,7 @@ describe('dates and times', () => {
 
   it('`r.time` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       await r.time().run();
       assert.fail('should throw');
     } catch (e) {
@@ -79,6 +80,7 @@ describe('dates and times', () => {
 
   it('`r.time` should throw if no 5 arguments', async () => {
     try {
+      // @ts-ignore
       await r.time(1, 1, 1, 1, 1).run();
       assert.fail('should throw');
     } catch (e) {
@@ -92,6 +94,7 @@ describe('dates and times', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .time(1, 2, 3, 'Z')
         .run();
       assert.fail('should throw');
@@ -108,6 +111,7 @@ describe('dates and times', () => {
 
   it('`r.epochTime` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       await r.epochTime().run();
       assert.fail('should throw');
     } catch (e) {
@@ -119,6 +123,7 @@ describe('dates and times', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .epochTime(Date.now())
         .run();
       assert.fail('should throw');
@@ -141,6 +146,7 @@ describe('dates and times', () => {
 
   it('`r.ISO8601` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       await r.ISO8601().run();
       assert.fail('should throw');
     } catch (e) {
@@ -153,6 +159,7 @@ describe('dates and times', () => {
 
   it('`r.ISO8601` should throw if too many arguments', async () => {
     try {
+      // @ts-ignore
       await r.ISO8601(1, 1, 1).run();
       assert.fail('should throw');
     } catch (e) {
@@ -167,6 +174,7 @@ describe('dates and times', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .ISO8601('validISOstring')
         .run();
       assert.fail('should throw');
@@ -204,6 +212,7 @@ describe('dates and times', () => {
 
   it('`inTimezone` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       await r
         .now()
         .inTimezone()
@@ -253,6 +262,7 @@ describe('dates and times', () => {
 
   it('`during` should throw if no argument has been given', async () => {
     try {
+      // @ts-ignore
       await r
         .now()
         .during()
@@ -268,6 +278,7 @@ describe('dates and times', () => {
 
   it('`during` should throw if just one argument has been given', async () => {
     try {
+      // @ts-ignore
       await r
         .now()
         .during(1)
@@ -283,6 +294,7 @@ describe('dates and times', () => {
 
   it('`during` should throw if too many arguments', async () => {
     try {
+      // @ts-ignore
       await r
         .now()
         .during(1, 1, 1, 1, 1)
@@ -369,7 +381,9 @@ describe('dates and times', () => {
       .inTimezone(new Date().toString().match(' GMT([^ ]*)')[1])
       .dayOfWeek()
       .run();
-    if (result === 7) result = 0;
+    if (result === 7) {
+      result = 0;
+    }
     assert.equal(result, new Date().getDay());
   });
 
@@ -444,6 +458,7 @@ describe('dates and times', () => {
     const result = await r
       .epochTime(now.getTime() / 1000)
       .run({ timeFormat: 'raw' });
+    // @ts-ignore
     assert.equal(result.$reql_type$, 'TIME');
   });
 

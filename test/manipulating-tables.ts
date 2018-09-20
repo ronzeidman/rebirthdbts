@@ -1,21 +1,41 @@
-// 15 passing (16s)
-// 2 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
 import { uuid } from './util/common';
 
 describe('manipulating tables', () => {
-  let dbName;
+  let dbName: string;
 
   before(async () => {
     await r.connectPool(config);
+    // delete all but the system dbs
+    await r
+      .dbList()
+      .filter(db =>
+        r
+          .expr(['rethinkdb', 'test'])
+          .contains(db)
+          .not()
+      )
+      .forEach(db => r.dbDrop(db))
+      .run();
     dbName = uuid(); // export to the global scope
     const result = await r.dbCreate(dbName).run();
     assert.equal(result.dbs_created, 1);
   });
 
   after(async () => {
+    // delete all but the system dbs
+    await r
+      .dbList()
+      .filter(db =>
+        r
+          .expr(['rethinkdb', 'test'])
+          .contains(db)
+          .not()
+      )
+      .forEach(db => r.dbDrop(db))
+      .run();
     await r.getPoolMaster().drain();
   });
 
@@ -30,18 +50,18 @@ describe('manipulating tables', () => {
   it('`tableList` should show the table we created', async () => {
     const tableName = uuid(); // export to the global scope
 
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result1.tables_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableList()
       .run();
-    assert(Array.isArray(result));
-    assert.equal(tableName, result.find(name => name === tableName));
+    assert(Array.isArray(result2));
+    assert.equal(tableName, result2.find(name => name === tableName));
   });
 
   it('`tableCreate` should create a table', async () => {
@@ -57,35 +77,35 @@ describe('manipulating tables', () => {
   it('`tableCreate` should create a table -- primaryKey', async () => {
     const tableName = uuid();
 
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .tableCreate(tableName, { primaryKey: 'foo' })
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result1.tables_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .info()
       .run();
-    assert(result.primary_key, 'foo');
+    assert.equal(result2.primary_key, 'foo');
   });
 
   it('`tableCreate` should create a table -- all args', async () => {
     const tableName = uuid();
 
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .tableCreate(tableName, { durability: 'soft', primaryKey: 'foo' })
       .run();
-    assert.equal(result.tables_created, 1); // We can't really check other parameters...
+    assert.equal(result1.tables_created, 1); // We can't really check other parameters...
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .table(tableName)
       .info()
       .run();
-    assert(result.primary_key, 'foo');
+    assert.equal(result2.primary_key, 'foo');
   });
 
   it('`tableCreate` should throw -- non valid args', async () => {
@@ -94,6 +114,7 @@ describe('manipulating tables', () => {
 
       await r
         .db(dbName)
+        // @ts-ignore
         .tableCreate(tableName, { nonValidArg: true })
         .run();
       assert.fail('should throw');
@@ -108,6 +129,7 @@ describe('manipulating tables', () => {
 
   it('`tableCreate` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .tableCreate()
@@ -139,34 +161,35 @@ describe('manipulating tables', () => {
   it('`tableDrop` should drop a table', async () => {
     const tableName = uuid();
 
-    let result = await r
+    const result1 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result1.tables_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableList()
       .run();
-    assert(Array.isArray(result));
-    assert.equal(result.find(name => name === tableName), tableName);
+    assert(Array.isArray(result2));
+    assert.equal(result2.find(name => name === tableName), tableName);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .tableDrop(tableName)
       .run();
-    assert.equal(result.tables_dropped, 1);
+    assert.equal(result3.tables_dropped, 1);
 
-    result = await r
+    const result4 = await r
       .db(dbName)
       .tableList()
       .run();
-    assert(result.find(name => name === tableName) === undefined);
+    assert(result4.find(name => name === tableName) === undefined);
   });
 
   it('`tableDrop` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .tableDrop()
@@ -183,232 +206,225 @@ describe('manipulating tables', () => {
   });
 
   describe('indices', () => {
-    const dbName = uuid();
-    const tableName = uuid();
+    const dbName1 = uuid();
+    const tableName1 = uuid();
 
     before(async () => {
-      let result = await r.dbCreate(dbName).run();
-      assert.equal(result.dbs_created, 1);
+      const result1 = await r.dbCreate(dbName1).run();
+      assert.equal(result1.dbs_created, 1);
 
-      result = await r
-        .db(dbName)
-        .tableCreate(tableName)
+      const result2 = await r
+        .db(dbName1)
+        .tableCreate(tableName1)
         .run();
-      assert.equal(result.tables_created, 1);
+      assert.equal(result2.tables_created, 1);
     });
 
     it('index operations', async () => {
-      let result = await r
-        .db(dbName)
-        .table(tableName)
+      const result1 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate('newField')
         .run();
-      assert.deepEqual(result, { created: 1 });
+      assert.deepEqual(result1, { created: 1 });
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result2 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexList()
         .run();
-      assert.deepEqual(result, ['newField']);
+      assert.deepEqual(result2, ['newField']);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result3 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexWait()
         .pluck('index', 'ready')
         .run();
-      assert.deepEqual(result, [{ index: 'newField', ready: true }]);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.deepEqual(result3, [{ index: 'newField', ready: true }]);
+      const result4 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexStatus()
         .pluck('index', 'ready')
         .run();
-      assert.deepEqual(result, [{ index: 'newField', ready: true }]);
+      assert.deepEqual(result4, [{ index: 'newField', ready: true }]);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result5 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexDrop('newField')
         .run();
-      assert.deepEqual(result, { dropped: 1 });
+      assert.deepEqual(result5, { dropped: 1 });
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
-        .indexCreate('field1', function(doc) {
-          return doc('field1');
-        })
+      const result6 = await r
+        .db(dbName1)
+        .table(tableName1)
+        .indexCreate('field1', doc => doc('field1'))
         .run();
-      assert.deepEqual(result, { created: 1 });
+      assert.deepEqual(result6, { created: 1 });
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result7 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexWait('field1')
         .pluck('index', 'ready')
         .run();
-      assert.deepEqual(result, [{ index: 'field1', ready: true }]);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.deepEqual(result7, [{ index: 'field1', ready: true }]);
+      const result8 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexStatus('field1')
         .pluck('index', 'ready')
         .run();
-      assert.deepEqual(result, [{ index: 'field1', ready: true }]);
+      assert.deepEqual(result8, [{ index: 'field1', ready: true }]);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result9 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexDrop('field1')
         .run();
-      assert.deepEqual(result, { dropped: 1 });
+      assert.deepEqual(result9, { dropped: 1 });
     });
 
     it('`indexCreate` should work with options', async () => {
       let result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate('foo', { multi: true })
         .run();
       assert.deepEqual(result, { created: 1 });
 
       result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate('foo1', row => row('foo'), { multi: true })
         .run();
       assert.deepEqual(result, { created: 1 });
 
       result = await r
-        .db(dbName)
-        .table(tableName)
-        .indexCreate(
-          'foo2',
-          function(doc) {
-            return doc('foo');
-          },
-          { multi: true }
-        )
+        .db(dbName1)
+        .table(tableName1)
+        .indexCreate('foo2', doc => doc('foo'), { multi: true })
         .run();
       assert.deepEqual(result, { created: 1 });
 
       await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexWait()
         .run();
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result1 = await r
+        .db(dbName1)
+        .table(tableName1)
         .insert({ foo: ['bar1', 'bar2'], buzz: 1 })
         .run();
-      assert.equal(result.inserted, 1);
+      assert.equal(result1.inserted, 1);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result2 = await r
+        .db(dbName1)
+        .table(tableName1)
         .insert({ foo: ['bar1', 'bar3'], buzz: 2 })
         .run();
-      assert.equal(result.inserted, 1);
+      assert.equal(result2.inserted, 1);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result3 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar1', { index: 'foo' })
         .count()
         .run();
-      assert.equal(result, 2);
+      assert.equal(result3, 2);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result4 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar1', { index: 'foo1' })
         .count()
         .run();
-      assert.equal(result, 2);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.equal(result4, 2);
+      const result5 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar1', { index: 'foo2' })
         .count()
         .run();
-      assert.equal(result, 2);
+      assert.equal(result5, 2);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result6 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar2', { index: 'foo' })
         .count()
         .run();
-      assert.equal(result, 1);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.equal(result6, 1);
+      const result7 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar2', { index: 'foo1' })
         .count()
         .run();
-      assert.equal(result, 1);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.equal(result7, 1);
+      const result8 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar2', { index: 'foo2' })
         .count()
         .run();
-      assert.equal(result, 1);
+      assert.equal(result8, 1);
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result9 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar3', { index: 'foo' })
         .count()
         .run();
-      assert.equal(result, 1);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.equal(result9, 1);
+      const result10 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar3', { index: 'foo1' })
         .count()
         .run();
-      assert.equal(result, 1);
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      assert.equal(result10, 1);
+      const result11 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll('bar3', { index: 'foo2' })
         .count()
         .run();
-      assert.equal(result, 1);
+      assert.equal(result11, 1);
 
       // Test when the function is wrapped in an array
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result12 = await r
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate('buzz', row => [row('buzz')])
         .run();
-      assert.deepEqual(result, { created: 1 });
+      assert.deepEqual(result12, { created: 1 });
 
       await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexWait()
         .run();
 
-      result = await r
-        .db(dbName)
-        .table(tableName)
+      const result13 = await r
+        .db(dbName1)
+        .table(tableName1)
         .getAll([1], { index: 'buzz' })
         .count()
         .run();
-      assert.equal(result, 1);
+      assert.equal(result13, 1);
     });
 
     it('`indexCreate` should throw if no argument is passed', async () => {
       try {
+        // @ts-ignore
         await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
           .indexCreate()
           .run();
         assert.fail('should throw');
@@ -416,9 +432,9 @@ describe('manipulating tables', () => {
         assert.equal(
           e.message,
           '`indexCreate` takes at least 1 argument, 0 provided after:\nr.db("' +
-            dbName +
+            dbName1 +
             '").table("' +
-            tableName +
+            tableName1 +
             '")\n'
         );
       }
@@ -426,9 +442,10 @@ describe('manipulating tables', () => {
 
     it('`indexDrop` should throw if no argument is passed', async () => {
       try {
+        // @ts-ignore
         await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
           .indexDrop()
           .run();
         assert.fail('should throw');
@@ -436,9 +453,9 @@ describe('manipulating tables', () => {
         assert.equal(
           e.message,
           '`indexDrop` takes 1 argument, 0 provided after:\nr.db("' +
-            dbName +
+            dbName1 +
             '").table("' +
-            tableName +
+            tableName1 +
             '")\n'
         );
       }
@@ -450,29 +467,29 @@ describe('manipulating tables', () => {
       const existing = uuid();
 
       let result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate(toRename)
         .run();
       assert.deepEqual(result, { created: 1 });
 
       result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexRename(toRename, renamed)
         .run();
       assert.deepEqual(result, { renamed: 1 });
 
       result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexCreate(existing)
         .run();
       assert.deepEqual(result, { created: 1 });
 
       result = await r
-        .db(dbName)
-        .table(tableName)
+        .db(dbName1)
+        .table(tableName1)
         .indexRename(renamed, existing, { overwrite: true })
         .run();
       assert.deepEqual(result, { renamed: 1 });
@@ -484,22 +501,22 @@ describe('manipulating tables', () => {
         const otherName = uuid();
 
         let result = await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
           .indexCreate(name)
           .run();
         assert.deepEqual(result, { created: 1 });
 
         result = await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
           .indexCreate(otherName)
           .run();
         assert.deepEqual(result, { created: 1 });
 
         await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
           .indexRename(otherName, name)
           .run();
         assert.fail('should throw');
@@ -511,8 +528,9 @@ describe('manipulating tables', () => {
     it('`indexRename` should throw -- non valid args', async () => {
       try {
         await r
-          .db(dbName)
-          .table(tableName)
+          .db(dbName1)
+          .table(tableName1)
+          // @ts-ignore
           .indexRename('foo', 'bar', { nonValidArg: true })
           .run();
         assert.fail('should throw');

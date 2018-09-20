@@ -1,5 +1,3 @@
-// 7 passing (57ms)
-// 7 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -16,7 +14,7 @@ describe('manipulating databases', () => {
 
   it('`expr` should work', async () => {
     const result = await r.expr(1).run();
-    assert(result, 1);
+    assert.equal(result, 1);
   });
 
   it('`dbList` should return a cursor', async () => {
@@ -33,6 +31,7 @@ describe('manipulating databases', () => {
 
   it('`dbCreate` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r.dbCreate().run();
       assert.fail('should throw');
     } catch (e) {
@@ -44,6 +43,7 @@ describe('manipulating databases', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .dbCreate('foo')
         .run();
       assert.fail('should throw');
@@ -56,6 +56,7 @@ describe('manipulating databases', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .db('foo')
         .run();
       assert.fail('should throw');
@@ -66,6 +67,7 @@ describe('manipulating databases', () => {
 
   it('`db` should throw is the name contains special char', async () => {
     try {
+      // @ts-ignore
       await r.db('-_-').run();
       assert.fail('should throw');
     } catch (e) {
@@ -78,12 +80,12 @@ describe('manipulating databases', () => {
   it('`dbList` should show the database we created', async () => {
     const dbName = uuid(); // export to the global scope
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r.dbList().run();
-    assert(Array.isArray(result));
-    assert(result.find(name => name === dbName) !== undefined);
+    const result2 = await r.dbList().run();
+    assert(Array.isArray(result2));
+    assert(result2.find(name => name === dbName) !== undefined);
   });
 
   it('`dbDrop` should drop a table', async () => {
@@ -98,6 +100,7 @@ describe('manipulating databases', () => {
 
   it('`dbDrop` should throw if given too many arguments', async () => {
     try {
+      // @ts-ignore
       await r.dbDrop('foo', 'bar', 'ette').run();
       assert.fail('should throw');
     } catch (e) {
@@ -107,6 +110,7 @@ describe('manipulating databases', () => {
 
   it('`dbDrop` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r.dbDrop().run();
       assert.fail('should throw');
     } catch (e) {
@@ -118,6 +122,7 @@ describe('manipulating databases', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .dbDrop('foo')
         .run();
     } catch (e) {
@@ -129,6 +134,7 @@ describe('manipulating databases', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .dbList('foo')
         .run();
       assert.fail('should throw');
@@ -140,15 +146,15 @@ describe('manipulating databases', () => {
   it('`dbList` should contain dropped databases', async () => {
     const dbName = uuid(); // export to the global scope
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r.dbDrop(dbName).run();
-    assert.deepEqual(result.dbs_dropped, 1);
+    const result2 = await r.dbDrop(dbName).run();
+    assert.deepEqual(result2.dbs_dropped, 1);
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    result = await r.dbList().run();
-    assert(Array.isArray(result));
-    assert(result.find(name => name === dbName) === undefined);
+    const result3 = await r.dbList().run();
+    assert(Array.isArray(result3));
+    assert(result3.find(name => name === dbName) === undefined);
   });
 });

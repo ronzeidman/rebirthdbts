@@ -1,5 +1,3 @@
-// 31 passing (4s)
-// 4 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -14,14 +12,14 @@ describe('writing data', () => {
     dbName = uuid();
     tableName = uuid();
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
   });
 
   after(async () => {
@@ -135,6 +133,7 @@ describe('writing data', () => {
 
   it('`insert` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -209,6 +208,7 @@ describe('writing data', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .insert({}, { nonValidKey: true })
         .run();
       assert.fail('should throw');
@@ -239,11 +239,10 @@ describe('writing data', () => {
           count: 10
         },
         {
-          conflict: function(id, oldDoc, newDoc) {
-            return newDoc.merge({
+          conflict: (id, oldDoc, newDoc) =>
+            newDoc.merge({
               count: newDoc('count').add(oldDoc('count'))
-            });
-          }
+            })
         }
       )
       .run();
@@ -261,6 +260,7 @@ describe('writing data', () => {
 
   it('`replace` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -284,6 +284,7 @@ describe('writing data', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .replace({}, { nonValidKey: true })
         .run();
     } catch (e) {
@@ -388,6 +389,7 @@ describe('writing data', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .delete({ nonValidKey: true })
         .run();
       assert.fail('should throw');
@@ -591,6 +593,7 @@ describe('writing data', () => {
 
   it('`update` should throw if no argument is given', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -614,6 +617,7 @@ describe('writing data', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .update({}, { nonValidKey: true })
         .run();
       assert.fail('should throw');

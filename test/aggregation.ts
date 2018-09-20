@@ -1,4 +1,3 @@
-// 30 passing (2s)
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -40,6 +39,7 @@ describe('aggregation', () => {
   });
   it('`reduce` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       result = await r
         .db(dbName)
         .table(tableName)
@@ -390,6 +390,7 @@ describe('aggregation', () => {
 
   it('`contains` should throw if called without arguments', async () => {
     try {
+      // @ts-ignore
       result = await r
         .db(dbName)
         .table(tableName)

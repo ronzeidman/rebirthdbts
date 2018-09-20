@@ -1,5 +1,3 @@
-// 34 passing (2s)
-// 1 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -16,27 +14,27 @@ describe('geo', () => {
     dbName = uuid();
     tableName = uuid();
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .indexCreate('location', { geo: true })
       .run();
-    assert.equal(result.created, 1);
+    assert.equal(result3.created, 1);
     await r
       .db(dbName)
       .table(tableName)
       .indexWait('location')
       .run();
-    result = await r
+    const result4 = await r
       .db(dbName)
       .table(tableName)
       .insert(
@@ -48,7 +46,7 @@ describe('geo', () => {
         })
       )
       .run();
-    assert.equal(result.inserted, numDocs);
+    assert.equal(result4.inserted, numDocs);
   });
 
   after(async () => {
@@ -93,6 +91,7 @@ describe('geo', () => {
 
   it('`r.circle` should throw with non recognized arguments', async () => {
     try {
+      // @ts-ignore
       await r.circle(r.point(0, 0), 1, { foo: 'bar' }).run();
       assert.fail('should throw');
     } catch (e) {
@@ -102,6 +101,7 @@ describe('geo', () => {
 
   it('`r.circle` arity - 1', async () => {
     try {
+      // @ts-ignore
       await r.circle(r.point(0, 0)).run();
       assert.fail('should throw');
     } catch (e) {
@@ -113,6 +113,7 @@ describe('geo', () => {
 
   it('`r.circle` arity - 2', async () => {
     try {
+      // @ts-ignore
       await r.circle(0, 1, 2, 3, 4).run();
       assert.fail('should throw');
     } catch (e) {
@@ -145,6 +146,7 @@ describe('geo', () => {
 
   it('`distance` arity - 1', async () => {
     try {
+      // @ts-ignore
       await r
         .point(0, 0)
         .distance()
@@ -159,6 +161,7 @@ describe('geo', () => {
 
   it('`distance` arity - 2', async () => {
     try {
+      // @ts-ignore
       await r
         .point(0, 0)
         .distance(1, 2, 3)
@@ -183,6 +186,7 @@ describe('geo', () => {
 
   it('`fill` arity error', async () => {
     try {
+      // @ts-ignore
       await r
         .circle(r.point(0, 0), 2, { numVertices: 40, fill: false })
         .fill(1)
@@ -202,6 +206,7 @@ describe('geo', () => {
 
   it('`geojson` arity error', async () => {
     try {
+      // @ts-ignore
       await r.geojson(1, 2, 3).run();
       assert.fail('should throw');
     } catch (e) {
@@ -219,6 +224,7 @@ describe('geo', () => {
 
   it('`toGeojson` arity error', async () => {
     try {
+      // @ts-ignore
       await r
         .point(0, 0)
         .toGeojson(1, 2, 3)
@@ -245,6 +251,7 @@ describe('geo', () => {
   it('`getIntersecting` arity', async () => {
     try {
       // All points are in [0,1]x[0,1]
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -298,6 +305,7 @@ describe('geo', () => {
 
   it('`includes` arity', async () => {
     try {
+      // @ts-ignore
       await r
         .circle([0, 0], 2000)
         .includes()
@@ -323,6 +331,7 @@ describe('geo', () => {
       // All points are in [0,1]x[0,1]
       const point1 = r.point(-117.220406, 32.719464);
       const point2 = r.point(-117.206201, 32.725186);
+      // @ts-ignore
       await r
         .circle(point1, 2000)
         .intersects(r.circle(point2, 2000), 2, 3)
@@ -349,6 +358,7 @@ describe('geo', () => {
 
   it('`r.line` arity', async () => {
     try {
+      // @ts-ignore
       await r.line().run();
       assert.fail('should throw');
     } catch (e) {
@@ -367,6 +377,7 @@ describe('geo', () => {
 
   it('`r.point` arity', async () => {
     try {
+      // @ts-ignore
       await r.point().run();
       assert.fail('should throw');
     } catch (e) {
@@ -383,6 +394,7 @@ describe('geo', () => {
 
   it('`r.polygon` arity', async () => {
     try {
+      // @ts-ignore
       await r.polygon().run();
       assert.fail('should throw');
     } catch (e) {
@@ -404,6 +416,7 @@ describe('geo', () => {
 
   it('`polygonSub` arity', async () => {
     try {
+      // @ts-ignore
       await r
         .polygon([0, 0], [0, 1], [1, 1])
         .polygonSub()

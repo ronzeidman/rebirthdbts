@@ -1,5 +1,3 @@
-// 19 passing (21s)
-// 2 failing
 import assert from 'assert';
 import * as net from 'net';
 import { Connection, r } from '../src';
@@ -183,6 +181,7 @@ describe('accessing-reql', () => {
 
   it('`noReplyWait` should throw', async () => {
     try {
+      // @ts-ignore
       await connection.noReplyWait();
       assert.fail('should throw an error');
     } catch (e) {
@@ -229,6 +228,7 @@ describe('accessing-reql', () => {
   });
 
   it('`run` should take an argument', async () => {
+    // @ts-ignore
     const result1 = await r.expr(1).run(connection, { readMode: 'primary' });
     assert.equal(result1, 1);
 
@@ -251,6 +251,7 @@ describe('accessing-reql', () => {
 
   it('`run` should throw on an unrecognized argument', async () => {
     try {
+      // @ts-ignore
       await r.expr(1).run(connection, { foo: 'bar' });
       assert.fail('should throw an error');
     } catch (e) {
@@ -274,6 +275,7 @@ describe('accessing-reql', () => {
     assert(result2 instanceof Date);
 
     const result3 = await r.now().run(connection, { timeFormat: 'raw' });
+    // @ts-ignore
     assert.equal(result3.$reql_type$, 'TIME');
   });
 
@@ -281,6 +283,7 @@ describe('accessing-reql', () => {
     const result = await r
       .binary(Buffer.from([1, 2, 3]))
       .run(connection, { binaryFormat: 'raw' });
+    // @ts-ignore
     assert.equal(result.$reql_type$, 'BINARY');
   });
 

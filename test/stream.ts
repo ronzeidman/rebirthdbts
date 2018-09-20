@@ -513,7 +513,8 @@ describe('stream', () => {
   // it('toStream((writable: true}) should handle options', function (done) {
   //   const r1 = rethinkdbdash({ buffer: 1, max: 2, discovery: false, silent: true })
 
-  //   const stream = r1.db(dbName).table(dumpTable).toStream({ writable: true, highWaterMark: 50, conflict: 'replace' })
+  //   const stream =
+  // r1.db(dbName).table(dumpTable).toStream({ writable: true, highWaterMark: 50, conflict: 'replace' })
   //   stream.write({ id: 1, foo: 1 })
   //   stream.write({ id: 1, foo: 2 })
   //   stream.end({ id: 1, foo: 3 })

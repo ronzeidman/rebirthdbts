@@ -1,15 +1,15 @@
-// 45 passing (10s)
-// 3 failing
 import assert from 'assert';
 import * as iterall from 'iterall';
 import { satisfies } from 'semver';
 import {
+  Changes,
   Connection,
   isRethinkDBError,
   r,
   RCursor,
   RethinkDBErrorType
 } from '../src';
+import { RethinkDBConnection } from '../src/connection/connection';
 import config from './config';
 import { uuid } from './util/common';
 
@@ -121,10 +121,14 @@ describe('cursor', () => {
 
     await new Promise((resolve, reject) => {
       let count = 0;
-      cursor.each((err, result) => {
-        if (err) reject(err);
+      cursor.each(err => {
+        if (err) {
+          reject(err);
+        }
         count++;
-        if (count === numDocs) resolve();
+        if (count === numDocs) {
+          resolve();
+        }
       });
     });
   });
@@ -139,14 +143,18 @@ describe('cursor', () => {
     await new Promise((resolve, reject) => {
       let count = 0;
       cursor.each(
-        (err, result) => {
-          if (err) reject(err);
+        err => {
+          if (err) {
+            reject(err);
+          }
           count++;
         },
         () => {
           if (count !== numDocs) {
             reject(
-              new Error('expected count to equal numDocs', count, numDocs)
+              new Error(
+                `expected count (${count}) to equal numDocs (${numDocs})`
+              )
             );
           }
           assert.equal(count, numDocs);
@@ -166,8 +174,10 @@ describe('cursor', () => {
     await new Promise((resolve, reject) => {
       let count = 0;
       cursor.each(
-        (err, result) => {
-          if (err) reject(err);
+        err => {
+          if (err) {
+            reject(err);
+          }
           count++;
           return false;
         },
@@ -192,7 +202,7 @@ describe('cursor', () => {
     let promisesWait = 0;
 
     // TODO cleanup
-    await cursor.eachAsync(async result => {
+    await cursor.eachAsync(async () => {
       history.push(count);
       count++;
       await new Promise((resolve, reject) => {
@@ -229,7 +239,7 @@ describe('cursor', () => {
     const now = Date.now();
     const timeout = 10;
 
-    await cursor.eachAsync((result, onRowFinished) => {
+    await cursor.eachAsync((_, onRowFinished) => {
       count++;
       setTimeout(onRowFinished, timeout);
     });
@@ -308,11 +318,11 @@ describe('cursor', () => {
   });
 
   it('`cursor.close` should return a promise', async () => {
-    const cursor = await r
+    const cursor1 = await r
       .db(dbName)
       .table(tableName2)
       .getCursor();
-    await cursor.close();
+    await cursor1.close();
   });
 
   it('`cursor.close` should still return a promise if the cursor was closed', async () => {
@@ -324,7 +334,7 @@ describe('cursor', () => {
     await cursor.close();
     result = cursor.close();
     try {
-      result.then(() => {}); // Promise's contract is to have a `then` method
+      result.then(() => undefined); // Promise's contract is to have a `then` method
     } catch (e) {
       assert.fail(e);
     }
@@ -337,6 +347,7 @@ describe('cursor', () => {
       .getCursor();
 
     try {
+      // @ts-ignore
       cursor.toJSON();
     } catch (err) {
       assert.equal(err.message, 'cursor.toJSON is not a function');
@@ -354,7 +365,6 @@ describe('cursor', () => {
     result = await r
       .db(dbName)
       .table(tableName)
-      .orderBy({ index: r.desc('id') })
       .sample(5)
       .replace(row => row.without('val'))
       .run();
@@ -542,9 +552,11 @@ describe('cursor', () => {
 
     let counter = 0;
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       feed.each((error, change) => {
-        if (error) reject(error);
+        if (error) {
+          reject(error);
+        }
         assert(typeof change.new_offset === 'number');
         if (counter >= 2) {
           assert(typeof change.old_offset === 'number');
@@ -580,9 +592,11 @@ describe('cursor', () => {
 
     let counter = 0;
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       feed.each((error, change) => {
-        if (error) reject(error);
+        if (error) {
+          reject(error);
+        }
         assert(typeof change.type === 'string');
         if (counter > 0) {
           feed
@@ -650,13 +664,13 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       feed
         .next()
-        .then(result => assert.deepEqual(result, { new_val: null }))
+        .then(res => assert.deepEqual(res, { new_val: null }))
         .then(() => feed.next())
-        .then(result =>
-          assert.deepEqual(result, { new_val: { id: idValue }, old_val: null })
+        .then(res =>
+          assert.deepEqual(res, { new_val: { id: idValue }, old_val: null })
         )
         .then(resolve)
         .catch(reject);
@@ -706,7 +720,7 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       let i = 0;
       feed.on('data', () => {
         i++;
@@ -755,7 +769,7 @@ describe('cursor', () => {
       .changes()
       .run();
 
-    feed.on('data', () => {});
+    feed.on('data', () => undefined);
     feed.on('error', assert.fail);
 
     try {
@@ -778,11 +792,13 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       let count = 0;
-      feed.each((err, result) => {
-        if (err) reject(err);
-        if (result.new_val.foo instanceof Date) {
+      feed.each((err, res) => {
+        if (err) {
+          reject(err);
+        }
+        if (res.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 1) {
@@ -813,13 +829,13 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       let count = 0;
-      feed.each((err, result) => {
+      feed.each((err, res) => {
         if (err) {
           reject(err);
         }
-        if (result.new_val.foo instanceof Date) {
+        if (res.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 2) {
@@ -850,10 +866,12 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
-      feed.each((err, result) => {
-        if (err) reject(err);
-        if (result.new_val != null && result.new_val.id === 1) {
+    const promise = new Promise<void>((resolve, reject) => {
+      feed.each((err, res) => {
+        if (err) {
+          reject(err);
+        }
+        if (res.new_val != null && res.new_val.id === 1) {
           feed
             .close()
             .then(resolve)
@@ -877,10 +895,10 @@ describe('cursor', () => {
       .run();
     assert(feed);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<void>((resolve, reject) => {
       let count = 0;
-      feed.on('data', result => {
-        if (result.new_val.foo instanceof Date) {
+      feed.on('data', res => {
+        if (res.new_val.foo instanceof Date) {
           count++;
         }
         if (count === 1) {
@@ -912,9 +930,11 @@ describe('cursor', () => {
       .run();
     let i = 0;
 
-    await new Promise((resolve, reject) => {
-      feed.each((err, change) => {
-        if (err) reject(err);
+    await new Promise<void>((resolve, reject) => {
+      feed.each(err => {
+        if (err) {
+          reject(err);
+        }
         i++;
         if (i === 10) {
           feed
@@ -934,13 +954,13 @@ describe('cursor', () => {
     });
     assert(connection);
 
-    const feed = await r
+    const feed1 = await r
       .db(dbName)
       .table(tableName)
       .changes()
       .run(connection);
 
-    const promise = feed.each((err, change) => {
+    const promise = feed1.each(err => {
       assert(
         err.message.startsWith(
           'The connection was closed before the query could be completed'
@@ -948,7 +968,10 @@ describe('cursor', () => {
       );
     });
     // Kill the TCP connection
-    connection.socket.close();
+    const { socket } = (connection as RethinkDBConnection).socket;
+    if (socket) {
+      socket.destroy();
+    }
     return promise;
   });
 
@@ -960,12 +983,12 @@ describe('cursor', () => {
     });
     assert(connection);
 
-    const feed = await r
+    const feed1 = await r
       .db(dbName)
       .table(tableName)
       .changes()
       .run(connection);
-    const promise = feed.eachAsync(change => {}).catch(err => {
+    const promise = feed1.eachAsync(() => undefined).catch(err => {
       assert(
         err.message.startsWith(
           'The connection was closed before the query could be completed'
@@ -973,7 +996,10 @@ describe('cursor', () => {
       );
     });
     // Kill the TCP connection
-    connection.socket.close();
+    const { socket } = (connection as RethinkDBConnection).socket;
+    if (socket) {
+      socket.destroy();
+    }
     return promise;
   });
 
@@ -986,21 +1012,24 @@ describe('cursor', () => {
       });
       assert(connection.open);
 
-      const feed = await r
+      const feed1 = await r
         .db(dbName)
         .table(tableName)
         .changes()
         .run(connection);
-      assert(feed);
+      assert(feed1);
 
-      const iterator = feed;
+      const iterator = feed1;
       assert(iterall.isAsyncIterable(iterator));
       // Kill the TCP connection
-      connection.socket.close();
+      const { socket } = (connection as RethinkDBConnection).socket;
+      if (socket) {
+        socket.destroy();
+      }
     });
 
     it('`asyncIterator` should work', async () => {
-      const feed = await r
+      const feed1: AsyncIterableIterator<Changes<any>> = await r
         .db(dbName)
         .table(tableName2)
         .changes()
@@ -1011,7 +1040,7 @@ describe('cursor', () => {
 
       const promise = (async () => {
         let res: any;
-        for await (const row of feed) {
+        for await (const row of feed1) {
           res = row;
           feed.close();
         }

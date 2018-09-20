@@ -1,4 +1,3 @@
-// 13 passing (2m)
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -56,12 +55,12 @@ describe('pool legacy', () => {
   it('`run` should work without a connection if a pool exists and the pool should keep a buffer', async () => {
     const numExpr = 5;
 
-    let result = await Promise.all(
+    const result1 = await Promise.all(
       Array(numExpr)
         .fill(r.expr(1))
         .map(expr => expr.run())
     );
-    assert.deepEqual(result, Array(numExpr).fill(1));
+    assert.deepEqual(result1, Array(numExpr).fill(1));
     await new Promise(resolve => setTimeout(resolve, 200));
     const numConnections = r.getPoolMaster().getAvailableLength();
     assert.ok(
@@ -110,13 +109,18 @@ describe('pool legacy', () => {
     );
     assert.deepEqual(result, Array(9).fill(1));
 
-    const { availableLength, length } = await new Promise((resolve, reject) => {
-      setTimeout(function() {
-        resolve({
-          availableLength: r.getPoolMaster().getAvailableLength(),
-          length: r.getPoolMaster().getLength()
-        });
-      }, 1000);
+    const { availableLength, length } = await new Promise<{
+      availableLength: number;
+      length: number;
+    }>(resolve => {
+      setTimeout(
+        () =>
+          resolve({
+            availableLength: r.getPoolMaster().getAvailableLength(),
+            length: r.getPoolMaster().getLength()
+          }),
+        1000
+      );
     });
     assert.equal(
       availableLength,
@@ -245,12 +249,12 @@ describe('pool legacy', () => {
     r.getPoolMaster().setOptions({ timeoutGb: 60 * 60 * 1000 });
 
     try {
-      let result = await Promise.all(
+      const result1 = await Promise.all(
         Array(options.max)
           .fill(r.expr(1))
           .map(expr => expr.run())
       );
-      assert.deepEqual(result, Array(options.max).fill(1));
+      assert.deepEqual(result1, Array(options.max).fill(1));
     } catch (e) {
       assert.ifError(e); // This should not error anymore because since the JSON protocol was introduced.
 
@@ -261,7 +265,7 @@ describe('pool legacy', () => {
 
       // We expect the connection that errored to get closed in the next second
       await new Promise((resolve, reject) => {
-        setTimeout(function() {
+        setTimeout(() => {
           assert.equal(r.getPoolMaster().getAvailableLength(), options.max - 1);
           assert.equal(r.getPoolMaster().getLength(), options.max - 1);
           resolve();
@@ -281,24 +285,24 @@ describe('pool legacy', () => {
       dbName = uuid();
       tableName = uuid();
 
-      let result = await r.dbCreate(dbName).run();
-      assert.equal(result.dbs_created, 1);
+      const result1 = await r.dbCreate(dbName).run();
+      assert.equal(result1.dbs_created, 1);
 
-      result = await r
+      const result2 = await r
         .db(dbName)
         .tableCreate(tableName)
         .run();
-      assert.equal(result.tables_created, 1);
+      assert.equal(result2.tables_created, 1);
 
-      result = await r
+      const result3 = await r
         .db(dbName)
         .table(tableName)
         .insert(Array(10000).fill({}))
         .run();
-      assert.equal(result.inserted, 10000);
+      assert.equal(result3.inserted, 10000);
 
       // Making bigger documents to retrieve multiple batches
-      result = await r
+      const result4 = await r
         .db(dbName)
         .table(tableName)
         .update({
@@ -314,11 +318,12 @@ describe('pool legacy', () => {
           date: r.now()
         })
         .run();
+      assert.equal(result4.replaced, 10000);
     });
 
     after(async () => {
-      let result = await r.dbDrop(dbName).run();
-      assert.equal(result.dbs_dropped, 1);
+      const result1 = await r.dbDrop(dbName).run();
+      assert.equal(result1.dbs_dropped, 1);
 
       await r.getPoolMaster().drain();
     });

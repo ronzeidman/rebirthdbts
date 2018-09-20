@@ -1,5 +1,3 @@
-// 41 passing (4s)
-// 3 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -15,33 +13,33 @@ describe('transformations', () => {
     tableName = uuid();
     const numDocs = 100;
 
-    let result = await r.dbCreate(dbName).run();
-    assert.equal(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName).run();
+    assert.equal(result1.dbs_created, 1);
 
-    result = await r
+    const result2 = await r
       .db(dbName)
       .tableCreate(tableName)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
-    result = await r
+    const result3 = await r
       .db(dbName)
       .table(tableName)
       .insert(Array(numDocs).fill({}))
       .run();
-    assert.equal(result.inserted, numDocs);
+    assert.equal(result3.inserted, numDocs);
 
-    result = await r
+    await r
       .db(dbName)
       .table(tableName)
       .update({ val: r.js('Math.random()') }, { nonAtomic: true })
       .run();
-    result = await r
+    await r
       .db(dbName)
       .table(tableName)
       .indexCreate('val')
       .run();
-    result = await r
+    await r
       .db(dbName)
       .table(tableName)
       .indexWait('val')
@@ -69,17 +67,13 @@ describe('transformations', () => {
   it('`map` should work on array -- function', async () => {
     let result = await r
       .expr([1, 2, 3])
-      .map(function(doc) {
-        return doc;
-      })
+      .map(doc => doc)
       .run();
     assert.deepEqual(result, [1, 2, 3]);
 
     result = await r
       .expr([1, 2, 3])
-      .map(function(doc) {
-        return doc.add(2);
-      })
+      .map(doc => doc.add(2))
       .run();
     assert.deepEqual(result, [3, 4, 5]);
   });
@@ -135,9 +129,7 @@ describe('transformations', () => {
   it('`concatMap` should work on array -- function', async () => {
     const result = await r
       .expr([[1, 2], [3], [4]])
-      .concatMap(function(doc) {
-        return doc;
-      })
+      .concatMap(doc => doc)
       .run();
     assert.deepEqual(result, [1, 2, 3, 4]);
   });
@@ -187,7 +179,7 @@ describe('transformations', () => {
       .table(tableName)
       .orderBy({ index: 'id' })
       .run();
-    for (var i = 0; i < result.length - 1; i++) {
+    for (let i = 0; i < result.length - 1; i++) {
       assert(result[i].id < result[i + 1].id);
     }
   });
@@ -198,43 +190,43 @@ describe('transformations', () => {
       .table(tableName)
       .orderBy({ index: 'val' })
       .run();
-    for (var i = 0; i < result.length - 1; i++) {
+    for (let i = 0; i < result.length - 1; i++) {
       assert(result[i].val < result[i + 1].val);
     }
   });
 
   it('`orderBy` should work on a two fields', async () => {
-    const dbName = uuid();
-    const tableName = uuid();
+    const dbName1 = uuid();
+    const tableName1 = uuid();
     const numDocs = 98;
 
-    let result = await r.dbCreate(dbName).run();
-    assert.deepEqual(result.dbs_created, 1);
+    const result1 = await r.dbCreate(dbName1).run();
+    assert.deepEqual(result1.dbs_created, 1);
 
-    result = await r
-      .db(dbName)
-      .tableCreate(tableName)
+    const result2 = await r
+      .db(dbName1)
+      .tableCreate(tableName1)
       .run();
-    assert.equal(result.tables_created, 1);
+    assert.equal(result2.tables_created, 1);
 
-    result = await r
-      .db(dbName)
-      .table(tableName)
+    const result3 = await r
+      .db(dbName1)
+      .table(tableName1)
       .insert(
         Array(numDocs)
-          .fill()
+          .fill(0)
           .map(() => ({ a: r.js('Math.random()') }))
       )
       .run();
-    assert.deepEqual(result.inserted, numDocs);
+    assert.deepEqual(result3.inserted, numDocs);
 
-    result = await r
-      .db(dbName)
-      .table(tableName)
+    const result4 = await r
+      .db(dbName1)
+      .table(tableName1)
       .orderBy('id', 'a')
       .run();
-    assert(Array.isArray(result));
-    assert(result[0].id < result[1].id);
+    assert(Array.isArray(result4));
+    assert(result4[0].id < result4[1].id);
   });
 
   it('`orderBy` should throw if no argument has been passed', async () => {
@@ -289,6 +281,7 @@ describe('transformations', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .desc('foo')
         .run();
       assert.fail('sholud throw');
@@ -301,6 +294,7 @@ describe('transformations', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .asc('foo')
         .run();
       assert.fail('should throw');
@@ -319,6 +313,7 @@ describe('transformations', () => {
 
   it('`skip` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -340,6 +335,7 @@ describe('transformations', () => {
 
   it('`limit` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -538,6 +534,7 @@ describe('transformations', () => {
 
   it('`slice` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -556,11 +553,12 @@ describe('transformations', () => {
       .expr([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
       .nth(3)
       .run();
-    assert(result, 3);
+    assert.equal(result, 3);
   });
 
   it('`nth` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -577,7 +575,7 @@ describe('transformations', () => {
       .expr([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
       .nth(3)
       .run();
-    assert(result, 3);
+    assert.equal(result, 3);
   });
 
   it('`offsetsOf` should work - row => row', async () => {
@@ -591,15 +589,14 @@ describe('transformations', () => {
   it('`offsetsOf` should work - function', async () => {
     const result = await r
       .expr([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-      .offsetsOf(function(doc) {
-        return doc.eq(3);
-      })
+      .offsetsOf(doc => doc.eq(3))
       .run();
     assert.equal(result, 3);
   });
 
   it('`offsetsOf` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -633,7 +630,7 @@ describe('transformations', () => {
       .union([3, 4, 5])
       .run();
     assert.deepEqual(result.length, 6);
-    for (var i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i++) {
       assert(result.indexOf(i) >= 0);
     }
   });
@@ -641,7 +638,7 @@ describe('transformations', () => {
   it('`union` should work - 2', async () => {
     const result = await r.union([0, 1, 2], [3, 4, 5], [6, 7]).run();
     assert.deepEqual(result.length, 8);
-    for (var i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++) {
       assert(result.indexOf(i) >= 0);
     }
   });
@@ -702,6 +699,7 @@ describe('transformations', () => {
 
   it('`sample` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)

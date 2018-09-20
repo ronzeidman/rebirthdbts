@@ -1,5 +1,3 @@
-// 0 passing (10ms)
-// 1 failing
 import assert from 'assert';
 import { TermType } from '../src/proto/enums';
 import {

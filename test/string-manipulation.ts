@@ -21,6 +21,7 @@ describe('string manipulation', () => {
 
   it('`match` should throw if no arguement has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .expr('foo')
         .match()

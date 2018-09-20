@@ -80,6 +80,7 @@ export interface TableOptions {
 }
 
 export interface DeleteOptions {
+  ignoreWriteHook?: boolean;
   returnChanges?: boolean | string | 'always'; // true, false or "always" default: false
   durability?: Durability; // "soft" or "hard" defualt: table
 }
@@ -126,7 +127,7 @@ export interface HttpRequestOptions {
   reattempts?: number; // default 5
   redirects?: number; // default 1
   verify?: boolean; // default true
-  resultFormat: 'text' | 'json' | 'jsonp' | 'binary' | 'auto';
+  resultFormat?: 'text' | 'json' | 'jsonp' | 'binary' | 'auto';
 
   // Request Options
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD'; // "GET" "POST" "PUT" "PATCH" "DELETE" "HEAD"
@@ -137,12 +138,12 @@ export interface HttpRequestOptions {
 
 export interface HTTPStreamRequestOptions extends HttpRequestOptions {
   // Pagination
-  page:
+  page?:
     | 'link-next'
     | ((
         param: RDatum<{ params: any; header: any; body: any }>
       ) => RValue<string>);
-  pageLimit: number; // -1 = no limit.
+  pageLimit?: number; // -1 = no limit.
 }
 
 export interface WaitOptions {
@@ -296,6 +297,16 @@ export interface MasterPool extends EventEmitter {
   getLength(): number;
   getAvailableLength(): number;
   getPools(): ConnectionPool[];
+  setOptions(options: {
+    discovery?: boolean;
+    buffer?: number;
+    max?: number;
+    timeoutError?: number;
+    timeoutGb?: number;
+    maxExponent?: number;
+    silent?: boolean;
+    log?: (msg: string) => void;
+  }): void;
 }
 export interface ConnectionPool extends EventEmitter {
   readonly isHealthy: boolean;
@@ -433,7 +444,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   ): T extends U[] ? RDatum<T> : never;
   spliceAt<U>(
     index: RValue<number>,
-    value: RValue<U>
+    value: RValue<U[]>
   ): T extends U[] ? RDatum<T> : never;
   deleteAt<U>(
     offset: RValue<number>,
@@ -541,12 +552,29 @@ export interface RDatum<T = any> extends RQuery<T> {
     ...objects: Array<object | RDatum | ((arg: RDatum<T>) => any)>
   ): RDatum<U>;
 
+  innerJoin<U, T2 = T extends Array<infer T1> ? T1 : never>(
+    other: RStream<U> | RValue<U[]>,
+    predicate: (doc1: RDatum<T2>, doc2: RDatum<U>) => RValue<boolean>
+  ): RDatum<Array<JoinResult<T2, U>>>;
+  outerJoin<U, T2 = T extends Array<infer T1> ? T1 : never>(
+    other: RStream<U> | RValue<U[]>,
+    predicate: (doc1: RDatum<T2>, doc2: RDatum<U>) => RValue<boolean>
+  ): RDatum<Array<JoinResult<T2, U>>>; // actually left join
+  eqJoin<U, T2 = T extends Array<infer T1> ? T1 : never>(
+    fieldOrPredicate: RValue<keyof T2> | Func<T2, boolean>,
+    rightTable: RTable<U>,
+    options?: { index: string }
+  ): RStream<JoinResult<T2, U>>;
   skip(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
   limit(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
   slice(
     start: RValue<number>,
     end?: RValue<number>,
-    options?: { leftBound: 'open' | 'closed'; rightBound: 'open' | 'closed' }
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): T extends Array<infer T1> ? RDatum<T> : never;
+  slice(
+    start: RValue<number>,
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
   ): T extends Array<infer T1> ? RDatum<T> : never;
   sample(n: RValue<number>): T extends Array<infer T1> ? RDatum<T> : never;
   offsetsOf<U = T extends Array<infer T1> ? T1 : never>(
@@ -556,13 +584,17 @@ export interface RDatum<T = any> extends RQuery<T> {
   isEmpty(): T extends Array<infer T1> ? RDatum<boolean> : never;
 
   coerceTo<U = any>(
-    type: 'object'
+    type: 'object' | 'OBJECT'
   ): T extends Array<infer T1> ? RDatum<U> : never;
-  coerceTo(type: 'string'): RDatum<string>;
-  coerceTo(type: 'array'): RDatum<any[]>;
+  coerceTo(type: 'string' | 'STRING'): RDatum<string>;
+  coerceTo(type: 'array' | 'ARRAY'): RDatum<any[]>;
   // Works only if T is a string
-  coerceTo(type: 'number'): T extends string ? RDatum<number> : never;
-  coerceTo(type: 'binary'): T extends string ? RDatum<Buffer> : never;
+  coerceTo(
+    type: 'number' | 'NUMBER'
+  ): T extends string ? RDatum<number> : never;
+  coerceTo(
+    type: 'binary' | 'BINARY'
+  ): T extends string ? RDatum<Buffer> : never;
   match(
     regexp: RValue<string>
   ): T extends string ? RDatum<MatchResults | null> : never;
@@ -626,15 +658,15 @@ export interface RDatum<T = any> extends RQuery<T> {
   floor(): T extends number ? RDatum<number> : never;
   // Works only for bool
   branch(
-    trueBranch: T,
+    trueBranch: any,
     falseBranchOrTest: any,
     ...branches: any[]
   ): T extends boolean ? RDatum<any> : never;
   and(
-    ...bool: Array<RDatum<boolean>>
+    ...bool: Array<RValue<boolean>>
   ): T extends boolean ? RDatum<boolean> : never;
   or(
-    ...bool: Array<RDatum<boolean>>
+    ...bool: Array<RValue<boolean>>
   ): T extends boolean ? RDatum<boolean> : never;
   not(): T extends boolean ? RDatum<boolean> : never;
   // Works only for Date
@@ -660,7 +692,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   // Works only for geo
   distance(
     geo: RValue,
-    options?: { geoSystem: string; unit: string }
+    options?: { geoSystem?: string; unit?: string }
   ): RDatum<number>;
   toGeojson(): RDatum;
   // Works only for line
@@ -695,17 +727,17 @@ export interface RStream<T = any> extends RQuery<T[]> {
 
   // FROM
 
-  innerJoin<U>(
-    other: RStream<U>,
+  innerJoin<U = any>(
+    other: RStream<U> | RValue<U[]>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>;
-  outerJoin<U>(
-    other: RStream<U>,
+  outerJoin<U = any>(
+    other: RStream<U> | RValue<U[]>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>; // actually left join
-  eqJoin<U>(
+  eqJoin<U = any>(
     fieldOrPredicate: RValue<keyof T> | Func<T, boolean>,
-    rightTable: RValue<string>,
+    rightTable: RTable<U>,
     options?: { index: string }
   ): RStream<JoinResult<T, U>>;
 
@@ -743,9 +775,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
   ): RDatum<boolean>;
 
   // ORDER BY
-  orderBy(
-    ...fieldOrIndex: Array<FieldSelector<T> | { index: string }>
-  ): RStream<T>; // also r.desc(string)
+  orderBy(...fieldOrIndex: Array<FieldSelector<T> | { index: string }>): this; // also r.desc(string)
 
   // GROUP
   group<U extends keyof T>(
@@ -787,15 +817,19 @@ export interface RStream<T = any> extends RQuery<T[]> {
     ...objects: Array<object | RDatum | ((arg: RDatum<T>) => any)>
   ): RStream<U>;
 
-  skip(n: RValue<number>): RStream<T>;
-  limit(n: RValue<number>): RStream<T>;
+  skip(n: RValue<number>): this;
+  limit(n: RValue<number>): this;
   slice(
     start: RValue<number>,
     end?: RValue<number>,
-    options?: { leftBound: 'open' | 'closed'; rightBound: 'open' | 'closed' }
-  ): RStream;
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): this;
+  slice(
+    start: RValue<number>,
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): this;
   nth(n: RValue<number>): RDatum<T>;
-  sample(n: RValue<number>): RDatum<T[]>;
+  sample(n: RValue<number>): this;
   offsetsOf(single: RValue<T> | Func<T, boolean>): RDatum<number[]>;
 
   isEmpty(): RDatum<boolean>;
@@ -894,7 +928,7 @@ export interface RTable<T = any> extends RSelection<T> {
   ): RDatum<IndexChangeResult>;
   indexCreate(
     indexName: RValue<string>,
-    options?: { multi: boolean; geo: boolean }
+    options?: { multi?: boolean; geo?: boolean }
   ): RDatum<IndexChangeResult>;
 
   indexDrop(indexName: RValue<string>): RDatum<IndexChangeResult>;
@@ -997,6 +1031,11 @@ export interface RDatabase {
   rebalance(): RDatum<RebalanceResult>;
   reconfigure(options?: TableReconfigureOptions): RDatum<ReconfigureResult>;
   wait(options?: WaitOptions): RDatum<{ ready: number }>;
+  info(): RDatum<{
+    id: string;
+    name: string;
+    type: 'DB';
+  }>;
 }
 
 export interface R {
@@ -1027,15 +1066,15 @@ export interface R {
   connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
   getPoolMaster(): MasterPool | undefined;
   setNestingLevel(level: number): void;
-  setArrayLimit(limit: number): void;
+  setArrayLimit(limit?: number): void;
   serialize(query: RQuery): string;
   deserialize<T extends RQuery = RQuery>(query: string): T;
   // send to DB
-  expr<T>(val: T): RDatum<T>;
-  <T>(val: T): RDatum<T>;
+  expr<T>(val: T, nestingLevel?: number): RDatum<T>;
+  <T>(val: T, nestingLevel?: number): RDatum<T>;
   // indexes
-  desc(indexName: RValue<string>): any;
-  asc(indexName: RValue<string>): any;
+  desc(indexName: RValue<string> | Func<any>): any;
+  asc(indexName: RValue<string> | Func<any>): any;
   // Object creation
   // Time
   epochTime(epochTime: RValue<number>): RDatum<Date>;
@@ -1070,11 +1109,11 @@ export interface R {
     ...keyOrValue: RValue[]
   ): RDatum<T>;
   // Geo
-  point(longitude: RValue<string>, latitude: RValue<string>): RDatum;
+  point(longitude: RValue<number>, latitude: RValue<number>): RDatum;
   line(
-    point1: [string, string],
-    point2: [string, string],
-    ...points: Array<[string, string]>
+    point1: [number, number],
+    point2: [number, number],
+    ...points: Array<[number, number]>
   ): RDatum;
   line(point1: RDatum, point2: RDatum, ...points: RDatum[]): RDatum;
   polygon(
@@ -1084,13 +1123,13 @@ export interface R {
     ...points: RDatum[]
   ): RDatum;
   polygon(
-    ll1: [string, string],
-    ll2: [string, string],
-    ll3: [string, string],
-    ...longitudeLatitudes: Array<[string, string]>
+    ll1: [number, number],
+    ll2: [number, number],
+    ll3: [number, number],
+    ...longitudeLatitudes: Array<[number, number]>
   ): RDatum;
   circle(
-    longitudeLatitude: [string, string] | RDatum,
+    longitudeLatitude: [number, number] | RDatum,
     radius: RValue<number>,
     options?: {
       numVertices?: number;
@@ -1328,19 +1367,19 @@ export interface R {
   ): RDatum<T[U]>;
 
   innerJoin<T, U>(
-    stream: RStream<T>,
-    other: RStream<U>,
+    stream: RStream<T> | RValue<T[]>,
+    other: RStream<U> | RValue<U[]>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>;
   outerJoin<T, U>(
-    stream: RStream<T>,
-    other: RStream<U>,
+    stream: RStream<T> | RValue<T[]>,
+    other: RStream<U> | RValue<T[]>,
     predicate: (doc1: RDatum<T>, doc2: RDatum<U>) => RValue<boolean>
   ): RStream<JoinResult<T, U>>; // actually left join
-  eqJoin<T, U>(
-    stream: RStream<T>,
+  eqJoin<T, U = any>(
+    stream: RStream<T> | RValue<T[]>,
     fieldOrPredicate: RValue<keyof T> | Func<T, boolean>,
-    rightTable: RValue<string>,
+    rightTable: RTable<U>,
     options?: { index: string }
   ): RStream<JoinResult<T, U>>;
 
@@ -1348,16 +1387,12 @@ export interface R {
     stream: RStream<T>
   ): T extends JoinResult<infer U1, infer U2> ? U1 & U2 : never;
 
-  union<T, U = T>(
-    stream: T extends Array<infer TArr>
-      ? RStream<T> | RValue<TArr>
-      : RStream<T>,
+  union<T, U = T extends Array<infer TArr> ? TArr : T>(
+    stream: RValue<U[]> | RStream<U>,
     ...other: Array<RStream<U> | RValue<U[]> | { interleave: boolean | string }>
   ): RStream<U>;
-  union<T, U = T>(
-    stream: T extends Array<infer TArr>
-      ? RStream<T> | RFeed<T> | RValue<TArr>
-      : RStream<T> | RFeed<T>,
+  union<T, U = T extends Array<infer TArr> ? TArr : T>(
+    stream: RValue<U[]> | RStream<U> | RFeed<U>,
     ...other: Array<
       RStream<U> | RValue<U[]> | RFeed<U> | { interleave: boolean | string }
     >
@@ -1445,10 +1480,10 @@ export interface R {
     datum: RDatum<T>,
     ...fields: Array<FieldSelector<T>>
   ): T extends Array<infer T1> ? RDatum<T> : never;
-  orderBy<T>(
-    stream: RStream<T>,
+  orderBy<T, U extends RStream<T>>(
+    stream: U,
     ...fieldOrIndex: Array<FieldSelector<T> | { index: string }>
-  ): RStream<T>; // also r.desc(string)
+  ): U; // also r.desc(string)
   group<
     T,
     F extends T extends Array<infer T1> ? keyof T1 : never,
@@ -1480,7 +1515,7 @@ export interface R {
     value?: RValue<T> | Func<T, number | null>
   ): RDatum<number>;
   avg<T, U = T extends Array<infer T1> ? T1 : never>(
-    datum: RDatum<T>,
+    datum: RValue<T>,
     value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   avg<T>(
@@ -1488,7 +1523,7 @@ export interface R {
     value?: RValue<T> | Func<T, number | null>
   ): RDatum<number>;
   min<T, U = T extends Array<infer T1> ? T1 : never>(
-    datum: RDatum<T>,
+    datum: RValue<T>,
     value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   min<T>(
@@ -1496,7 +1531,7 @@ export interface R {
     value?: RValue<T> | Func<T, number | null> | { index: string }
   ): RDatum<number>;
   max<T, U = T extends Array<infer T1> ? T1 : never>(
-    datum: RDatum<T>,
+    datum: RValue<T>,
     value?: FieldSelector<U, number | null>
   ): T extends Array<infer T1> ? RDatum<number> : never;
   max<T>(
@@ -1504,7 +1539,7 @@ export interface R {
     value?: RValue<T> | Func<T, number | null> | { index: string }
   ): RDatum<number>;
   reduce<T, U = any, ONE = T extends Array<infer T1> ? T1 : never>(
-    datum: RDatum<T>,
+    datum: RValue<T>,
     reduceFunction: (left: RDatum<ONE>, right: RDatum<ONE>) => any
   ): T extends Array<infer T1> ? RDatum<U> : never;
   reduce<T, U = any>(
@@ -1512,7 +1547,7 @@ export interface R {
     reduceFunction: (left: RDatum<T>, right: RDatum<T>) => any
   ): RDatum<U>;
   fold<T, ACC = any, RES = any, ONE = T extends Array<infer T1> ? T1 : never>(
-    datum: RDatum<T>,
+    datum: RValue<T>,
     base: any,
     foldFunction: (acc: RDatum<ACC>, next: RDatum<ONE>) => any, // this any is ACC
     options?: {
@@ -1544,7 +1579,7 @@ export interface R {
       finalEmit?: (acc: RStream) => any[]; // this any is also RES
     }
   ): RStream<RES>;
-  distinct<T>(datum: RDatum<T>): RDatum<T>;
+  distinct<T>(datum: RValue<T[]>): RDatum<T[]>;
   distinct<T>(stream: RStream<T>): RStream<T>;
   distinct<T, TIndex = any>(
     stream: RStream<T>,
@@ -1579,28 +1614,27 @@ export interface R {
     stream: RStream,
     ...objects: Array<object | RDatum | ((arg: RDatum) => any)>
   ): RStream<U>;
-  skip<T>(
-    datum: RDatum<T>,
-    n: RValue<number>
-  ): T extends Array<infer T1> ? RDatum<T> : never;
+  skip<T extends any[]>(datum: RDatum<T>, n: RValue<number>): RDatum<T>;
   skip<T>(stream: RStream<T>, n: RValue<number>): RStream<T>;
-  limit<T>(
-    datum: RDatum<T>,
-    n: RValue<number>
-  ): T extends Array<infer T1> ? RDatum<T> : never;
+  limit<T extends any[]>(datum: RDatum<T>, n: RValue<number>): RDatum<T>;
   limit<T>(stream: RStream<T>, n: RValue<number>): RStream<T>;
-  slice<T>(
+  slice<T extends any[]>(
     datum: RDatum<T>,
     start: RValue<number>,
     end?: RValue<number>,
-    options?: { leftBound: 'open' | 'closed'; rightBound: 'open' | 'closed' }
-  ): T extends Array<infer T1> ? RDatum<T> : never;
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): RDatum<T>;
+  slice<T extends any[]>(
+    datum: RDatum<T>,
+    start: RValue<number>,
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): RDatum<T>;
   slice<T>(
     stream: RStream<T>,
     start: RValue<number>,
     end?: RValue<number>,
-    options?: { leftBound: 'open' | 'closed'; rightBound: 'open' | 'closed' }
-  ): RStream;
+    options?: { leftBound?: 'open' | 'closed'; rightBound?: 'open' | 'closed' }
+  ): RStream<T>;
   nth<T>(
     datum: RDatum<T>,
     attribute: RValue<number>
@@ -1649,9 +1683,11 @@ export interface R {
     type: 'binary'
   ): T extends string ? RDatum<Buffer> : never;
 
-  do<T, U>(
-    datum: RDatum<T>,
-    ...args: Array<RDatum | ((arg: RDatum<T>, ...args: RDatum[]) => U)>
+  do<T extends Primitives | object, U>(
+    datum: RValue<T>,
+    ...args: Array<
+      RDatum | Primitives | object | ((arg: RDatum<T>, ...args: RDatum[]) => U)
+    >
   ): U extends RStream ? RStream : RDatum;
 
   default<T>(datum: RDatum<T>, value: T): RDatum<T>;
@@ -1708,135 +1744,90 @@ export interface R {
 
   // Works only if T is a string
 
-  match<T>(
-    datum: RDatum<T>,
+  match(
+    datum: RValue<string>,
     regexp: RValue<string>
-  ): T extends string ? RDatum<MatchResults | null> : never;
-  split<T>(
-    datum: RDatum<T>,
+  ): RDatum<MatchResults | null>;
+  split(
+    datum: RValue<string>,
     seperator?: RValue<string>,
     maxSplits?: RValue<number>
-  ): T extends string ? RDatum<string[]> : never;
-  upcase<T>(datum: RDatum<T>): T extends string ? RDatum<string> : never;
-  downcase<T>(datum: RDatum<T>): T extends string ? RDatum<string> : never;
-  add<T>(
-    datum: RDatum<T>,
+  ): RDatum<string[]>;
+  upcase(datum: RValue<string>): RDatum<string>;
+  downcase(datum: RValue<string>): RDatum<string>;
+  add<T extends string | number | Date>(
+    datum: RValue<T>,
     ...str: Array<RValue<string> | RValue<number>>
-  ): T extends string | number | Date ? RDatum<T> : never;
-  gt<T>(
-    datum: RDatum<T>,
+  ): RDatum<T>;
+  gt<T extends string | number | Date>(
+    datum: RValue<T>,
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<boolean> : never;
-  ge<T>(
-    datum: RDatum<T>,
+  ): RDatum<boolean>;
+  ge<T extends string | number | Date>(
+    datum: RValue<T>,
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<boolean> : never;
-  lt<T>(
-    datum: RDatum<T>,
+  ): RDatum<boolean>;
+  lt<T extends string | number | Date>(
+    datum: RValue<T>,
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<boolean> : never;
-  le<T>(
-    datum: RDatum<T>,
+  ): RDatum<boolean>;
+  le<T extends string | number | Date>(
+    datum: RValue<T>,
     ...value: Array<RValue<string> | RValue<number> | RValue<Date>>
-  ): T extends string | number | Date ? RDatum<boolean> : never;
+  ): RDatum<boolean>;
   // Works only for numbers
-  sub<T>(
-    datum: RDatum<T>,
+  sub<T extends number | Date>(
+    datum: RValue<T>,
     ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : T extends Date ? RDatum<Date> : never;
-  sub<T>(
-    datum: RDatum<T>,
-    date: RValue<Date>
-  ): T extends Date ? RDatum<number> : never;
-  mul<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  div<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  mod<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
+  ): RDatum<T>;
+  sub(datum: RValue<Date>, date: RValue<Date>): RDatum<number>;
+  mul(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  div(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  mod(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
 
-  bitAnd<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitOr<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitXor<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitNot<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitSal<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitShl<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitSar<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
-  bitSht<T>(
-    datum: RDatum<T>,
-    ...num: Array<RValue<number>>
-  ): T extends number ? RDatum<number> : never;
+  bitAnd(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitOr(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitXor(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitNot(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitSal(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitShl(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitSar(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
+  bitSht(datum: RValue<number>, ...num: Array<RValue<number>>): RDatum<number>;
 
-  round<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
-  ceil<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
-  floor<T>(datum: RDatum<T>): T extends number ? RDatum<number> : never;
+  round(datum: RValue<number>): RDatum<number>;
+  ceil(datum: RValue<number>): RDatum<number>;
+  floor(datum: RValue<number>): RDatum<number>;
   // Works only for bool
-  branch<T = any>(
+  branch(
     datum: RValue<boolean>,
-    trueBranch: RValue<T>,
+    trueBranch: any,
     falseBranchOrTest: any,
     ...branches: any[]
-  ): T extends boolean ? RDatum<any> : never;
-  and<T>(
-    datum: RDatum<T>,
-    ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<boolean> : never;
-  or<T>(
-    datum: RDatum<T>,
-    ...bool: Array<RDatum<boolean>>
-  ): T extends boolean ? RDatum<boolean> : never;
-  not<T>(datum: RDatum<T>): T extends boolean ? RDatum<boolean> : never;
+  ): RDatum<any>;
+  and(datum: RValue<boolean>, ...bool: Array<RValue<boolean>>): RDatum<boolean>;
+  or(datum: RValue<boolean>, ...bool: Array<RValue<boolean>>): RDatum<boolean>;
+  not(datum: RValue<boolean>): RDatum<boolean>;
   // Works only for Date
-  inTimezone<T>(
-    datum: RDatum<T>,
-    timezone: string
-  ): T extends Date ? RDatum<Date> : never;
-  timezone<T>(datum: RDatum<T>): T extends Date ? RDatum<string> : never;
-  during<T>(
-    datum: RDatum<T>,
+  inTimezone(datum: RValue<Date>, timezone: string): RDatum<Date>;
+  timezone(datum: RValue<Date>): RDatum<string>;
+  during(
+    datum: RValue<Date>,
     start: RValue<Date>,
     end: RValue<Date>,
     options?: { leftBound: 'open' | 'closed'; rightBound: 'open' | 'closed' }
-  ): T extends Date ? RDatum<boolean> : never;
-  date<T>(datum: RDatum<T>): T extends Date ? RDatum<Date> : never;
-  timeOfDay<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  year<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  month<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  day<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  dayOfWeek<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  dayOfYear<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  hours<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  minutes<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  seconds<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
-  toISO8601<T>(datum: RDatum<T>): T extends Date ? RDatum<string> : never;
-  toEpochTime<T>(datum: RDatum<T>): T extends Date ? RDatum<number> : never;
+  ): RDatum<boolean>;
+  date(datum: RValue<Date>): RDatum<Date>;
+  timeOfDay(datum: RValue<Date>): RDatum<number>;
+  year(datum: RValue<Date>): RDatum<number>;
+  month(datum: RValue<Date>): RDatum<number>;
+  day(datum: RValue<Date>): RDatum<number>;
+  dayOfWeek(datum: RValue<Date>): RDatum<number>;
+  dayOfYear(datum: RValue<Date>): RDatum<number>;
+  hours(datum: RValue<Date>): RDatum<number>;
+  minutes(datum: RValue<Date>): RDatum<number>;
+  seconds(datum: RValue<Date>): RDatum<number>;
+  toISO8601(datum: RValue<Date>): RDatum<string>;
+  toEpochTime(datum: RValue<Date>): RDatum<number>;
   // Works only for geo
   distance<T>(
     datum: RDatum<T>,
@@ -1851,13 +1842,13 @@ export interface R {
   toJsonString<T>(datum: RDatum<T>): RDatum<string>;
   toJSON<T>(datum: RDatum<T>): RDatum<string>;
 
-  eq<T>(datum: RDatum<T>, ...value: RValue[]): RDatum<boolean>;
-  ne<T>(datum: RDatum<T>, ...value: RValue[]): RDatum<boolean>;
+  eq(datum: RValue, ...value: RValue[]): RDatum<boolean>;
+  ne(datum: RValue, ...value: RValue[]): RDatum<boolean>;
 
   keys<T>(datum: RDatum<T>): RDatum<string[]>;
   values<T>(datum: RDatum<T>): RDatum<Array<T[keyof T]>>;
 
-  typeOf(query: RQuery): RDatum<string>;
+  typeOf(query: any): RDatum<string>;
   info(
     query: RQuery
   ): RDatum<{
@@ -1869,6 +1860,13 @@ export interface R {
     name?: string;
     primary_key?: string;
     type: string;
+  }>;
+  info(
+    db: RDatabase
+  ): RDatum<{
+    id: string;
+    name: string;
+    type: 'DB';
   }>;
 }
 

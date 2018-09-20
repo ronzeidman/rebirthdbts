@@ -260,6 +260,7 @@ describe('document manipulation', () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .literal('foo')
         .run();
       assert.fail('should throw');
@@ -309,6 +310,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .append()
         .run();
       assert.fail('should throw');
@@ -337,6 +339,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .prepend()
         .run();
       assert.fail('sholud throw');
@@ -365,6 +368,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .difference()
         .run();
       assert.fail('should throw');
@@ -399,6 +403,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .setInsert()
         .run();
       assert.fail('should throw');
@@ -427,6 +432,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .setUnion()
         .run();
       assert.fail('should throw');
@@ -455,6 +461,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .setIntersection()
         .run();
       assert.fail('should throw');
@@ -483,6 +490,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .setDifference()
         .run();
       assert.fail('should throw');
@@ -518,6 +526,7 @@ describe('document manipulation', () => {
 
   it('`(...)` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)()
@@ -537,6 +546,7 @@ describe('document manipulation', () => {
 
   it('`getField` should throw if no argument has been passed', async () => {
     try {
+      // @ts-ignore
       await r
         .db(dbName)
         .table(tableName)
@@ -602,6 +612,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .insertAt()
         .run();
       assert.fail('should throw');
@@ -630,6 +641,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .spliceAt()
         .run();
       assert.fail('should throw');
@@ -664,6 +676,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .deleteAt()
         .run();
       assert.fail('should throw');
@@ -684,6 +697,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .deleteAt(1, 1, 1, 1)
         .run();
       assert.fail('should throw');
@@ -712,6 +726,7 @@ describe('document manipulation', () => {
       await r
         .db(dbName)
         .table(tableName)
+        // @ts-ignore
         .changeAt()
         .run();
       assert.fail('should throw');

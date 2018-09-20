@@ -1,5 +1,3 @@
-// 14 passing (67ms)
-// 3 failing
 import assert from 'assert';
 import { r } from '../src';
 import config from './config';
@@ -14,32 +12,33 @@ describe('datum', () => {
   });
 
   it('All raws datum should be defined', async () => {
-    let result = await r.expr(1).run();
-    assert.equal(result, 1);
+    const result1 = await r.expr(1).run();
+    assert.equal(result1, 1);
 
-    result = await r.expr(null).run();
-    assert.equal(result, null);
+    const result2 = await r.expr(null).run();
+    assert.equal(result2, null);
 
-    result = await r.expr(false).run();
-    assert.equal(result, false);
+    const result3 = await r.expr(false).run();
+    assert.equal(result3, false);
 
-    result = await r.expr(true).run();
-    assert.equal(result, true);
+    const result4 = await r.expr(true).run();
+    assert.equal(result4, true);
 
-    result = await r.expr('Hello').run();
-    assert.equal(result, 'Hello');
+    const result5 = await r.expr('Hello').run();
+    assert.equal(result5, 'Hello');
 
-    result = await r.expr([0, 1, 2]).run();
-    assert.deepEqual(result, [0, 1, 2]);
+    const result6 = await r.expr([0, 1, 2]).run();
+    assert.deepEqual(result6, [0, 1, 2]);
 
-    result = await r.expr({ a: 0, b: 1 }).run();
-    assert.deepEqual(result, { a: 0, b: 1 });
+    const result7 = await r.expr({ a: 0, b: 1 }).run();
+    assert.deepEqual(result7, { a: 0, b: 1 });
   });
 
   it('`expr` is not defined after a term', async () => {
     try {
       await r
         .expr(1)
+        // @ts-ignore
         .expr('foo')
         .run();
       assert.fail('should throw');
@@ -62,7 +61,7 @@ describe('datum', () => {
 
   describe('nesting level', () => {
     afterEach(() => {
-      r.setNestingLevel(r._nestingLevel);
+      r.setNestingLevel(20);
     });
 
     it('`r.expr` should throw when setNestingLevel is too small', async () => {
@@ -164,13 +163,13 @@ describe('datum', () => {
   });
 
   it('`r.binary` should work - with a ReQL term', async () => {
-    let result = await r.binary(r.expr('foo')).run();
-    assert(result instanceof Buffer);
-    result = await r
-      .expr(result)
+    const result1 = await r.binary(r.expr('foo')).run();
+    assert(result1 instanceof Buffer);
+    const result2 = await r
+      .expr(result1)
       .coerceTo('STRING')
       .run();
-    assert.equal(result, 'foo');
+    assert.equal(result2, 'foo');
   });
 
   it('`r.expr` should work with binaries', async () => {
