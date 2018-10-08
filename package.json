@@ -1,6 +1,6 @@
 {
   "name": "rethinkdb-ts",
-  "version": "2.4.0-rc.7",
+  "version": "2.4.0-rc.8",
   "description": "RethinkDB TypeScript driver",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -20,7 +20,7 @@
   "author": "Ron Zeidman",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rethinkdb/rethinkdb-tsissues"
+    "url": "https://github.com/rethinkdb/rethinkdb-ts/issues"
   },
   "homepage": "https://github.com/rethinkdb/rethinkdb-ts#readme",
   "devDependencies": {

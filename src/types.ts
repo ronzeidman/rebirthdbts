@@ -938,8 +938,8 @@ export interface RTable<T = any> extends RSelection<T> {
     newName: RValue<string>,
     options?: { overwrite: boolean }
   ): RDatum<IndexChangeResult>;
-  indexStatus(...indexName: string[]): RDatum<IndexStatus>;
-  indexWait(...indexName: string[]): RDatum<IndexStatus>;
+  indexStatus(...indexName: string[]): RDatum<IndexStatus[]>;
+  indexWait(...indexName: string[]): RDatum<IndexStatus[]>;
 
   insert(obj: any, options?: InsertOptions): RDatum<WriteResult<T>>;
   sync(): RDatum<{ synced: number }>;
@@ -1228,8 +1228,11 @@ export interface R {
     newName: RValue<string>,
     options?: { overwrite: boolean }
   ): RDatum<IndexChangeResult>;
-  indexStatus<T>(table: RTable<T>, ...indexName: string[]): RDatum<IndexStatus>;
-  indexWait<T>(table: RTable<T>, ...indexName: string[]): RDatum<IndexStatus>;
+  indexStatus<T>(
+    table: RTable<T>,
+    ...indexName: string[]
+  ): RDatum<IndexStatus[]>;
+  indexWait<T>(table: RTable<T>, ...indexName: string[]): RDatum<IndexStatus[]>;
 
   insert<T>(
     table: RTable<T>,
