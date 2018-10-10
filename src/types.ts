@@ -408,6 +408,7 @@ export interface RQuery<T = any> {
   ): T extends Array<infer T1>
     ? Promise<RCursor<T1>>
     : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
+  then(): never;
 }
 export interface RDatum<T = any> extends RQuery<T> {
   do<U>(
