@@ -10,9 +10,9 @@ import {
   Connection,
   MasterPool,
   RCursor,
+  RethinkDBErrorType,
   RPoolConnectionOptions,
   RServer,
-  RethinkDBErrorType,
   RunOptions
 } from '../types';
 import { RethinkDBConnection } from './connection';
@@ -127,13 +127,13 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   public waitForHealthy() {
-    return new Promise((resolve, reject) => {
+    return new Promise<this>((resolve, reject) => {
       if (this.isHealthy) {
-        resolve();
+        resolve(this);
       } else {
         this.once('healthy', healthy => {
           if (healthy) {
-            resolve();
+            resolve(this);
           } else {
             reject(
               new RethinkDBError('Error initializing pool', {

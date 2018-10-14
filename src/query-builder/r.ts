@@ -16,7 +16,7 @@ import { funcall, rConfig, rConsts, termConfig } from './query-config';
 import { expr, termBuilder } from './term-builder';
 
 export const r: R = expr as any;
-(r as any).connectPool = async (options: RPoolConnectionOptions = {}) => {
+r.connectPool = async (options: RPoolConnectionOptions = {}) => {
   const { host, port, server = { host, port }, servers = [server] } = options;
   if (host || port) {
     if (options.server) {
@@ -52,10 +52,10 @@ export const r: R = expr as any;
   } as any);
   (r as any).pool = cpool;
   cpool.initServers().catch(() => undefined);
-  await cpool.waitForHealthy();
+  return await cpool.waitForHealthy();
 };
 
-(r as any).connect = async (options: RConnectionOptions = {}) => {
+r.connect = async (options: RConnectionOptions = {}) => {
   const { host, port, server = { host, port } } = options;
   if ((host || port) && options.server) {
     throw new RethinkDBError(
