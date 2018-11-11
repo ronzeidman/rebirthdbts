@@ -6,8 +6,8 @@ import { Cursor } from '../response/cursor';
 import {
   ConnectionPool,
   RConnectionOptions,
-  RServerConnectionOptions,
   RethinkDBErrorType,
+  RServerConnectionOptions,
   RunOptions
 } from '../types';
 import { RethinkDBConnection } from './connection';

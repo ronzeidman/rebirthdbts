@@ -17,7 +17,13 @@ import { expr, termBuilder } from './term-builder';
 
 export const r: R = expr as any;
 r.connectPool = async (options: RPoolConnectionOptions = {}) => {
-  const { host, port, server = { host, port }, servers = [server] } = options;
+  const {
+    host,
+    port,
+    server = { host, port },
+    servers = [server],
+    waitForHealthy = true
+  } = options;
   if (host || port) {
     if (options.server) {
       throw new RethinkDBError(
@@ -52,7 +58,7 @@ r.connectPool = async (options: RPoolConnectionOptions = {}) => {
   } as any);
   (r as any).pool = cpool;
   cpool.initServers().catch(() => undefined);
-  return await cpool.waitForHealthy();
+  return waitForHealthy ? await cpool.waitForHealthy() : cpool;
 };
 
 r.connect = async (options: RConnectionOptions = {}) => {

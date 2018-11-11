@@ -1,17 +1,17 @@
 import { EventEmitter } from 'events';
-import { Socket, TcpNetConnectOpts, connect as netConnect } from 'net';
+import { connect as netConnect, Socket, TcpNetConnectOpts } from 'net';
 import { connect as tlsConnect } from 'tls';
 import { isError } from 'util';
-import { RServerConnectionOptions, RethinkDBErrorType } from '..';
+import { RethinkDBErrorType, RServerConnectionOptions } from '..';
 import { RethinkDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { QueryType, ResponseType } from '../proto/enums';
 import { DataQueue } from './data-queue';
 import {
-  NULL_BUFFER,
   buildAuthBuffer,
   compareDigest,
   computeSaltedPassword,
+  NULL_BUFFER,
   validateVersion
 } from './handshake-utils';
 
@@ -43,12 +43,10 @@ export class RethinkDBSocket extends EventEmitter {
       data: DataQueue<ResponseJson | Error>;
     }
   >();
-  private mark = 0;
   private isOpen = false;
   private nextToken = 0;
   private buffer = Buffer.alloc(0);
   private mode: 'handshake' | 'response' = 'handshake';
-  private ca?: Buffer[];
 
   constructor({
     connectionOptions,
@@ -66,7 +64,7 @@ export class RethinkDBSocket extends EventEmitter {
   }
 
   public eventNames() {
-    return ['connect', 'query', 'data', 'release', 'error'];
+    return ['connect', 'query', 'data', 'release', 'error', 'close'];
   }
 
   public async connect() {
@@ -125,6 +123,7 @@ export class RethinkDBSocket extends EventEmitter {
       }
     });
     this.isOpen = true;
+    this.lastError = undefined;
     await this.performHandshake();
     this.emit('connect');
   }
@@ -253,6 +252,7 @@ export class RethinkDBSocket extends EventEmitter {
     this.socket = undefined;
     this.isOpen = false;
     this.mode = 'handshake';
+    this.emit('close');
     this.removeAllListeners();
     this.nextToken = 0;
   }

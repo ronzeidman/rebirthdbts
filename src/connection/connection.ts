@@ -8,13 +8,13 @@ import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
 import {
   Connection,
-  RServerConnectionOptions,
   RethinkDBErrorType,
+  RServerConnectionOptions,
   RunOptions,
   ServerInfo
 } from '../types';
 import { NULL_BUFFER } from './handshake-utils';
-import { RNConnOpts, RethinkDBSocket, setConnectionDefaults } from './socket';
+import { RethinkDBSocket, RNConnOpts, setConnectionDefaults } from './socket';
 
 const tableQueries = [
   TermType.TABLE_CREATE,
@@ -99,8 +99,13 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     }
     this.socket
       .on('connect', () => this.emit('connect'))
-      .on('close', () => this.emit('close'))
-      .on('error', err => this.reportError(err))
+      .on('close', () => {
+        this.close();
+        this.emit('close');
+      })
+      .on('error', err => {
+        this.reportError(err);
+      })
       .on('data', (data, token) => this.emit(data, token))
       .on('release', count => {
         if (count === 0) {
@@ -230,19 +235,25 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
   private startPinging() {
     if (this.pingInterval > 0) {
       this.pingTimer = setTimeout(async () => {
-        const token = this.socket.sendQuery([
-          QueryType.START,
-          [TermType.ERROR, ['ping']]
-        ]);
-        const result = await this.socket.readNext(token);
-        if (
-          result.t !== ResponseType.RUNTIME_ERROR ||
-          result.e !== ErrorType.USER ||
-          result.r[0] !== 'ping'
-        ) {
-          this.reportError(
-            new RethinkDBError('Ping error', { responseType: result.t })
-          );
+        try {
+          if (this.socket.status === 'open') {
+            const token = this.socket.sendQuery([
+              QueryType.START,
+              [TermType.ERROR, ['ping']]
+            ]);
+            const result = await this.socket.readNext(token);
+            if (
+              result.t !== ResponseType.RUNTIME_ERROR ||
+              result.e !== ErrorType.USER ||
+              result.r[0] !== 'ping'
+            ) {
+              this.reportError(
+                new RethinkDBError('Ping error', { responseType: result.t })
+              );
+            }
+          }
+        } catch (e) {
+          this.reportError(e);
         }
         if (this.pingTimer) {
           this.startPinging();

@@ -55,6 +55,7 @@ export type RConnectionOptions = RBaseConnectionOptions &
 
 export type RPoolConnectionOptions = RConnectionOptions & {
   servers?: RServerConnectionOptions[];
+  waitForHealthy?: boolean; // default true
 };
 export interface TableCreateOptions {
   primaryKey?: string; // default: "id"
@@ -407,7 +408,9 @@ export interface RQuery<T = any> {
     options?: RunOptions
   ): T extends Array<infer T1>
     ? Promise<RCursor<T1>>
-    : T extends RCursor<infer T2> ? Promise<T> : Promise<RCursor<T>>;
+    : T extends RCursor<infer T2>
+    ? Promise<T>
+    : Promise<RCursor<T>>;
   then(): never;
 }
 export interface RDatum<T = any> extends RQuery<T> {

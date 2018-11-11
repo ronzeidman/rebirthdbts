@@ -189,9 +189,8 @@ describe('pool legacy', () => {
       .connectPool({
         buffer: 1,
         max: 2,
-        log: message => {
-          console.log(message);
-        }
+        port: config.port,
+        host: config.host
       })
       .catch(() => undefined);
     await r.getPoolMaster().drain();
@@ -210,7 +209,13 @@ describe('pool legacy', () => {
   });
 
   it('If the pool is draining, it should reject queries', async () => {
-    await r.connectPool({ buffer: 1, max: 2, silent: true });
+    await r.connectPool({
+      buffer: 1,
+      max: 2,
+      silent: true,
+      port: config.port,
+      host: config.host
+    });
     r.getPoolMaster().drain();
     try {
       await r.expr(1).run();
@@ -245,7 +250,13 @@ describe('pool legacy', () => {
   // });
 
   it('The pool should remove a connection if it errored', async () => {
-    await r.connectPool({ buffer: 1, max: 2, silent: true });
+    await r.connectPool({
+      buffer: 1,
+      max: 2,
+      silent: true,
+      port: config.port,
+      host: config.host
+    });
     r.getPoolMaster().setOptions({ timeoutGb: 60 * 60 * 1000 });
 
     try {
