@@ -32,7 +32,7 @@ const conn = await r.connect(options);
 - Drop-in replacement for rethinkdbdash with only some minor changes
 
 # CHANGES FROM RETHINKDBDASH
-- support for complex socket configuration + tls (notice that for tls or any configuration more complex then `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
+- support for complex socket configuration + tls (notice that for SSL/TLS or any configuration more complex then `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
 ```ts
 { 
    server: {
@@ -44,6 +44,8 @@ const conn = await r.connect(options);
    } 
 }
 ```
+The options for standard connections is described here: https://nodejs.org/dist/latest-v10.x/docs/api/net.html#net_net_createconnection_options_connectlistener.
+If you want an SSL/TLS add `tls: true` and the options described here: https://nodejs.org/dist/latest-v10.x/docs/api/tls.html#tls_tls_connect_options_callback and 
 - Importing property instead of entire library: `const {r} = require('rethinkdbts')` or `import {r} from 'rethinkdbts'` instead of `const r = require('rethinkdbdash')(options)`
 - No top level initialization, initializing a pool is done by `await r.connectPool()`
 - No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
