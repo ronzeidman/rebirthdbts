@@ -91,6 +91,7 @@ export class RethinkDBSocket extends EventEmitter {
     socket.removeAllListeners();
     socket
       .on('close', () => this.close())
+      .on('end', () => this.close())
       .on('error', error => this.handleError(error))
       .on('data', data => {
         try {
