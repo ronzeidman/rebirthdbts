@@ -904,6 +904,7 @@ export interface RSelection<T = any> extends RStream<T> {
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   delete(options?: DeleteOptions): RDatum<WriteResult<T>>;
+  nth(n: RValue<number>): RSingleSelection<T>;
 }
 export interface RTable<T = any> extends RSelection<T> {
   grant(
@@ -927,7 +928,7 @@ export interface RTable<T = any> extends RSelection<T> {
   }>;
   indexCreate(
     indexName: RValue<string>,
-    indexFunction?: RDatum | RDatum[] | ((row: RDatum) => any),
+    indexFunction?: RDatum | Buffer | RDatum[] | ((row: RDatum) => any),
     options?: IndexOptions
   ): RDatum<IndexChangeResult>;
   indexCreate(
@@ -1212,7 +1213,7 @@ export interface R {
   indexCreate<T>(
     table: RTable<T>,
     indexName: RValue<string>,
-    indexFunction?: RDatum | RDatum[] | ((row: RDatum) => any),
+    indexFunction?: RDatum | Buffer | RDatum[] | ((row: RDatum) => any),
     options?: IndexOptions
   ): RDatum<IndexChangeResult>;
   indexCreate<T>(
