@@ -1,6 +1,6 @@
 {
   "name": "rethinkdb-ts",
-  "version": "2.4.0-rc.11",
+  "version": "2.4.0-rc.12",
   "description": "RethinkDB TypeScript driver",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
