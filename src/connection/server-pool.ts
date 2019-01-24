@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { isUndefined } from 'util';
-import { RethinkDBError } from '../error/error';
+import { isRethinkDBError, RethinkDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
 import {
@@ -295,7 +295,10 @@ export class ServerConnectionPool extends EventEmitter
     if (this.listenerCount('error') > 0) {
       this.emit('error', err);
     }
-    if (log) {
+    if (
+      log &&
+      (!isRethinkDBError(err) || err.type !== RethinkDBErrorType.CANCEL)
+    ) {
       this.log(err.toString());
       if (!this.silent) {
         console.error(err.toString());

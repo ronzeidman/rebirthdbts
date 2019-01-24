@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { isUndefined } from 'util';
-import { RethinkDBError } from '../error/error';
+import { isRethinkDBError, RethinkDBError } from '../error/error';
 import { QueryJson, TermJson } from '../internal-types';
 import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
@@ -273,9 +273,11 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     if (this.listenerCount('error') > 0) {
       this.emit('error', err);
     }
-    this.log(err.toString());
-    if (!this.silent) {
-      console.error(err.toString());
+    if (!isRethinkDBError(err) || err.type !== RethinkDBErrorType.CANCEL) {
+      this.log(err.toString());
+      if (!this.silent) {
+        console.error(err.toString());
+      }
     }
   }
 }
