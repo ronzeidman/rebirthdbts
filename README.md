@@ -1,3 +1,6 @@
+# rethinkdb-ts
+[![npm Package Version](https://img.shields.io/npm/v/rethinkdb-ts.svg?maxAge=2592000)](https://www.npmjs.com/package/rethinkdb-ts)
+
 ## Install
 
 `npm i rethinkdb-ts`
