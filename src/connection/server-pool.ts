@@ -13,8 +13,6 @@ import {
 import { RethinkDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
 
-const REBALANCE_EVERY = 30 * 1000;
-
 export class ServerConnectionPool extends EventEmitter
   implements ConnectionPool {
   public readonly server: RNConnOpts;
@@ -211,9 +209,9 @@ export class ServerConnectionPool extends EventEmitter
       this.checkIdle(conn);
       conn
         .on('close', () => {
-          const size1 = this.getOpenConnections().length;
-          this.emit('size', size1);
-          if (size === 0) {
+          const innerSize = this.getOpenConnections().length;
+          this.emit('size', innerSize);
+          if (innerSize === 0) {
             this.setHealthy(false);
             // if no connections are available need to remove all connections and start over
             // so it won't try to reconnect all connections at once

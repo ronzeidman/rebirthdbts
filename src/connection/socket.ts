@@ -355,18 +355,6 @@ export class RethinkDBSocket extends EventEmitter {
       this.emit('error', err);
     }
   }
-
-  private createNextData() {
-    let resolve: any;
-    const promise = new Promise<ResponseJson | Error>(
-      (res, rej) => (resolve = res)
-    );
-    return {
-      promise,
-      resolve,
-      resolved: false
-    };
-  }
 }
 
 export function setConnectionDefaults(

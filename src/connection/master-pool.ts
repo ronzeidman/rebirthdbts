@@ -308,10 +308,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
       this.setHealthy(true);
     }
     pool
-      .on('size', () => {
-        const size1 = this.getOpenConnections().length;
-        this.emit('size', size);
-      })
+      .on('size', () => this.emit('size', this.getOpenConnections().length))
       .on('available-size', () =>
         this.emit('available-size', this.getAvailableLength())
       )
@@ -365,11 +362,8 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
   }
 
   private getPoolWithMinQueries() {
-    return this.getHealthyServerPools().reduce(
-      (min, next) =>
-        min.getNumOfRunningQueries() < next.getNumOfRunningQueries()
-          ? min
-          : next
+    return this.getHealthyServerPools().reduce((min, next) =>
+      min.getNumOfRunningQueries() < next.getNumOfRunningQueries() ? min : next
     );
   }
 

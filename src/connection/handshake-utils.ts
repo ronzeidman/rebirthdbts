@@ -10,12 +10,6 @@ const AUTHENTIFICATION_METHOD = 'SCRAM-SHA-256';
 const KEY_LENGTH = 32; // Because we are currently using SHA 256
 const CACHE_PBKDF2: { [cacheKey: string]: Buffer } = {};
 
-enum HandshakeState {
-  INITIAL = 0,
-  VERSION_OK = 1,
-  AUTH = 2
-}
-
 export function buildAuthBuffer(user: string) {
   const versionBuffer = Buffer.alloc(4);
   versionBuffer.writeInt32LE(Version.V1_0, 0);
