@@ -31,7 +31,7 @@ const conn = await r.connect(options);
 # STATUS:
 
 - Fully working typescript driver!
-- Rebuilt from scrach using the latest ES/TS features for readability and maintainability
+- Rebuilt from scratch using the latest ES/TS features for readability and maintainability
 - Drop-in replacement for rethinkdbdash with only some minor changes
 
 # CHANGES FROM RETHINKDBDASH
@@ -57,7 +57,7 @@ If you want an SSL/TLS add `tls: true` and the options described here: https://n
 - Uses native promises instead of `bluebird`
 - A cursor is already a readable stream, no need for `toStream()`
 - A readable stream is already an async iterator in node 10 no need for `.asyncIterator()`
-- In connction pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded.
+- In connction pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded
 - Integrated fully encompasing type definitions
 
 # NEW FEATURES
@@ -67,7 +67,7 @@ If you want an SSL/TLS add `tls: true` and the options described here: https://n
 # DROPPING SUPPORT:
 
 - Support node < 8
-- Support callbacks.
+- Support callbacks
 - Support using `.then()` directly on a query (optionalRun), it can confuse users that queries are promises leading to false assumptions:
   - Queries are not promises since they are not eagerly evaluated and therefore they can:
     - `.run()` as many times as you want (promises run only once and return the same value without running other times)
