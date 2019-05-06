@@ -35,7 +35,7 @@ const conn = await r.connect(options);
 - Drop-in replacement for rethinkdbdash with only some minor changes
 
 # CHANGES FROM RETHINKDBDASH
-- support for complex socket configuration + tls (notice that for SSL/TLS or any configuration more complex than `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
+- Support for complex socket configuration + tls (notice that for SSL/TLS or any configuration more complex than `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
 ```ts
 { 
    server: {
