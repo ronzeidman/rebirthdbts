@@ -35,7 +35,7 @@ const conn = await r.connect(options);
 - Drop-in replacement for rethinkdbdash with only some minor changes
 
 # CHANGES FROM RETHINKDBDASH
-- support for complex socket configuration + tls (notice that for SSL/TLS or any configuration more complex then `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
+- Support for complex socket configuration + tls (notice that for SSL/TLS or any configuration more complex than `{ host: '...', port: '...' }` you'll have to encapsulate in a server/servers property: 
 ```ts
 { 
    server: {
@@ -47,9 +47,9 @@ const conn = await r.connect(options);
    } 
 }
 ```
-The options for standard connections is described here: https://nodejs.org/dist/latest-v10.x/docs/api/net.html#net_net_createconnection_options_connectlistener.
+The options for standard connections is described [here](https://nodejs.org/dist/latest-v10.x/docs/api/net.html#net_net_createconnection_options_connectlistener).
 
-If you want an SSL/TLS add `tls: true` and the options described here: https://nodejs.org/dist/latest-v10.x/docs/api/tls.html#tls_tls_connect_options_callback and 
+If you want an SSL/TLS, add `tls: true` and the options described [here](https://nodejs.org/dist/latest-v10.x/docs/api/tls.html#tls_tls_connect_options_callback) and 
 - Importing property instead of entire library: `const {r} = require('rethinkdbts')` or `import {r} from 'rethinkdbts'` instead of `const r = require('rethinkdbdash')(options)`
 - No top level initialization, initializing a pool is done by `await r.connectPool()`
 - No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
@@ -57,7 +57,7 @@ If you want an SSL/TLS add `tls: true` and the options described here: https://n
 - Uses native promises instead of `bluebird`
 - A cursor is already a readable stream, no need for `toStream()`
 - A readable stream is already an async iterator in node 10 no need for `.asyncIterator()`
-- In connction pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded
+- In a connection pool, reusing open connections that already run queries instead of making queries wait for a connection when max connections exceeded
 - Integrated fully encompasing type definitions
 
 # NEW FEATURES
@@ -73,5 +73,5 @@ If you want an SSL/TLS add `tls: true` and the options described here: https://n
     - `.run()` as many times as you want (promises run only once and return the same value without running other times)
     - be stored for future evaluation (promises run as you create them)
 - Support browsers (Unless it's the only demand of making this driver used instead of rethinkdbdash)
-- Support write streams (Does anyone uses it? will add it if its a popular demand)
+- Support write streams (Does anyone uses it? Will add it if its a popular demand)
 - Multiple connection pools (if someone has a good usecase I'll support it)
