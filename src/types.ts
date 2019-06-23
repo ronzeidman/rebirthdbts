@@ -65,14 +65,13 @@ export interface TableCreateOptions {
   nonvotingReplicaTags?: string[];
   durability?: Durability; // "soft" or "hard" defualt: "hard"
 }
-export interface Repair {
-  emergencyRepair: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
-}
+
 export interface TableReconfigureOptions {
   shards?: number; // 1-32
   replicas?: number | { [serverTag: string]: number };
   primaryReplicaTag?: string;
   dryRun?: boolean;
+  emergencyRepair: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
 }
 
 export interface TableOptions {
