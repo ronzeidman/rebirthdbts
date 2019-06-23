@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { TcpNetConnectOpts } from 'net';
 import { ConnectionOptions } from 'tls';
+import { DeepPartial } from './internal-types';
 
 //#region optargs
 export type Primitives = null | string | boolean | number;
@@ -477,7 +478,7 @@ export interface RDatum<T = any> extends RQuery<T> {
     ...fields: MultiFieldSelector[]
   ): T extends Array<infer T1> ? RDatum<Array<Partial<T1>>> : never;
   filter<U = T extends Array<infer T1> ? T1 : never>(
-    predicate: Partial<U> | ((doc: RDatum<U>) => RValue<boolean>),
+    predicate: DeepPartial<U> | ((doc: RDatum<U>) => RValue<boolean>),
     options?: { default: boolean }
   ): this;
   includes(geometry: RDatum): T extends Array<infer T1> ? RDatum<T> : never;
@@ -765,7 +766,7 @@ export interface RStream<T = any> extends RQuery<T[]> {
   withFields(...fields: MultiFieldSelector[]): RStream<Partial<T>>;
   hasFields(...fields: MultiFieldSelector[]): RStream<T>;
   filter(
-    predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>),
+    predicate: DeepPartial<T> | ((doc: RDatum<T>) => RValue<boolean>),
     options?: { default: boolean }
   ): this;
   includes(geometry: RDatum): RStream<T>;
@@ -862,7 +863,7 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
   withFields(...fields: MultiFieldSelector[]): RFeed<Partial<T>>;
   hasFields(...fields: MultiFieldSelector[]): RFeed<T>;
   filter(
-    predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>),
+    predicate: DeepPartial<T> | ((doc: RDatum<T>) => RValue<boolean>),
     options?: { default: boolean }
   ): this;
   includes(geometry: RDatum): RFeed<T>;
@@ -882,7 +883,7 @@ export interface RFeed<T = any> extends RQuery<RCursor<T>> {
 
 export interface RSingleSelection<T = any> extends RDatum<T> {
   update(
-    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
+    obj: RValue<DeepPartial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   replace(
@@ -895,7 +896,7 @@ export interface RSingleSelection<T = any> extends RDatum<T> {
 
 export interface RSelection<T = any> extends RStream<T> {
   update(
-    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
+    obj: RValue<DeepPartial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   replace(
@@ -1319,7 +1320,7 @@ export interface R {
   // SELECTION / SINGLE SELECTION
   update<T>(
     selection: RSelection<T> | RSingleSelection<T>,
-    obj: RValue<Partial<T>> | ((arg: RDatum<T>) => any),
+    obj: RValue<DeepPartial<T>> | ((arg: RDatum<T>) => any),
     options?: UpdateOptions
   ): RDatum<WriteResult<T>>;
   replace<T>(
@@ -1448,17 +1449,17 @@ export interface R {
   ): T extends Array<infer T1> ? RDatum<T> : RDatum<boolean>;
   filter<T>(
     feed: RFeed<T>,
-    predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>),
+    predicate: DeepPartial<T> | ((doc: RDatum<T>) => RValue<boolean>),
     options?: { default: boolean }
   ): RFeed<T>;
   filter<T>(
     stream: RStream<T>,
-    predicate: Partial<T> | ((doc: RDatum<T>) => RValue<boolean>),
+    predicate: DeepPartial<T> | ((doc: RDatum<T>) => RValue<boolean>),
     options?: { default: boolean }
   ): RStream<T>;
   filter<T, U = T extends Array<infer T1> ? T1 : never>(
     datum: RDatum<T>,
-    predicate: Partial<T> | ((doc: RDatum<U>) => RValue<boolean>),
+    predicate: DeepPartial<T> | ((doc: RDatum<U>) => RValue<boolean>),
     options?: { default: boolean }
   ): RDatum<T>;
   includes<T>(
