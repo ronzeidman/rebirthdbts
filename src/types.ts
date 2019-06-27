@@ -965,6 +965,9 @@ export interface RTable<T = any> extends RSelection<T> {
     key4: any,
     options?: { index: string }
   ): RSelection<T>;
+  getAll(...params: (string | {
+    index: string;
+  })[]): RSelection<T>;
 
   between(
     lowKey: any,
