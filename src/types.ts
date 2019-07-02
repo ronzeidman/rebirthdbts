@@ -72,7 +72,7 @@ export interface TableReconfigureOptions {
   replicas?: number | { [serverTag: string]: number };
   primaryReplicaTag?: string;
   dryRun?: boolean;
-  emergencyRepair: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
+  emergencyRepair?: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
 }
 
 export interface TableOptions {
