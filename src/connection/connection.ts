@@ -62,9 +62,7 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     this.socket = new RethinkDBSocket({
       connectionOptions: this.options,
       user,
-      password: password
-        ? Buffer.concat([Buffer.from(password), NULL_BUFFER])
-        : NULL_BUFFER
+      password
     });
   }
 
