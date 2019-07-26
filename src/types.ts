@@ -426,7 +426,7 @@ export interface RDatum<T = any> extends RQuery<T> {
   nth(
     attribute: RValue<number>
   ): T extends Array<infer T1> ? RDatum<T1> : never;
-  default(value: T): RDatum<T>;
+  default<U>(value: U): RDatum<T | U>;
   hasFields(
     ...fields: string[]
   ): T extends Array<infer T1> ? RDatum<T> : RDatum<boolean>;
