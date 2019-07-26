@@ -51,16 +51,16 @@ export class RethinkDBSocket extends EventEmitter {
   constructor({
     connectionOptions,
     user = 'admin',
-    password = NULL_BUFFER
+    password = ''
   }: {
     connectionOptions: RNConnOpts;
     user?: string;
-    password?: Buffer;
+    password?: string;
   }) {
     super();
     this.connectionOptions = setConnectionDefaults(connectionOptions);
     this.user = user;
-    this.password = password;
+    this.password = password ? Buffer.from(password) : NULL_BUFFER;
   }
 
   public eventNames() {
