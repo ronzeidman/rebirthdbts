@@ -123,7 +123,8 @@ describe('accessing-reql', () => {
       db: dbName,
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 

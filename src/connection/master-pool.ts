@@ -131,13 +131,14 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
       if (this.isHealthy) {
         resolve(this);
       } else {
-        this.once('healthy', healthy => {
+        this.once('healthy', (healthy, error) => {
           if (healthy) {
             resolve(this);
           } else {
             reject(
-              new RethinkDBError('Error initializing pool', {
-                type: RethinkDBErrorType.POOL_FAIL
+              new RethinkDBError('Error initializing master pool', {
+                type: RethinkDBErrorType.MASTER_POOL_FAIL,
+                cause: error
               })
             );
           }
@@ -317,7 +318,7 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
           this.emit('error', error);
         }
       })
-      .on('healthy', healthy => {
+      .on('healthy', (healthy?: boolean, error?: Error) => {
         if (!healthy) {
           const { server } = pool;
           this.closeServerPool(pool)
@@ -333,16 +334,16 @@ export class MasterConnectionPool extends EventEmitter implements MasterPool {
               }
             });
         }
-        this.setHealthy(!!this.getHealthyServerPools().length);
+        this.setHealthy(!!this.getHealthyServerPools().length, error);
       });
   }
 
-  private setHealthy(healthy: boolean | undefined) {
+  private setHealthy(healthy: boolean | undefined, error?: Error) {
     if (isUndefined(healthy)) {
       this.healthy = undefined;
     } else if (healthy !== this.healthy && !isUndefined(healthy)) {
       this.healthy = healthy;
-      this.emit('healthy', healthy);
+      this.emit('healthy', healthy, error);
     }
   }
 

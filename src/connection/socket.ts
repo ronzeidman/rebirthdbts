@@ -74,59 +74,55 @@ export class RethinkDBSocket extends EventEmitter {
       });
     }
     const { tls = false, ...options } = this.connectionOptions;
-    let socket: Socket = (undefined as any) as Socket;
     try {
-      await new Promise((resolve, reject) => {
-        socket = tls
+      const socket = await new Promise<Socket>((resolve, reject) => {
+        const s = tls
           ? tlsConnect(options)
-              .once('connect', resolve)
-              .once('error', reject)
-          : netConnect(options as TcpNetConnectOpts)
-              .once('connect', resolve)
-              .once('error', reject);
+          : netConnect(options as TcpNetConnectOpts);
+        s.once('connect', () => resolve(s)).once('error', reject);
       });
+      socket.removeAllListeners();
+      socket
+        .on('close', () => this.close())
+        .on('end', () => this.close())
+        .on('error', error => this.handleError(error))
+        .on('data', data => {
+          try {
+            this.buffer = Buffer.concat([this.buffer, data]);
+            switch (this.mode) {
+              case 'handshake':
+                this.handleHandshakeData();
+                break;
+              case 'response':
+                this.handleData();
+                break;
+            }
+          } catch (error) {
+            this.handleError(error);
+          }
+        });
+      socket.setKeepAlive(true);
+      this.socket = socket;
+      await new Promise((resolve, reject) => {
+        socket.once('connect', resolve);
+        socket.once('error', reject);
+        if (socket.destroyed) {
+          socket.removeListener('connect', resolve);
+          socket.removeListener('error', reject);
+          reject(this.lastError);
+        } else if (!socket.connecting) {
+          socket.removeListener('connect', resolve);
+          socket.removeListener('error', reject);
+          resolve();
+        }
+      });
+      this.isOpen = true;
+      this.lastError = undefined;
+      await this.performHandshake();
+      this.emit('connect');
     } catch (err) {
       this.handleError(err);
     }
-    socket.removeAllListeners();
-    socket
-      .on('close', () => this.close())
-      .on('end', () => this.close())
-      .on('error', error => this.handleError(error))
-      .on('data', data => {
-        try {
-          this.buffer = Buffer.concat([this.buffer, data]);
-          switch (this.mode) {
-            case 'handshake':
-              this.handleHandshakeData();
-              break;
-            case 'response':
-              this.handleData();
-              break;
-          }
-        } catch (error) {
-          this.handleError(error);
-        }
-      });
-    socket.setKeepAlive(true);
-    this.socket = socket;
-    await new Promise((resolve, reject) => {
-      socket.once('connect', resolve);
-      socket.once('error', reject);
-      if (socket.destroyed) {
-        socket.removeListener('connect', resolve);
-        socket.removeListener('error', reject);
-        reject(this.lastError);
-      } else if (!socket.connecting) {
-        socket.removeListener('connect', resolve);
-        socket.removeListener('error', reject);
-        resolve();
-      }
-    });
-    this.isOpen = true;
-    this.lastError = undefined;
-    await this.performHandshake();
-    this.emit('connect');
   }
 
   public sendQuery(newQuery: QueryJson, token = this.nextToken++) {
@@ -232,7 +228,7 @@ export class RethinkDBSocket extends EventEmitter {
     return res as any;
   }
 
-  public close() {
+  public close(error?: Error) {
     for (const { data, query } of this.runningQueries.values()) {
       data.destroy(
         new RethinkDBError(
@@ -253,7 +249,7 @@ export class RethinkDBSocket extends EventEmitter {
     this.socket = undefined;
     this.isOpen = false;
     this.mode = 'handshake';
-    this.emit('close');
+    this.emit('close', error);
     this.removeAllListeners();
     this.nextToken = 0;
   }
@@ -349,7 +345,7 @@ export class RethinkDBSocket extends EventEmitter {
   }
 
   private handleError(err: Error) {
-    this.close();
+    this.close(err);
     this.lastError = err;
     if (this.listenerCount('error') > 0) {
       this.emit('error', err);

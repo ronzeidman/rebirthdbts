@@ -3,13 +3,7 @@ import { isUndefined } from 'util';
 import { isRethinkDBError, RethinkDBError } from '../error/error';
 import { TermJson } from '../internal-types';
 import { Cursor } from '../response/cursor';
-import {
-  ConnectionPool,
-  RConnectionOptions,
-  RethinkDBErrorType,
-  RServerConnectionOptions,
-  RunOptions
-} from '../types';
+import { ConnectionPool, RConnectionOptions, RethinkDBErrorType, RServerConnectionOptions, RunOptions } from '../types';
 import { RethinkDBConnection } from './connection';
 import { RNConnOpts, setConnectionDefaults } from './socket';
 
@@ -87,13 +81,14 @@ export class ServerConnectionPool extends EventEmitter
       if (this.isHealthy) {
         resolve(this);
       } else {
-        this.once('healthy', healthy => {
+        this.once('healthy', (healthy, error) => {
           if (healthy) {
             resolve(this);
           } else {
             reject(
               new RethinkDBError('Error initializing pool', {
-                type: RethinkDBErrorType.POOL_FAIL
+                type: RethinkDBErrorType.POOL_FAIL,
+                cause: error
               })
             );
           }
@@ -186,12 +181,12 @@ export class ServerConnectionPool extends EventEmitter
     return minQueriesRunningConnection.query(term, globalArgs);
   }
 
-  private setHealthy(healthy: boolean | undefined) {
+  private setHealthy(healthy: boolean | undefined, error?: Error) {
     if (isUndefined(healthy)) {
       this.healthy = undefined;
     } else if (healthy !== this.healthy && !isUndefined(healthy)) {
       this.healthy = healthy;
-      this.emit('healthy', healthy);
+      this.emit('healthy', healthy, error);
     }
   }
 
@@ -208,11 +203,11 @@ export class ServerConnectionPool extends EventEmitter
       this.setHealthy(true);
       this.checkIdle(conn);
       conn
-        .on('close', () => {
+        .on('close', error => {
           const innerSize = this.getOpenConnections().length;
           this.emit('size', innerSize);
           if (innerSize === 0) {
-            this.setHealthy(false);
+            this.setHealthy(false, error);
             // if no connections are available need to remove all connections and start over
             // so it won't try to reconnect all connections at once
             // this.drain({}, false).then(() => this.initConnections());
@@ -272,7 +267,7 @@ export class ServerConnectionPool extends EventEmitter
           break;
         }
         if (isUndefined(this.healthy)) {
-          this.setHealthy(false);
+          this.setHealthy(false, err);
         }
         await new Promise(resolve =>
           setTimeout(resolve, 2 ** exp * this.timeoutError)

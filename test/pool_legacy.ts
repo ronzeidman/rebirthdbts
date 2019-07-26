@@ -17,7 +17,8 @@ describe('pool legacy', () => {
         port: config.port
       }
     ],
-    authKey: config.authKey,
+    user: config.user,
+    password: config.password,
     discovery: false,
     silent: true
   };

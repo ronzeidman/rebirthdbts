@@ -193,7 +193,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -211,7 +212,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -236,7 +238,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -271,7 +274,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -301,7 +305,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -338,7 +343,8 @@ describe('stream', () => {
     const connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 

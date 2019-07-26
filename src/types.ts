@@ -19,7 +19,7 @@ export type RValue<T = any> = RDatum<T> | T;
 //     [x: keyof T]: RValue<T[keyof T]>;
 // } | RDatum<T>;
 interface RArray<T> extends Array<RValue<T>> {}
-export type Func<T, Res = any> = ((doc: RDatum<T>) => RValue<Res>);
+export type Func<T, Res = any> = (doc: RDatum<T>) => RValue<Res>;
 export type MultiFieldSelector = object | any[] | string;
 export type FieldSelector<T, U = any> = string | Func<T, U>;
 
@@ -356,6 +356,7 @@ export enum RethinkDBErrorType {
   API_FAIL,
   // query errors
   CONNECTION,
+  MASTER_POOL_FAIL,
   POOL_FAIL,
   CURSOR_END,
   TIMEOUT,
@@ -965,9 +966,7 @@ export interface RTable<T = any> extends RSelection<T> {
     key4: any,
     options?: { index: string }
   ): RSelection<T>;
-  getAll(...params: (string | {
-    index: string;
-  })[]): RSelection<T>;
+  getAll(...params: Array<string | { index: string }>): RSelection<T>;
 
   between(
     lowKey: any,
@@ -1000,11 +999,11 @@ export interface RTable<T = any> extends RSelection<T> {
     func:
       | null
       | Buffer
-      | (((
+      | ((
           context: RDatum<{ primary_key: string; timestamp: Date }>,
           oldVal: RDatum<T>,
           newVal: RDatum<T>
-        ) => any))
+        ) => any)
   ): RDatum<{ function: Buffer; query: string }>;
 }
 export interface RDatabase {
@@ -1313,11 +1312,11 @@ export interface R {
     func:
       | null
       | Buffer
-      | (((
+      | ((
           context: RDatum<{ primary_key: string; timestamp: Date }>,
           oldVal: RDatum<T>,
           newVal: RDatum<T>
-        ) => any))
+        ) => any)
   ): RDatum<{ function: Buffer; query: string }>;
 
   // SELECTION / SINGLE SELECTION
@@ -1701,7 +1700,7 @@ export interface R {
     >
   ): U extends RStream ? RStream : RDatum;
 
-  default<T>(datum: RDatum<T>, value: T): RDatum<T>;
+  default<T, U>(datum: RDatum<T>, value: U): RDatum<T | U>;
   // Works only if T is an array
   append<T, U>(
     datum: RDatum<T>,

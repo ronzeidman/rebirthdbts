@@ -6,14 +6,7 @@ import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import {
-  Connection,
-  RethinkDBErrorType,
-  RServerConnectionOptions,
-  RunOptions,
-  ServerInfo
-} from '../types';
-import { NULL_BUFFER } from './handshake-utils';
+import { Connection, RethinkDBErrorType, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
 import { RethinkDBSocket, RNConnOpts, setConnectionDefaults } from './socket';
 
 const tableQueries = [
@@ -97,9 +90,9 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     }
     this.socket
       .on('connect', () => this.emit('connect'))
-      .on('close', () => {
+      .on('close', error => {
         this.close();
-        this.emit('close');
+        this.emit('close', error);
       })
       .on('error', err => {
         this.reportError(err);
@@ -130,26 +123,27 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
         }
       );
       this.reportError(error);
-      this.emit('close');
+      this.emit('close', error);
       this.close();
       throw error;
     }
     if (this.socket.status === 'errored') {
       this.reportError(this.socket.lastError as any);
-      this.emit('close');
+      this.emit('close', this.socket.lastError);
       this.close();
       throw this.socket.lastError;
     }
     if (this.socket.status !== 'open') {
-      this.emit('timeout');
-      this.emit('close');
-      this.close().catch(() => undefined);
-      throw new RethinkDBError(
+      const error = new RethinkDBError(
         `Failed to connect to ${this.connectionOptions.host}:${
           this.connectionOptions.port
         } in less than ${this.timeout}s.`,
         { type: RethinkDBErrorType.TIMEOUT }
       );
+      this.emit('timeout');
+      this.emit('close', error);
+      this.close().catch(() => undefined);
+      throw error;
     }
     this.startPinging();
     return this;

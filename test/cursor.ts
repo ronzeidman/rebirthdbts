@@ -392,7 +392,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection.open);
 
@@ -414,7 +415,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection.open);
 
@@ -432,7 +434,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection.open);
 
@@ -462,7 +465,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -950,7 +954,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -979,7 +984,8 @@ describe('cursor', () => {
     connection = await r.connect({
       host: config.host,
       port: config.port,
-      authKey: config.authKey
+      user: config.user,
+      password: config.password
     });
     assert(connection);
 
@@ -988,13 +994,15 @@ describe('cursor', () => {
       .table(tableName)
       .changes()
       .run(connection);
-    const promise = feed1.eachAsync(() => undefined).catch(err => {
-      assert(
-        err.message.startsWith(
-          'The connection was closed before the query could be completed'
-        )
-      );
-    });
+    const promise = feed1
+      .eachAsync(() => undefined)
+      .catch(err => {
+        assert(
+          err.message.startsWith(
+            'The connection was closed before the query could be completed'
+          )
+        );
+      });
     // Kill the TCP connection
     const { socket } = (connection as RethinkDBConnection).socket;
     if (socket) {
@@ -1008,7 +1016,8 @@ describe('cursor', () => {
       connection = await r.connect({
         host: config.host,
         port: config.port,
-        authKey: config.authKey
+        user: config.user,
+        password: config.password
       });
       assert(connection.open);
 
