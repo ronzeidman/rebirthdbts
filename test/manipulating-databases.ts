@@ -68,11 +68,13 @@ describe('manipulating databases', () => {
   it('`db` should throw is the name contains special char', async () => {
     try {
       // @ts-ignore
-      await r.db('-_-').run();
+      await r.db('*_*').run();
       assert.fail('should throw');
     } catch (e) {
       assert(
-        e.message.match(/Database name `-_-` invalid \(Use A-Za-z0-9_ only\)/)
+        e.message.match(
+          /Database name `\*_\*` invalid \(Use A-Z, a-z, 0-9, _ and - only\)/
+        )
       );
     }
   });

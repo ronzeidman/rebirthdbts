@@ -94,7 +94,7 @@ describe('datum', () => {
         await r.expr([0, 1, 2, 3, 4, 5, 6, 8, 9]).run({ arrayLimit: 2 });
         assert.fail('should throw');
       } catch (e) {
-        assert(e.message.match(/^Array over size limit `2` in/));
+        assert(e.message.match(/^Array over size limit `2`/));
       }
     });
 
@@ -104,7 +104,7 @@ describe('datum', () => {
         await r.expr([0, 1, 2, 3, 4, 5, 6, 8, 9]).run({ arrayLimit: 2 });
         assert.fail('should throw');
       } catch (e) {
-        assert(e.message.match(/^Array over size limit `2` in/));
+        assert(e.message.match(/^Array over size limit `2`/));
       }
     });
 
@@ -114,7 +114,7 @@ describe('datum', () => {
         await r.expr([0, 1, 2, 3, 4, 5, 6, 8, 9]).run();
         assert.fail('shold throw');
       } catch (e) {
-        assert(e.message.match(/^Array over size limit `2` in/));
+        assert(e.message.match(/^Array over size limit `2`/));
       }
     });
 
