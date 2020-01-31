@@ -2,9 +2,10 @@ services:
   - docker
 language: node_js
 node_js:
-  - "8"
-  - "9"
-  - "node"
+  - '8'
+  - '10'
+  - '12'
+  - 'node'
 before_install:
   - docker pull rethinkdb:latest
   - docker run -d -p 28015:28015 rethinkdb
@@ -15,14 +16,14 @@ script:
 after_success:
 jobs:
   include:
-  - stage: npm release
-    node_js: "node"
-    script:
-    - npm run build
-    deploy:
-      provider: npm
-      email: "ron.zeidman@gmail.com"
-      api_key: "$NPM_API_KEY"
-      skip_cleanup: true
-      on:
-        tags: true
+    - stage: npm release
+      node_js: 'node'
+      script:
+        - npm run build
+      deploy:
+        provider: npm
+        email: 'ron.zeidman@gmail.com'
+        api_key: '$NPM_API_KEY'
+        skip_cleanup: true
+        on:
+          tags: true
