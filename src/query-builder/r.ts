@@ -74,6 +74,14 @@ r.connect = async (options: RConnectionOptions = {}) => {
   return c;
 };
 r.getPoolMaster = () => (r as any).pool;
+r.waitForHealthy = () => {
+  if ((r as any).pool) {
+    return (r as any).pool.waitForHealthy();
+  }
+  throw new RethinkDBError('Pool not initialized', {
+    type: RethinkDBErrorType.MASTER_POOL_FAIL
+  });
+};
 r.setNestingLevel = (level: number) => (globals.nestingLevel = level);
 r.setArrayLimit = (limit?: number) => (globals.arrayLimit = limit);
 r.serialize = (termStr: RQuery) => JSON.stringify((termStr as any).term);

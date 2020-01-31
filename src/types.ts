@@ -168,6 +168,7 @@ export interface ChangesOptions {
 
 //#region results
 export interface ValueChange<T = any> {
+  error?: string;
   old_val?: T;
   new_val?: T;
 }
@@ -293,7 +294,7 @@ export interface Connection extends EventEmitter {
 
 export interface MasterPool extends EventEmitter {
   readonly isHealthy: boolean;
-
+  waitForHealthy(): Promise<this>;
   drain(options?: { noreplyWait: boolean }): Promise<void>;
   getLength(): number;
   getAvailableLength(): number;
@@ -1072,6 +1073,7 @@ export interface R {
   connect(options: RConnectionOptions): Promise<Connection>;
   connectPool(options?: RPoolConnectionOptions): Promise<MasterPool>;
   getPoolMaster(): MasterPool | undefined;
+  waitForHealthy(): Promise<MasterPool>;
   setNestingLevel(level: number): void;
   setArrayLimit(limit?: number): void;
   serialize(query: RQuery): string;
