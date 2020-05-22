@@ -18,12 +18,12 @@ export function buildAuthBuffer(user: string) {
     JSON.stringify({
       protocol_version: PROTOCOL_VERSION,
       authentication_method: AUTHENTIFICATION_METHOD,
-      authentication: `n,,n=${user},r=${randomString}`
-    })
+      authentication: `n,,n=${user},r=${randomString}`,
+    }),
   );
   return {
     randomString,
-    authBuffer: Buffer.concat([versionBuffer, mainBuffer, NULL_BUFFER])
+    authBuffer: Buffer.concat([versionBuffer, mainBuffer, NULL_BUFFER]),
   };
 }
 
@@ -37,7 +37,7 @@ export function validateVersion(msg: {
     msg.min_protocol_version > PROTOCOL_VERSION
   ) {
     throw new RethinkDBError('Unsupported protocol version', {
-      type: RethinkDBErrorType.UNSUPPORTED_PROTOCOL
+      type: RethinkDBErrorType.UNSUPPORTED_PROTOCOL,
     });
   }
 }
@@ -46,20 +46,20 @@ export async function computeSaltedPassword(
   authentication: string,
   randomString: string,
   user: string,
-  password: Buffer
+  password: Buffer,
 ) {
   const [randomNonce, s, i] = authentication
     .split(',')
-    .map(part => part.substring(2));
+    .map((part) => part.substring(2));
   const salt = Buffer.from(s, 'base64');
   const iterations = parseInt(i, 10);
   if (randomNonce.substring(0, randomString.length) !== randomString) {
     throw new RethinkDBError('Invalid nonce from server', {
-      type: RethinkDBErrorType.AUTH
+      type: RethinkDBErrorType.AUTH,
     });
   }
   const cacheKey = `${password.toString('base64')},${salt.toString(
-    'base64'
+    'base64',
   )},${iterations}`;
   const saltedPassword =
     CACHE_PBKDF2[cacheKey] ||
@@ -70,9 +70,7 @@ export async function computeSaltedPassword(
   const clientKey = createHmac('sha256', saltedPassword)
     .update('Client Key')
     .digest();
-  const storedKey = createHash('sha256')
-    .update(clientKey)
-    .digest();
+  const storedKey = createHash('sha256').update(clientKey).digest();
 
   const authMessage = `n=${user},r=${randomString},${authentication},${clientFinalMessageWithoutProof}`;
 
@@ -94,14 +92,13 @@ export async function computeSaltedPassword(
     proof: Buffer.concat([
       Buffer.from(
         JSON.stringify({
-          authentication:
-            clientFinalMessageWithoutProof +
-            ',p=' +
-            clientProof.toString('base64')
-        })
+          authentication: `${clientFinalMessageWithoutProof},p=${clientProof.toString(
+            'base64',
+          )}`,
+        }),
       ),
-      NULL_BUFFER
-    ])
+      NULL_BUFFER,
+    ]),
   };
 }
 
@@ -111,7 +108,7 @@ export function compareDigest(authentication: string, serverSignature: string) {
     serverSignature
   ) {
     throw new RethinkDBError('Invalid server signature', {
-      type: RethinkDBErrorType.AUTH
+      type: RethinkDBErrorType.AUTH,
     });
   }
 }

@@ -6,26 +6,41 @@ import { ErrorType, QueryType, ResponseType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
 import { parseOptarg } from '../query-builder/param-parser';
 import { Cursor } from '../response/cursor';
-import { Connection, RethinkDBErrorType, RServerConnectionOptions, RunOptions, ServerInfo } from '../types';
+import {
+  Connection,
+  RethinkDBErrorType,
+  RServerConnectionOptions,
+  RunOptions,
+  ServerInfo,
+} from '../types';
 import { RethinkDBSocket, RNConnOpts, setConnectionDefaults } from './socket';
 
 const tableQueries = [
   TermType.TABLE_CREATE,
   TermType.TABLE_DROP,
   TermType.TABLE_LIST,
-  TermType.TABLE
+  TermType.TABLE,
 ];
 
 export class RethinkDBConnection extends EventEmitter implements Connection {
   public clientPort: number;
+
   public clientAddress: string;
+
   public readonly socket: RethinkDBSocket;
+
   private options: RNConnOpts;
+
   private timeout: number;
+
   private pingInterval: number;
+
   private silent: boolean;
+
   private log: (message: string) => any;
+
   private pingTimer?: NodeJS.Timer;
+
   private db = 'test';
 
   constructor(
@@ -37,8 +52,8 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
       timeout = 20,
       pingInterval = -1,
       silent = false,
-      log = (message: string) => undefined
-    } = {}
+      log = (message: string) => undefined,
+    } = {},
   ) {
     super();
     this.options = setConnectionDefaults(connectionOptions);
@@ -55,7 +70,7 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     this.socket = new RethinkDBSocket({
       connectionOptions: this.options,
       user,
-      password
+      password,
     });
   }
 
@@ -90,15 +105,15 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     }
     this.socket
       .on('connect', () => this.emit('connect'))
-      .on('close', error => {
+      .on('close', (error) => {
         this.close();
         this.emit('close', error);
       })
-      .on('error', err => {
+      .on('error', (err) => {
         this.reportError(err);
       })
       .on('data', (data, token) => this.emit(data, token))
-      .on('release', count => {
+      .on('release', (count) => {
         if (count === 0) {
           this.emit('release');
         }
@@ -107,9 +122,9 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
       let timer: any;
       await Promise.race([
         new Promise(
-          resolve => (timer = setTimeout(resolve, this.timeout * 1000))
+          (resolve) => (timer = setTimeout(resolve, this.timeout * 1000)),
         ),
-        this.socket.connect()
+        this.socket.connect(),
       ]);
       if (timer) {
         clearTimeout(timer);
@@ -119,8 +134,8 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
         'Unable to establish connection, see cause for more info.',
         {
           cause,
-          type: RethinkDBErrorType.CONNECTION
-        }
+          type: RethinkDBErrorType.CONNECTION,
+        },
       );
       this.reportError(error);
       this.emit('close', error);
@@ -135,10 +150,8 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     }
     if (this.socket.status !== 'open') {
       const error = new RethinkDBError(
-        `Failed to connect to ${this.connectionOptions.host}:${
-          this.connectionOptions.port
-        } in less than ${this.timeout}s.`,
-        { type: RethinkDBErrorType.TIMEOUT }
+        `Failed to connect to ${this.connectionOptions.host}:${this.connectionOptions.port} in less than ${this.timeout}s.`,
+        { type: RethinkDBErrorType.TIMEOUT },
       );
       this.emit('timeout');
       this.emit('close', error);
@@ -148,9 +161,11 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     this.startPinging();
     return this;
   }
+
   public use(db: string): void {
     this.db = db;
   }
+
   public async noreplyWait(): Promise<void> {
     const token = this.socket.sendQuery([QueryType.NOREPLY_WAIT]);
     const result = await this.socket.readNext(token);
@@ -163,6 +178,7 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
       throw err;
     }
   }
+
   public async server(): Promise<ServerInfo> {
     const token = this.socket.sendQuery([QueryType.SERVER_INFO]);
     const result = await this.socket.readNext(token);
@@ -176,9 +192,10 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
     }
     return result.r[0];
   }
+
   public async query(
     term: TermJson,
-    globalArgs: RunOptions = {}
+    globalArgs: RunOptions = {},
   ): Promise<Cursor | undefined> {
     const { timeFormat, groupFormat, binaryFormat, ...gargs } = globalArgs;
     gargs.db = gargs.db || this.db;
@@ -197,13 +214,12 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
   private findTableTermAndAddDb(term: TermJson | undefined, db: any) {
     if (!Array.isArray(term)) {
       if (term !== null && typeof term === 'object') {
-        Object.values(term).forEach(value =>
-          this.findTableTermAndAddDb(value, db)
+        Object.values(term).forEach((value) =>
+          this.findTableTermAndAddDb(value, db),
         );
         return;
-      } else {
-        return;
       }
+      return;
     }
     const termParam = term[1];
     if (tableQueries.includes(term[0])) {
@@ -219,9 +235,8 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
       return;
     }
     if (termParam) {
-      termParam.forEach(value => this.findTableTermAndAddDb(value, db));
+      termParam.forEach((value) => this.findTableTermAndAddDb(value, db));
     }
-    return;
   }
 
   private startPinging() {
@@ -231,7 +246,7 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
           if (this.socket.status === 'open') {
             const token = this.socket.sendQuery([
               QueryType.START,
-              [TermType.ERROR, ['ping']]
+              [TermType.ERROR, ['ping']],
             ]);
             const result = await this.socket.readNext(token);
             if (
@@ -240,7 +255,7 @@ export class RethinkDBConnection extends EventEmitter implements Connection {
               result.r[0] !== 'ping'
             ) {
               this.reportError(
-                new RethinkDBError('Ping error', { responseType: result.t })
+                new RethinkDBError('Ping error', { responseType: result.t }),
               );
             }
           }

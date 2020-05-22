@@ -13,7 +13,7 @@ import { r } from './r';
 
 export function termBuilder(
   [termType, termName, minArgs, maxArgs, optargType]: TermConfig,
-  currentTerm?: TermJson
+  currentTerm?: TermJson,
 ) {
   return (...args: any[]) => {
     let optarg: object | undefined;
@@ -30,7 +30,7 @@ export function termBuilder(
           }\` takes ${minArgs} argument${
             minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RethinkDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY },
         );
       }
       if (argsLength < minArgs) {
@@ -40,7 +40,7 @@ export function termBuilder(
           }\` takes at least ${minArgs} argument${
             minArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RethinkDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY },
         );
       }
       if (maxArgs !== -1 && argsLength > maxArgs) {
@@ -50,7 +50,7 @@ export function termBuilder(
           }\` takes at most ${maxArgs} argument${
             maxArgs === 1 ? '' : 's'
           }, ${argsLength} provided${!currentTerm ? '.' : ' after:'}`,
-          { term: currentTerm, type: RethinkDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY },
         );
       }
       switch (optargType) {
@@ -70,15 +70,15 @@ export function termBuilder(
       ) {
         throw new RethinkDBError(
           `${numToString(
-            argsLength
+            argsLength,
           )} argument of \`${termName}\` must be an object.`,
-          { term: currentTerm, type: RethinkDBErrorType.ARITY }
+          { term: currentTerm, type: RethinkDBErrorType.ARITY },
         );
       }
       params.push(
         ...args
           .filter((_, i) => (optarg ? i < argsLength - 1 : true))
-          .map(x => parseParam(x))
+          .map((x) => parseParam(x)),
       );
     }
     const term: ComplexTermJson = [termType];
@@ -103,7 +103,7 @@ export const doTermFunc = (termQuery: any) => {
 export const runQueryFunc = (term: TermJson) => {
   return async (
     conn?: RethinkDBConnection | RunOptions,
-    options?: RunOptions
+    options?: RunOptions,
   ): Promise<any> => {
     const c = conn instanceof RethinkDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
@@ -111,7 +111,7 @@ export const runQueryFunc = (term: TermJson) => {
     if (!c && (!cpool || cpool.draining)) {
       throw new RethinkDBError(
         '`run` was called without a connection and no pool has been created after:',
-        { term, type: RethinkDBErrorType.API_FAIL }
+        { term, type: RethinkDBErrorType.API_FAIL },
       );
     }
     const cursor = c ? await c.query(term, opt) : await cpool.queue(term, opt);
@@ -132,13 +132,12 @@ export const runQueryFunc = (term: TermJson) => {
         }
       }
     }
-    return;
   };
 };
 export const getCursorQueryFunc = (term: TermJson) => {
   return async (
     conn?: RethinkDBConnection | RunOptions,
-    options?: RunOptions
+    options?: RunOptions,
   ): Promise<RCursor | undefined> => {
     const c = conn instanceof RethinkDBConnection ? conn : undefined;
     const cpool = r.getPoolMaster() as MasterConnectionPool;
@@ -146,7 +145,7 @@ export const getCursorQueryFunc = (term: TermJson) => {
     if (!c && (!cpool || cpool.draining)) {
       throw new RethinkDBError(
         '`getCursor` was called without a connection and no pool has been created after:',
-        { term, type: RethinkDBErrorType.API_FAIL }
+        { term, type: RethinkDBErrorType.API_FAIL },
       );
     }
     const cursor = c ? await c.query(term, opt) : await cpool.queue(term, opt);

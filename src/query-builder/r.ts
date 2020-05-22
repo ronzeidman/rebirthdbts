@@ -8,7 +8,7 @@ import {
   RConnectionOptions,
   RethinkDBErrorType,
   RPoolConnectionOptions,
-  RQuery
+  RQuery,
 } from '../types';
 import { globals } from './globals';
 import { toQuery } from './query';
@@ -22,30 +22,30 @@ r.connectPool = async (options: RPoolConnectionOptions = {}) => {
     port,
     server = { host, port },
     servers = [server],
-    waitForHealthy = true
+    waitForHealthy = true,
   } = options;
   if (host || port) {
     if (options.server) {
       throw new RethinkDBError(
         'If `host` or `port` are defined `server` must not be.',
-        { type: RethinkDBErrorType.API_FAIL }
+        { type: RethinkDBErrorType.API_FAIL },
       );
     } else if ((options as any).servers) {
       throw new RethinkDBError(
         'If `host` or `port` are defined `servers` must not be.',
-        { type: RethinkDBErrorType.API_FAIL }
+        { type: RethinkDBErrorType.API_FAIL },
       );
     }
   }
   if ((options as any).server && (options as any).servers) {
     throw new RethinkDBError('If `server` is defined `servers` must not be.', {
-      type: RethinkDBErrorType.API_FAIL
+      type: RethinkDBErrorType.API_FAIL,
     });
   }
   if (!servers.length) {
     throw new RethinkDBError(
       'If `servers` is an array, it must contain at least one server.',
-      { type: RethinkDBErrorType.API_FAIL }
+      { type: RethinkDBErrorType.API_FAIL },
     );
   }
   if ((r as any).pool) {
@@ -54,7 +54,7 @@ r.connectPool = async (options: RPoolConnectionOptions = {}) => {
   }
   const cpool = new MasterConnectionPool({
     ...options,
-    servers
+    servers,
   } as any);
   (r as any).pool = cpool;
   cpool.initServers().catch(() => undefined);
@@ -66,7 +66,7 @@ r.connect = async (options: RConnectionOptions = {}) => {
   if ((host || port) && options.server) {
     throw new RethinkDBError(
       'If `host` or `port` are defined `server` must not be.',
-      { type: RethinkDBErrorType.API_FAIL }
+      { type: RethinkDBErrorType.API_FAIL },
     );
   }
   const c = new RethinkDBConnection(server, options as any);
@@ -79,7 +79,7 @@ r.waitForHealthy = () => {
     return (r as any).pool.waitForHealthy();
   }
   throw new RethinkDBError('Pool not initialized', {
-    type: RethinkDBErrorType.MASTER_POOL_FAIL
+    type: RethinkDBErrorType.MASTER_POOL_FAIL,
   });
 };
 r.setNestingLevel = (level: number) => (globals.nestingLevel = level);
@@ -91,7 +91,7 @@ r.do = (...args: any[]) => {
   const last = args.pop();
   return termBuilder(funcall)(last, ...args);
 };
-rConfig.forEach(config => ((r as any)[config[1]] = termBuilder(config)));
+rConfig.forEach((config) => ((r as any)[config[1]] = termBuilder(config)));
 rConsts.forEach(([type, name]) => ((r as any)[name] = toQuery([type])));
 termConfig
   .filter(([_, name]) => !(name in r))
@@ -102,8 +102,8 @@ termConfig
         name,
         minArgs + 1,
         maxArgs === -1 ? maxArgs : maxArgs + 1,
-        optArgs
-      ]))
+        optArgs,
+      ])),
   );
 
 function validateTerm(term: any): any {
@@ -126,17 +126,17 @@ function validateTerm(term: any): any {
         if (!Array.isArray(args)) {
           throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
         }
-        if (!args.every(arg => validateTerm(arg))) {
+        if (!args.every((arg) => validateTerm(arg))) {
           throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
         }
       }
       if (
         !isUndefined(options) &&
-        !Object.values(term).every(value => validateTerm(value))
+        !Object.values(term).every((value) => validateTerm(value))
       ) {
         throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
       }
-    } else if (!Object.values(term).every(value => validateTerm(value))) {
+    } else if (!Object.values(term).every((value) => validateTerm(value))) {
       throw new RethinkDBError(`Invalid term:\n${JSON.stringify(term)}\n`);
     }
   }

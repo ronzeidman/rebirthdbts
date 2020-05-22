@@ -6,15 +6,13 @@ import {
   doTermFunc,
   getCursorQueryFunc,
   runQueryFunc,
-  termBuilder
+  termBuilder,
 } from './term-builder';
 
 export const querySymbol = Symbol('RethinkDBQuery');
 
 export const isQuery = (query: any) =>
-  ((query !== null && typeof query === 'object') ||
-    typeof query === 'function') &&
-  querySymbol in query;
+  query === Object(query) && Object.hasOwnProperty.call(query, querySymbol);
 
 export function toQuery(term: TermJson) {
   // Using proxy since:
@@ -33,7 +31,7 @@ const proxyKeys = new Set<PropertyKey>([
   querySymbol,
   'run',
   'do',
-  ...termConfig.map(t => t[1])
+  ...termConfig.map((t) => t[1]),
 ]);
 const queryProxyHandler: ProxyHandler<any> = {
   get(target, p, receiver) {
@@ -42,7 +40,7 @@ const queryProxyHandler: ProxyHandler<any> = {
     switch (p) {
       case 'then':
         throw new RethinkDBError(
-          'Cannot `await` a query, did you forget `run` or `getCursor`?'
+          'Cannot `await` a query, did you forget `run` or `getCursor`?',
         );
       case 'toString':
         return () => backtraceTerm(term)[0];
@@ -53,7 +51,7 @@ const queryProxyHandler: ProxyHandler<any> = {
       case 'do':
         return doTermFunc(receiver);
     }
-    const config = termConfig.find(t => t[1] === p);
+    const config = termConfig.find((t) => t[1] === p);
     if (config) {
       return termBuilder(config, term);
     }
@@ -61,5 +59,5 @@ const queryProxyHandler: ProxyHandler<any> = {
   },
   has(target, p) {
     return p in target || proxyKeys.has(p);
-  }
+  },
 };

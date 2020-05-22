@@ -11,15 +11,24 @@ export class Cursor extends Readable implements RCursor {
   public get profile() {
     return this._profile;
   }
+
   // tslint:disable-next-line:variable-name
   private _profile: any;
+
   private position = 0;
+
   private type: RCursorType = 'Cursor';
+
   private includeStates = false;
+
   private closed = false;
+
   private emitting = false;
+
   private resolving: Promise<any> | undefined;
+
   private lastError: Error | undefined;
+
   constructor(
     private conn: RethinkDBSocket,
     private token: number,
@@ -29,7 +38,7 @@ export class Cursor extends Readable implements RCursor {
     >,
     private query: QueryJson,
     private results?: any[],
-    private hasNextBatch?: boolean
+    private hasNextBatch?: boolean,
   ) {
     super({ objectMode: true });
   }
@@ -104,13 +113,13 @@ export class Cursor extends Readable implements RCursor {
     if (this.emitting) {
       throw new RethinkDBError(
         'You cannot call `next` once you have bound listeners on the Feed.',
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     if (this.closed) {
       throw new RethinkDBError(
         `You cannot call \`next\` on a closed ${this.type}`,
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     return await this._next();
@@ -120,7 +129,7 @@ export class Cursor extends Readable implements RCursor {
     if (this.emitting) {
       throw new RethinkDBError(
         'You cannot call `toArray` once you have bound listeners on the Feed.',
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     const all: any[] = [];
@@ -130,7 +139,7 @@ export class Cursor extends Readable implements RCursor {
           'You cannot call `toArray` on a change Feed.',
           {
             type: RethinkDBErrorType.CURSOR,
-          }
+          },
         );
       }
       all.push(row);
@@ -139,20 +148,20 @@ export class Cursor extends Readable implements RCursor {
 
   public async each(
     callback: (err: RethinkDBError | undefined, row?: any) => boolean,
-    onFinishedCallback?: () => any
+    onFinishedCallback?: () => any,
   ) {
     if (this.emitting) {
       throw new RethinkDBError(
         'You cannot call `each` once you have bound listeners on the Feed.',
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     if (this.closed) {
       callback(
         new RethinkDBError(
           'You cannot retrieve data from a cursor that is closed',
-          { type: RethinkDBErrorType.CURSOR }
-        )
+          { type: RethinkDBErrorType.CURSOR },
+        ),
       );
       if (onFinishedCallback) {
         onFinishedCallback();
@@ -181,18 +190,18 @@ export class Cursor extends Readable implements RCursor {
 
   public async eachAsync(
     rowHandler: (row: any, rowFinished?: (error?: string) => any) => any,
-    final?: (error: any) => any
+    final?: (error: any) => any,
   ) {
     if (this.emitting) {
       throw new RethinkDBError(
         'You cannot call `eachAsync` once you have bound listeners on the Feed.',
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     if (this.closed) {
       throw new RethinkDBError(
         'You cannot retrieve data from a cursor that is closed',
-        { type: RethinkDBErrorType.CURSOR }
+        { type: RethinkDBErrorType.CURSOR },
       );
     }
     let nextRow: any;
@@ -204,9 +213,9 @@ export class Cursor extends Readable implements RCursor {
             rowHandler(nextRow, (err) =>
               err
                 ? reject(
-                    new RethinkDBError(err, { type: RethinkDBErrorType.USER })
+                    new RethinkDBError(err, { type: RethinkDBErrorType.USER }),
                   )
-                : resolve()
+                : resolve(),
             );
           });
         } else {
@@ -229,7 +238,7 @@ export class Cursor extends Readable implements RCursor {
       if (
         !isRethinkDBError(error) ||
         ![RethinkDBErrorType.CURSOR_END, RethinkDBErrorType.CANCEL].includes(
-          error.type
+          error.type,
         )
       ) {
         throw error;
@@ -316,6 +325,7 @@ export class Cursor extends Readable implements RCursor {
       throw error;
     }
   }
+
   private getResults() {
     return this.results &&
       this.type === 'Atom' &&
@@ -371,7 +381,7 @@ export class Cursor extends Readable implements RCursor {
         }
         return acc;
       },
-      { type: 'Cursor' as RCursorType, includeStates: true }
+      { type: 'Cursor' as RCursorType, includeStates: true },
     );
     this.type = type;
     this.includeStates = includeStates;
