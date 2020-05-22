@@ -50,7 +50,7 @@ const conn = await r.connect(options);
 The options for standard connections is described [here](https://nodejs.org/dist/latest-v10.x/docs/api/net.html#net_net_createconnection_options_connectlistener).
 
 If you want an SSL/TLS, add `tls: true` and the options described [here](https://nodejs.org/dist/latest-v10.x/docs/api/tls.html#tls_tls_connect_options_callback) and 
-- Importing property instead of entire library: `const {r} = require('rethinkdbts')` or `import {r} from 'rethinkdbts'` instead of `const r = require('rethinkdbdash')(options)`
+- Importing property instead of entire library: `const {r} = require('rethinkdb-ts')` or `import {r} from 'rethinkdb-ts'` instead of `const r = require('rethinkdbdash')(options)`
 - No top level initialization, initializing a pool is done by `await r.connectPool()`
 - No `{ cursor: true }` option, for getting a cursor use `.getCursor(runOptions)` instead of `.run(runOptions)`
   - `.run()` will coerce streams to array by default feeds will return a cursor like rethinkdbdash
