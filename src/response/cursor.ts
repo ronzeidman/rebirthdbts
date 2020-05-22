@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 import { isUndefined } from 'util';
 import { RethinkDBSocket } from '../connection/socket';
-import { RethinkDBError, isRethinkDBError } from '../error/error';
+import { isRethinkDBError, RethinkDBError } from '../error/error';
 import { QueryJson, ResponseJson } from '../internal-types';
 import { ResponseNote, ResponseType } from '../proto/enums';
 import { RCursor, RCursorType, RethinkDBErrorType, RunOptions } from '../types';
@@ -35,7 +35,7 @@ export class Cursor extends Readable implements RCursor {
   }
 
   public init() {
-    this.resolving = this.resolve().catch(err => (this.lastError = err));
+    this.resolving = this.resolve().catch((err) => (this.lastError = err));
   }
 
   public _read() {
@@ -49,12 +49,12 @@ export class Cursor extends Readable implements RCursor {
     };
     this._next()
       .then(push)
-      .catch(err => {
+      .catch((err) => {
         if (
           (!isRethinkDBError(err) ||
             ![
               RethinkDBErrorType.CURSOR_END,
-              RethinkDBErrorType.CANCEL
+              RethinkDBErrorType.CANCEL,
             ].includes(err.type)) &&
           this.listenerCount('error') > 0
         ) {
@@ -72,6 +72,10 @@ export class Cursor extends Readable implements RCursor {
   public resume() {
     this._read();
     return super.resume();
+  }
+
+  public destroy() {
+    super.destroy();
   }
 
   public _destroy() {
@@ -120,12 +124,12 @@ export class Cursor extends Readable implements RCursor {
       );
     }
     const all: any[] = [];
-    return this.eachAsync(async row => {
+    return this.eachAsync(async (row) => {
       if (this.type.endsWith('Feed')) {
         throw new RethinkDBError(
           'You cannot call `toArray` on a change Feed.',
           {
-            type: RethinkDBErrorType.CURSOR
+            type: RethinkDBErrorType.CURSOR,
           }
         );
       }
@@ -197,14 +201,12 @@ export class Cursor extends Readable implements RCursor {
         nextRow = await this.next();
         if (rowHandler.length > 1) {
           await new Promise((resolve, reject) => {
-            rowHandler(
-              nextRow,
-              err =>
-                err
-                  ? reject(
-                      new RethinkDBError(err, { type: RethinkDBErrorType.USER })
-                    )
-                  : resolve()
+            rowHandler(nextRow, (err) =>
+              err
+                ? reject(
+                    new RethinkDBError(err, { type: RethinkDBErrorType.USER })
+                  )
+                : resolve()
             );
           });
         } else {
@@ -255,6 +257,28 @@ export class Cursor extends Readable implements RCursor {
     }
   }
 
+  public [Symbol.asyncIterator]() {
+    return {
+      next: async () => {
+        if (this.closed) {
+          return { done: true };
+        }
+        try {
+          const value = await this.next();
+          return { value, done: false };
+        } catch (error) {
+          if (
+            isRethinkDBError(error) &&
+            error.type === RethinkDBErrorType.CANCEL
+          ) {
+            return { done: true };
+          }
+          throw error;
+        }
+      },
+    };
+  }
+
   private async _next() {
     if (this.lastError) {
       this.emitting = false;
@@ -282,7 +306,7 @@ export class Cursor extends Readable implements RCursor {
       }
       if (!this.hasNextBatch && isUndefined(next)) {
         throw new RethinkDBError('No more rows in the cursor.', {
-          type: RethinkDBErrorType.CURSOR_END
+          type: RethinkDBErrorType.CURSOR_END,
         });
       }
       this.position++;
@@ -292,7 +316,6 @@ export class Cursor extends Readable implements RCursor {
       throw error;
     }
   }
-
   private getResults() {
     return this.results &&
       this.type === 'Atom' &&
@@ -311,7 +334,7 @@ export class Cursor extends Readable implements RCursor {
           responseErrorType: error,
           responseType: type,
           query: this.query,
-          backtrace
+          backtrace,
         });
       case ResponseType.SUCCESS_ATOM:
       case ResponseType.SUCCESS_PARTIAL:
