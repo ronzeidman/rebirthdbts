@@ -72,7 +72,7 @@ export function backtraceTerm(
         return getMarked(
           combineMarks`(${params.reduce(joinMultiArray, [
             '',
-            ''
+            '',
           ])}) => ${backtraceTerm(
             (args as any)[1],
             false,
@@ -84,7 +84,7 @@ export function backtraceTerm(
         return getMarked(
           combineMarks`function(${params.reduce(joinMultiArray, [
             '',
-            ''
+            '',
           ])}) { return ${backtraceTerm(
             (args as any)[1],
             false,
@@ -128,13 +128,13 @@ export function backtraceTerm(
       );
     }
     default: {
-      const c = rConsts.find(co => co[0] === type);
+      const c = rConsts.find((co) => co[0] === type);
       if (c) {
         return getMarked(`r.${c[1]}`, backtrace);
       }
-      const func = termConfig.find(conf => conf[0] === type);
+      const func = termConfig.find((conf) => conf[0] === type);
       if (!func) {
-        const rfunc = rConfig.find(conf => conf[0] === type);
+        const rfunc = rConfig.find((conf) => conf[0] === type);
         if (rfunc) {
           const rparsedParams = [...(args || [])]
             .map(parseArg)
@@ -196,9 +196,7 @@ export function backtraceTerm(
       return getMarked(
         parsedOptarg
           ? hasParams
-            ? combineMarks`${parsedCaller}.${
-                func[1]
-              }(${parsedParams}, ${parsedOptarg})`
+            ? combineMarks`${parsedCaller}.${func[1]}(${parsedParams}, ${parsedOptarg})`
             : combineMarks`${parsedCaller}.${func[1]}(${parsedOptarg})`
           : combineMarks`${parsedCaller}.${func[1]}(${parsedParams})`,
         backtrace
@@ -219,14 +217,18 @@ function backtraceObject(obj: any, backtrace?: Array<number | string>) {
     .map(([key, val]) => {
       const next = param === key ? nextB : undefined;
       return getMarked(
-        combineMarks`${snakeToCamel(key)}: ${backtraceTerm(val, false, next)}`
+        combineMarks`${snakeToCamel(key)}: ${backtraceTerm(
+          val as TermJson,
+          false,
+          next
+        )}`
       );
     })
     .reduce(joinMultiArray, ['', ''])} }`;
 }
 
 function snakeToCamel(name: string) {
-  return name.replace(/(_[a-z])/g, x => x.charAt(1).toUpperCase());
+  return name.replace(/(_[a-z])/g, (x) => x.charAt(1).toUpperCase());
 }
 
 export function backtraceQuery(

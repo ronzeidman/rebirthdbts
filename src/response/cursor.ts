@@ -257,11 +257,11 @@ export class Cursor extends Readable implements RCursor {
     }
   }
 
-  public [Symbol.asyncIterator]() {
+  public [Symbol.asyncIterator](): AsyncIterableIterator<any> {
     return {
       next: async () => {
         if (this.closed) {
-          return { done: true };
+          return { done: true, value: undefined };
         }
         try {
           const value = await this.next();
@@ -271,12 +271,12 @@ export class Cursor extends Readable implements RCursor {
             isRethinkDBError(error) &&
             error.type === RethinkDBErrorType.CANCEL
           ) {
-            return { done: true };
+            return { done: true, value: undefined };
           }
           throw error;
         }
       },
-    };
+    } as AsyncIterableIterator<any>;
   }
 
   private async _next() {

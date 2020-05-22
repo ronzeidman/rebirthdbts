@@ -40,7 +40,7 @@ export class RethinkDBError extends Error {
       errorCode,
       backtrace,
       responseType,
-      responseErrorType
+      responseErrorType,
     }: RethinkDBErrorArgs = {}
   ) {
     super(buildMessage(msg, query, term, backtrace));
@@ -56,7 +56,7 @@ export class RethinkDBError extends Error {
   public addBacktrace({
     term,
     query,
-    backtrace
+    backtrace,
   }: {
     term?: TermJson;
     query?: QueryJson;
@@ -68,7 +68,7 @@ export class RethinkDBError extends Error {
   private setErrorType({
     errorCode,
     type,
-    responseErrorType
+    responseErrorType,
   }: {
     errorCode?: number;
     type?: RethinkDBErrorType;
@@ -136,8 +136,8 @@ function buildMessage(
       msg.charAt(msg.length - 1) === ':'
         ? msg
         : msg.charAt(msg.length - 1) === '.'
-          ? msg.substring(0, msg.length - 1) + ' in:'
-          : msg + ' in:';
+        ? msg.substring(0, msg.length - 1) + ' in:'
+        : msg + ' in:';
     const [str, mark] = backtraceTerm(t, true, backtrace);
     if (globals.pretty) {
       msg += `\n${pretty(str, mark)}`;
@@ -158,7 +158,7 @@ function pretty(query: string, mark: string) {
   let char = '';
   let newline = true;
   let inStr = false;
-  let eacape = false;
+  let shouldEscape = false;
   let lastNewlinePos = 0;
   let lineMarkPos = 0;
   let lineMark = '';
@@ -180,7 +180,7 @@ function pretty(query: string, mark: string) {
     }
     switch (char) {
       case '.':
-        eacape = false;
+        shouldEscape = false;
         newline = false;
         if (inStr || result.length - lastNewlinePos <= 80 + indent) {
           result += char;
@@ -218,7 +218,7 @@ function pretty(query: string, mark: string) {
         }
         break;
       case '{':
-        eacape = false;
+        shouldEscape = false;
         if (inStr || query.charAt(i + 1) === '}') {
           newline = false;
           result += char;
@@ -238,7 +238,7 @@ function pretty(query: string, mark: string) {
         break;
       case '}':
         newline = false;
-        eacape = false;
+        shouldEscape = false;
         if (inStr || query.charAt(i - 1) === '{') {
           result += char;
         } else {
@@ -257,7 +257,7 @@ function pretty(query: string, mark: string) {
         }
         break;
       case ' ':
-        eacape = false;
+        shouldEscape = false;
         if (newline) {
           lineMarkPos++;
         } else {
@@ -265,8 +265,8 @@ function pretty(query: string, mark: string) {
         }
         break;
       case '"':
-        if (escape) {
-          eacape = false;
+        if (shouldEscape) {
+          shouldEscape = false;
         } else {
           inStr = !inStr;
         }
@@ -274,12 +274,12 @@ function pretty(query: string, mark: string) {
         result += char;
         break;
       case '\\':
-        eacape = !escape;
+        shouldEscape = !escape;
         newline = false;
         result += char;
         break;
       default:
-        eacape = false;
+        shouldEscape = false;
         newline = false;
         result += char;
         break;
