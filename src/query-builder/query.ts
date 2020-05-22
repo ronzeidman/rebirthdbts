@@ -12,9 +12,7 @@ import {
 export const querySymbol = Symbol('RethinkDBQuery');
 
 export const isQuery = (query: any) =>
-  ((query !== null && typeof query === 'object') ||
-    typeof query === 'function') &&
-  querySymbol in query;
+  query === Object(query) && Object.hasOwnProperty.call(query, querySymbol);
 
 export function toQuery(term: TermJson) {
   const query: any = termBuilder(bracket, term);
