@@ -21,13 +21,18 @@ export function isRethinkDBError(error: any): error is RethinkDBError {
 
 export class RethinkDBError extends Error {
   public readonly cause: Error | undefined;
+
   public get type() {
     return this._type;
   }
+
   // tslint:disable-next-line:variable-name
   private _type: RethinkDBErrorType = RethinkDBErrorType.UNKNOWN;
+
   private term?: TermJson;
+
   private query?: QueryJson;
+
   private backtrace?: Array<number | string>;
 
   constructor(
@@ -41,7 +46,7 @@ export class RethinkDBError extends Error {
       backtrace,
       responseType,
       responseErrorType,
-    }: RethinkDBErrorArgs = {}
+    }: RethinkDBErrorArgs = {},
   ) {
     super(buildMessage(msg, query, term, backtrace));
     this.cause = cause;
@@ -128,7 +133,7 @@ function buildMessage(
   msg: string,
   query?: QueryJson,
   term?: TermJson,
-  backtrace?: Array<number | string>
+  backtrace?: Array<number | string>,
 ) {
   const t = query ? query[1] : term;
   if (t) {
@@ -136,8 +141,8 @@ function buildMessage(
       msg.charAt(msg.length - 1) === ':'
         ? msg
         : msg.charAt(msg.length - 1) === '.'
-        ? msg.substring(0, msg.length - 1) + ' in:'
-        : msg + ' in:';
+        ? `${msg.substring(0, msg.length - 1)} in:`
+        : `${msg} in:`;
     const [str, mark] = backtraceTerm(t, true, backtrace);
     if (globals.pretty) {
       msg += `\n${pretty(str, mark)}`;

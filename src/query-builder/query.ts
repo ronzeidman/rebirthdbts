@@ -6,7 +6,7 @@ import {
   doTermFunc,
   getCursorQueryFunc,
   runQueryFunc,
-  termBuilder
+  termBuilder,
 } from './term-builder';
 
 export const querySymbol = Symbol('RethinkDBQuery');
