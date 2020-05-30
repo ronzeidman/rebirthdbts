@@ -101,7 +101,10 @@ export function parseParam(
       ? [TermType.FUNC, [[TermType.MAKE_ARRAY, [1]], objTerm]]
       : objTerm;
   }
-  if (typeof param === 'number' && (isNaN(param) || !isFinite(param))) {
+  if (
+    typeof param === 'number' &&
+    (Number.isNaN(param) || !Number.isFinite(param))
+  ) {
     throw new RethinkDBError(`Cannot convert \`${param}\` to JSON`, {
       type: RethinkDBErrorType.PARSE,
     });
