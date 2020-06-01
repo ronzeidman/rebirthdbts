@@ -6,7 +6,7 @@ import {
   doTermFunc,
   getCursorQueryFunc,
   runQueryFunc,
-  termBuilder
+  termBuilder,
 } from './term-builder';
 
 export const querySymbol = Symbol('RethinkDBQuery');
@@ -23,7 +23,7 @@ export function toQuery(term: TermJson) {
   query[querySymbol] = true;
 
   Object.defineProperty(query, 'then', {
-    get: function () {
+    get() {
       throw new RethinkDBError(
         'Cannot `await` a query, did you forget `run` or `getCursor`?',
       );
