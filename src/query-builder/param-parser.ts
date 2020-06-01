@@ -72,7 +72,7 @@ export function parseParam(
           { type: RethinkDBErrorType.PARSE },
         );
       }
-      const term = [
+      return [
         TermType.FUNC,
         [
           [
@@ -84,7 +84,6 @@ export function parseParam(
           parseParam(funcResult),
         ],
       ];
-      return term;
     } finally {
       globals.nextVarId = nextVarId;
     }
