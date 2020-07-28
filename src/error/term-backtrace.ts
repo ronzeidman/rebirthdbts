@@ -1,7 +1,7 @@
 import { QueryJson, TermJson } from '../internal-types';
 import { QueryType, TermType } from '../proto/enums';
 import { globals } from '../query-builder/globals';
-import { hasImplicitVar } from '../query-builder/param-parser';
+import { hasImplicitVar } from '../query-builder/has-implicit-var';
 import { rConfig, rConsts, termConfig } from '../query-builder/query-config';
 
 export function backtraceTerm(
